@@ -1,0 +1,168 @@
+export type ProjectCardData = {
+  title: string;
+  description: string;
+  level: string;
+  whatYouMake: string;
+  time: string;
+  href: string;
+  artGradient: string;
+  locked?: boolean;
+};
+
+export type LessonStep = {
+  id: string;
+  order: number;
+  shortTitle: string;
+  sidebarCopy: string;
+  kicker: string;
+  title: string;
+  body: string;
+  hint?: string;
+  example?: string;
+  challenge?: string;
+  editorFocus: {
+    label: string;
+    matchText?: string;
+    helperText?: string;
+  };
+  prediction?: {
+    question: string;
+    options: string[];
+    answerIndex: number;
+    positiveFeedback?: string;
+    neutralFeedback?: string;
+  };
+  activity?: {
+    type: "selection";
+    title: string;
+    body: string;
+    questions: Array<{
+      id: string;
+      title: string;
+      options: string[];
+      answerIndex: number;
+      positiveFeedback?: string;
+      neutralFeedback?: string;
+    }>;
+  };
+  checklist?: string[];
+  showEditor: boolean;
+  editorReadOnly?: boolean;
+  showImagePicker?: boolean;
+  showThemePicker?: boolean;
+  showBuilder?: boolean;
+  editorTabs?: LessonEditorTab[];
+  defaultEditorTabId?: string;
+};
+
+export type LessonEditorTab = {
+  id: string;
+  label: string;
+  language: string;
+  badgeLabel: string;
+};
+
+export type ThemeOption = {
+  id: string;
+  name: string;
+  description: string;
+  swatches: string[];
+  previewGradient: string;
+  cssVars: Record<string, string>;
+};
+
+export type ImageOption = {
+  id: string;
+  name: string;
+  description: string;
+  alt: string;
+  src: string;
+};
+
+export type LessonSidebarMeta = {
+  eyebrow: string;
+  title: string;
+  description: string;
+};
+
+export type FinishScreenContent = {
+  eyebrow: string;
+  title: string;
+  body: string;
+  learnedBadges: string[];
+};
+
+export type LessonIntroCard = {
+  title: string;
+  body: string;
+  pills: string[];
+};
+
+export type BuilderSelections = Record<string, string>;
+
+export type BuilderOption = {
+  id: string;
+  label: string;
+  description: string;
+  emoji?: string;
+  accentColor?: string;
+  previewGradient?: string;
+};
+
+export type BuilderQuestion = {
+  id: string;
+  title: string;
+  body: string;
+  defaultOptionId: string;
+  options: BuilderOption[];
+};
+
+export type LessonBuilderConfig = {
+  title: string;
+  body: string;
+  questions: BuilderQuestion[];
+};
+
+export type LessonProjectConfig = {
+  slug: string;
+  editorLanguage: string;
+  editorBadgeLabel: string;
+  starterCode: string;
+  builder?: LessonBuilderConfig;
+  getStarterCode?: (state: { step: LessonStep; builderSelections: BuilderSelections }) => string;
+  steps: LessonStep[];
+  sidebar: LessonSidebarMeta;
+  introCard: LessonIntroCard;
+  finish: FinishScreenContent;
+  defaultThemeId?: string;
+  themeOptions?: ThemeOption[];
+  defaultImageId?: string;
+  imageOptions?: ImageOption[];
+  previewTitle?: (state: {
+    selectedThemeId: string;
+    selectedImageId: string;
+  }) => string;
+  previewSandbox?: string;
+  buildPreviewDocument: (state: {
+    code: string;
+    selectedThemeId: string;
+    selectedImageId: string;
+  }) => string;
+  transformStepCode?: (state: {
+    code: string;
+    step: LessonStep;
+    surface: "editor" | "preview";
+  }) => string;
+  getEditorCodeSlice?: (state: {
+    code: string;
+    step: LessonStep;
+    editorTabId: string;
+  }) => string;
+  applyEditorCodeSlice?: (state: {
+    currentCode: string;
+    nextSliceCode: string;
+    step: LessonStep;
+    editorTabId: string;
+  }) => string;
+  onSelectImage?: (currentCode: string, image: ImageOption) => string;
+};
