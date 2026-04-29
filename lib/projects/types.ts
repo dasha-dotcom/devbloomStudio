@@ -45,6 +45,17 @@ export type LessonStep = {
       neutralFeedback?: string;
     }>;
   };
+  feedbackMode?: LessonFeedbackMode;
+  isGate?: boolean;
+  allowNextWhen?: LessonAllowNextWhen;
+  checkBehavior?: LessonCheckBehavior;
+  passMessage?: string;
+  closeMessage?: string;
+  notYetMessage?: string;
+  successCriteria?: LessonSuccessCriteria;
+  checkpoint?: LessonCheckpointConfig;
+  reflectionPrompt?: string;
+  reflectionPlaceholder?: string;
   checklist?: string[];
   showEditor: boolean;
   editorReadOnly?: boolean;
@@ -54,6 +65,63 @@ export type LessonStep = {
   editorTabs?: LessonEditorTab[];
   defaultEditorTabId?: string;
 };
+
+export type LessonFeedbackMode = "none" | "autoCheck" | "checkpoint" | "reflection";
+
+export type LessonAllowNextWhen = "always" | "pass" | "answered";
+
+export type LessonCheckBehavior = "live" | "manual";
+
+export type LessonCheckpointQuestion = {
+  id: string;
+  prompt: string;
+  options: string[];
+  correctOptionIndex: number;
+};
+
+export type LessonCheckpointConfig = {
+  title: string;
+  body: string;
+  questions: LessonCheckpointQuestion[];
+  submitLabel?: string;
+};
+
+export type LessonTargetRegion = {
+  startAfter: string;
+  endBefore: string;
+};
+
+export type LessonSuccessCriteria =
+  | {
+      type: "changedFromStarter";
+    }
+  | {
+      type: "changedFromStepStart";
+    }
+  | {
+      type: "changedInTargetRegion";
+      region: LessonTargetRegion;
+    }
+  | {
+      type: "codeIncludes";
+      value: string;
+    }
+  | {
+      type: "codeIncludesAny";
+      values: string[];
+    }
+  | {
+      type: "codeExcludes";
+      value: string;
+    }
+  | {
+      type: "allOf";
+      criteria: LessonSuccessCriteria[];
+    }
+  | {
+      type: "anyOf";
+      criteria: LessonSuccessCriteria[];
+    };
 
 export type LessonEditorTab = {
   id: string;
@@ -128,6 +196,7 @@ export type LessonProjectConfig = {
   editorLanguage: string;
   editorBadgeLabel: string;
   starterCode: string;
+  resetBehavior?: "full" | "active-tab";
   builder?: LessonBuilderConfig;
   getStarterCode?: (state: { step: LessonStep; builderSelections: BuilderSelections }) => string;
   steps: LessonStep[];

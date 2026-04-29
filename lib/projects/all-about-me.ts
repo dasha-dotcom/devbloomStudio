@@ -46,6 +46,8 @@ export const allAboutMeLessonSteps: LessonStep[] = [
     editorFocus: {
       label: "Look around",
     },
+    feedbackMode: "none",
+    isGate: false,
     showEditor: false,
   },
   {
@@ -70,6 +72,17 @@ export const allAboutMeLessonSteps: LessonStep[] = [
       positiveFeedback: "Nice guess — now try it and see.",
       neutralFeedback: "Try it and compare the preview.",
     },
+    feedbackMode: "autoCheck",
+    isGate: false,
+    successCriteria: {
+      type: "changedInTargetRegion",
+      region: {
+        startAfter: "<h1>",
+        endBefore: "</h1>",
+      },
+    },
+    passMessage: "Nice — that changed the page title.",
+    notYetMessage: "This step is about the big heading. Edit the words inside the <h1> tag.",
     showEditor: true,
   },
   {
@@ -88,6 +101,17 @@ export const allAboutMeLessonSteps: LessonStep[] = [
       label: "The first <p> paragraph",
       matchText: "<p>",
     },
+    feedbackMode: "autoCheck",
+    isGate: false,
+    successCriteria: {
+      type: "changedInTargetRegion",
+      region: {
+        startAfter: "<p>",
+        endBefore: "</p>",
+      },
+    },
+    passMessage: "Nice — your intro changed the paragraph on the page.",
+    notYetMessage: "Something still needs attention here. Change the words inside the first paragraph.",
     showEditor: true,
   },
   {
@@ -112,6 +136,31 @@ export const allAboutMeLessonSteps: LessonStep[] = [
       positiveFeedback: "That fits — now edit the list and watch it update.",
       neutralFeedback: "Make one list change and see what part updates.",
     },
+    feedbackMode: "checkpoint",
+    isGate: true,
+    allowNextWhen: "pass",
+    checkpoint: {
+      title: "Match the list idea to the code",
+      body: "This step is about how HTML lists are built. Pick the answer that matches the list structure you just edited.",
+      submitLabel: "Check my answers",
+      questions: [
+        {
+          id: "list-tag",
+          prompt: "Which tag makes one item in the list?",
+          options: ["<li>", "<h1>", "<img>"],
+          correctOptionIndex: 0,
+        },
+        {
+          id: "add-item",
+          prompt: "Which code would add one more favorite to the list?",
+          options: ["<p>Soccer</p>", "<li>Soccer</li>", "<img src=\"soccer.png\" />"],
+          correctOptionIndex: 1,
+        },
+      ],
+    },
+    passMessage: "Nice — you connected the list idea to the right HTML tag.",
+    closeMessage: "You're close. This step is asking about which tag makes a list item.",
+    notYetMessage: "Something still needs attention here. Look for the tag that wraps each favorite.",
     showEditor: true,
   },
   {
@@ -130,6 +179,8 @@ export const allAboutMeLessonSteps: LessonStep[] = [
       helperText:
         "This line controls the picture on your page. The <img> tag shows a picture on a webpage.",
     },
+    feedbackMode: "none",
+    isGate: false,
     showEditor: true,
     showImagePicker: true,
   },
@@ -153,6 +204,8 @@ export const allAboutMeLessonSteps: LessonStep[] = [
       positiveFeedback: "Exactly — now try a few and compare the mood.",
       neutralFeedback: "Pick a theme and notice what changes versus what stays the same.",
     },
+    feedbackMode: "none",
+    isGate: false,
     showEditor: true,
     showThemePicker: true,
   },
@@ -174,6 +227,13 @@ export const allAboutMeLessonSteps: LessonStep[] = [
       "Add one more favorite",
       "Check that your heading sounds like you",
     ],
+    feedbackMode: "autoCheck",
+    isGate: false,
+    successCriteria: {
+      type: "changedFromStepStart",
+    },
+    passMessage: "Nice — you added a personal polish move to the page.",
+    notYetMessage: "You can leave this step open, or make one small extra change before you move on.",
     showEditor: true,
   },
   {
@@ -189,6 +249,12 @@ export const allAboutMeLessonSteps: LessonStep[] = [
     editorFocus: {
       label: "Your finished page",
     },
+    feedbackMode: "reflection",
+    isGate: false,
+    reflectionPrompt: "What part of your page came from HTML?",
+    reflectionPlaceholder: "For example: the heading, the paragraph, the list, or the image line.",
+    passMessage: "Nice reflection. You named a part that HTML puts on the page.",
+    notYetMessage: "Take a moment to name one part of the page that came from HTML.",
     showEditor: false,
   },
 ];

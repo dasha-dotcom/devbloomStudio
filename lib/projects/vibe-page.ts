@@ -37,6 +37,8 @@ export const vibePageLessonSteps: LessonStep[] = [
     editorFocus: {
       label: "Look at the CSS starter",
     },
+    feedbackMode: "none",
+    isGate: false,
     showEditor: false,
   },
   {
@@ -48,7 +50,7 @@ export const vibePageLessonSteps: LessonStep[] = [
     title: "Start with the background",
     body:
       "Background color is one of the fastest ways to change a webpage mood. Edit the color inside the body rule and watch the whole scene shift.",
-    hint: "Try a bold color if you want the change to feel extra dramatic.",
+    hint: "In CSS, colors can be written as simple names like red or blue, or as hex codes like #ff0000—you can look up a hex color if you want a specific shade.",
     example: "background-color: #0f172f;",
     editorFocus: {
       label: "The body background-color rule",
@@ -61,6 +63,17 @@ export const vibePageLessonSteps: LessonStep[] = [
       positiveFeedback: "Exactly. Body styles can affect the whole page.",
       neutralFeedback: "Try the color change and see how much space it controls.",
     },
+    feedbackMode: "autoCheck",
+    isGate: false,
+    successCriteria: {
+      type: "changedInTargetRegion",
+      region: {
+        startAfter: "background-color:",
+        endBefore: ";",
+      },
+    },
+    passMessage: "Nice — that changed the page background.",
+    notYetMessage: "This step is asking about the body background color. Change the value after `background-color:`.",
     showEditor: true,
   },
   {
@@ -78,6 +91,30 @@ export const vibePageLessonSteps: LessonStep[] = [
       label: "The .hero-title rule",
       matchText: ".hero-title",
     },
+    feedbackMode: "checkpoint",
+    isGate: true,
+    allowNextWhen: "pass",
+    checkpoint: {
+      title: "Notice what the selector does",
+      body: "This step is about how CSS knows what to style. Answer the quick checkpoint before moving on.",
+      questions: [
+        {
+          id: "selector-part",
+          prompt: "Which part of a CSS rule decides what gets styled?",
+          options: ["The selector", "The color value", "The semicolon"],
+          correctOptionIndex: 0,
+        },
+        {
+          id: "selector-example",
+          prompt: "In `.hero-title { color: #20355f; }`, which part points to the big title?",
+          options: [".hero-title", "color", "#20355f"],
+          correctOptionIndex: 0,
+        },
+      ],
+    },
+    passMessage: "Nice — you identified the selector that tells CSS what to style.",
+    closeMessage: "You're close. This step is about the selector, not the color value.",
+    notYetMessage: "Something still needs attention here. Look at which part names the title rule.",
     showEditor: true,
   },
   {
@@ -89,7 +126,7 @@ export const vibePageLessonSteps: LessonStep[] = [
     title: "Shape the vibe card",
     body:
       "The card is your main content panel. Try changing the background, padding, roundness, or shadow to make it feel soft, bold, cozy, sleek, or glowing.",
-    hint: "Padding controls the space inside the card. Border radius controls how rounded the corners feel.",
+    hint: "Padding controls the space inside the card. Border radius controls how rounded the corners are.",
     editorFocus: {
       label: "The .vibe-card rule",
       matchText: ".vibe-card",
@@ -99,6 +136,17 @@ export const vibePageLessonSteps: LessonStep[] = [
       "Change the padding number",
       "Make the corners more or less rounded",
     ],
+    feedbackMode: "autoCheck",
+    isGate: false,
+    successCriteria: {
+      type: "changedInTargetRegion",
+      region: {
+        startAfter: ".vibe-card {",
+        endBefore: "}",
+      },
+    },
+    passMessage: "Nice — you changed the card styling.",
+    notYetMessage: "This step is about the `.vibe-card` rule. Change one style inside that block.",
     showEditor: true,
   },
   {
@@ -110,7 +158,7 @@ export const vibePageLessonSteps: LessonStep[] = [
     title: "Push the mood further",
     body:
       "Small CSS details can completely change the energy. Adjust the card shadow or the mood note color until the page feels more like a clear vibe instead of a plain starter.",
-    hint: "A softer shadow can feel cozy. A brighter shadow can feel neon or magical.",
+    hint: "In CSS, box-shadow adds a shadow around an element using values for horizontal shift, vertical shift, blur, and color, so you can tweak the numbers to change how soft or far the shadow looks.",
     editorFocus: {
       label: "The box-shadow or .mood-note styles",
       matchText: "box-shadow",
@@ -124,6 +172,23 @@ export const vibePageLessonSteps: LessonStep[] = [
       positiveFeedback: "Yes. CSS can change the feeling without changing the content.",
       neutralFeedback: "Try it and notice how the same card starts to feel different.",
     },
+    feedbackMode: "checkpoint",
+    isGate: false,
+    checkpoint: {
+      title: "Connect the rule to the page",
+      body: "Use one quick question to connect the selector to the part of the page it affects.",
+      questions: [
+        {
+          id: "mood-note-target",
+          prompt: "If you edit the `.mood-note` rule, which part of the page changes?",
+          options: ["The small note inside the card", "The whole page background", "Every heading on the page"],
+          correctOptionIndex: 0,
+        },
+      ],
+    },
+    passMessage: "Nice — you matched the selector to the right part of the page.",
+    closeMessage: "You're close. This rule only styles one small part, not the whole page.",
+    notYetMessage: "Check which part of the page the `.mood-note` rule points to.",
     showEditor: true,
   },
   {
@@ -144,6 +209,8 @@ export const vibePageLessonSteps: LessonStep[] = [
       "Adjust one spacing or roundness value",
       "Change one text or shadow detail for extra mood",
     ],
+    feedbackMode: "none",
+    isGate: false,
     showEditor: true,
   },
   {
@@ -159,6 +226,12 @@ export const vibePageLessonSteps: LessonStep[] = [
     editorFocus: {
       label: "Your finished design",
     },
+    feedbackMode: "reflection",
+    isGate: false,
+    reflectionPrompt: "How does CSS know which part of the page to style?",
+    reflectionPlaceholder: "You can mention selectors, class names, or a rule from this lesson.",
+    passMessage: "Nice reflection. You connected CSS styling to the selector idea.",
+    notYetMessage: "Take a moment to describe how a CSS rule finds the part to style.",
     showEditor: false,
   },
 ];

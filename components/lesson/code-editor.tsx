@@ -12,6 +12,7 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
 });
 
 type CodeEditorProps = {
+  stepId: string;
   value: string;
   onChange: (value: string) => void;
   focus: LessonStep["editorFocus"];
@@ -43,6 +44,7 @@ const getFocusRange = (value: string, matchText?: string) => {
 };
 
 export function CodeEditor({
+  stepId,
   value,
   onChange,
   focus,
@@ -55,6 +57,7 @@ export function CodeEditor({
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof Monaco | null>(null);
   const decorationIdsRef = useRef<string[]>([]);
+  const focusRangeRef = useRef<ReturnType<typeof getFocusRange>>(null);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -65,6 +68,7 @@ export function CodeEditor({
     }
 
     const focusRange = getFocusRange(value, focus.matchText);
+    focusRangeRef.current = focusRange;
 
     if (!focusRange) {
       decorationIdsRef.current = editor.deltaDecorations(decorationIdsRef.current, []);
@@ -81,8 +85,18 @@ export function CodeEditor({
         },
       },
     ]);
-    editor.revealLineInCenter(focusRange.startLine);
   }, [focus, value]);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    const focusRange = focusRangeRef.current;
+
+    if (!editor || !focusRange) {
+      return;
+    }
+
+    editor.revealLineInCenter(focusRange.startLine);
+  }, [stepId]);
 
   return (
     <div className="editor-frame">

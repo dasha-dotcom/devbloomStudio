@@ -57,6 +57,8 @@ const BASE_CSS = `
   }
 
   .remix-page {
+    position: relative;
+    overflow: hidden;
     min-height: calc(100vh - 48px);
     padding: clamp(20px, 4vw, 34px);
     border-radius: 34px;
@@ -65,10 +67,27 @@ const BASE_CSS = `
       var(--page-bg);
     transition:
       background 220ms ease,
+      color 220ms ease,
+      transform 220ms ease;
+  }
+
+  .remix-page::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    background:
+      radial-gradient(circle at 80% 16%, rgba(255, 255, 255, 0.72), transparent 16%),
+      radial-gradient(circle at 14% 82%, rgba(255, 255, 255, 0.42), transparent 20%);
+    transition:
+      opacity 220ms ease,
       transform 220ms ease;
   }
 
   .remix-grid {
+    position: relative;
+    z-index: 1;
     width: min(100%, 920px);
     margin: 0 auto;
     display: grid;
@@ -84,6 +103,11 @@ const BASE_CSS = `
     border: 1px solid var(--card-border);
     box-shadow: var(--card-shadow);
     backdrop-filter: blur(12px);
+    transition:
+      background 220ms ease,
+      border-color 220ms ease,
+      box-shadow 220ms ease,
+      transform 220ms ease;
   }
 
   .hero-card {
@@ -148,11 +172,16 @@ const BASE_CSS = `
     border-radius: calc(var(--card-radius) - 8px);
     background: var(--art-bg);
     color: var(--headline);
+    transition:
+      background 220ms ease,
+      box-shadow 220ms ease,
+      transform 220ms ease;
   }
 
   .art-emoji {
     font-size: clamp(3rem, 10vw, 4.8rem);
     line-height: 1;
+    transition: transform 220ms ease;
   }
 
   .art-label {
@@ -203,18 +232,107 @@ const BASE_CSS = `
     background: var(--message-bg);
     border: 1px solid rgba(255, 255, 255, 0.32);
     font-weight: 700;
+    transition:
+      background 220ms ease,
+      border-color 220ms ease,
+      color 220ms ease,
+      transform 220ms ease;
   }
 
   .remix-page.alt-mode {
-    transform: translateY(-2px);
+    --page-bg: linear-gradient(142deg, #190b2f 0%, #ff4f8b 46%, #ffe45c 100%);
+    --card-bg: rgba(20, 8, 34, 0.82);
+    --card-border: rgba(255, 255, 255, 0.42);
+    --card-shadow: 0 30px 70px rgba(255, 79, 139, 0.42);
+    --headline: #fff9d7;
+    --body-text: #fff0f8;
+    --accent: #ffe45c;
+    --badge-bg: rgba(255, 228, 92, 0.18);
+    --art-bg: linear-gradient(135deg, rgba(255, 228, 92, 0.92), rgba(255, 79, 139, 0.76));
+    --button-bg: linear-gradient(135deg, #ffe45c, #ffffff);
+    --button-text: #190b2f;
+    --button-shadow: 0 18px 36px rgba(255, 228, 92, 0.34);
+    --message-bg: rgba(255, 255, 255, 0.16);
+    transform: translateY(-3px);
+  }
+
+  .remix-page.alt-mode::before,
+  .remix-page.surprise-mode::before,
+  .remix-page.message-mode::before {
+    opacity: 1;
+  }
+
+  .remix-page.alt-mode .hero-card {
+    transform: rotate(-1deg);
+  }
+
+  .remix-page.alt-mode .details-card,
+  .remix-page.alt-mode .action-card {
+    transform: rotate(1deg);
   }
 
   .remix-page.alt-mode .hero-art {
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+    box-shadow:
+      inset 0 0 0 2px rgba(255, 255, 255, 0.4),
+      0 22px 42px rgba(25, 11, 47, 0.32);
+    transform: scale(1.04);
+  }
+
+  .remix-page.alt-mode .art-emoji {
+    transform: rotate(-8deg) scale(1.16);
+  }
+
+  .remix-page.surprise-mode {
+    background:
+      radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.88), transparent 18%),
+      linear-gradient(145deg, #11235f 0%, #7b2ff7 52%, #f107a3 100%);
+  }
+
+  .remix-page.surprise-mode .hero-card,
+  .remix-page.surprise-mode .details-card {
+    transform: scale(0.97);
+    filter: saturate(0.82);
+  }
+
+  .remix-page.surprise-mode .action-card {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 28px 70px rgba(241, 7, 163, 0.42);
+    transform: scale(1.04);
   }
 
   .remix-page.surprise-mode .dynamic-message {
     background: var(--surprise-bg);
+    color: #31113f;
+    border-color: rgba(241, 7, 163, 0.26);
+    transform: translateY(-2px);
+  }
+
+  .remix-page.message-mode {
+    background:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.62) 0 10px, transparent 10px 22px),
+      var(--page-bg);
+  }
+
+  .remix-page.message-mode .hero-top {
+    align-items: center;
+  }
+
+  .remix-page.message-mode .hero-art {
+    transform: rotate(3deg) scale(0.96);
+  }
+
+  .remix-page.message-mode .action-card {
+    border-color: var(--accent);
+    box-shadow:
+      var(--card-shadow),
+      0 0 0 6px rgba(255, 255, 255, 0.2);
+  }
+
+  .remix-page.message-mode .dynamic-message {
+    background: var(--button-bg);
+    color: var(--button-text);
+    transform: translateX(8px);
   }
 
   @media (min-width: 760px) {
@@ -386,7 +504,7 @@ const vibeTemplates: Record<string, VibeTemplate> = {
 const interactionTemplates: Record<string, InteractionTemplate> = {
   "switch-the-mood": {
     id: "switch-the-mood",
-    buttonLabel: "Switch the Mood",
+    buttonLabel: "Flip the Whole Mood",
     starterMessage: (topic) => topic.moodMessage,
     buildJavaScript: (topic) => `const page = document.querySelector(".remix-page");
 const button = document.getElementById("remix-button");
@@ -394,13 +512,13 @@ const message = document.getElementById("dynamic-message");
 
 const firstState = {
   message: ${JSON.stringify(topic.moodMessage)},
-  buttonLabel: "Switch the Mood",
+  buttonLabel: "Flip the Whole Mood",
   pageClass: "remix-page",
 };
 
 const secondState = {
-  message: "Now the page feels extra bold and ready for a remix.",
-  buttonLabel: "Switch It Back",
+  message: "Everything flipped: new colors, bigger energy, and a totally different mood.",
+  buttonLabel: "Flip It Back",
   pageClass: "remix-page alt-mode",
 };
 
@@ -427,16 +545,16 @@ applyState(firstState);
   },
   "reveal-a-surprise": {
     id: "reveal-a-surprise",
-    buttonLabel: "Reveal a Surprise",
-    starterMessage: () => "Click the button to reveal one extra detail.",
+    buttonLabel: "Pop the Spotlight",
+    starterMessage: () => "Click the button to make one hidden detail take over the spotlight.",
     buildJavaScript: (topic) => `const page = document.querySelector(".remix-page");
 const button = document.getElementById("remix-button");
 const message = document.getElementById("dynamic-message");
 
-const startMessage = "Click the button to reveal one extra detail.";
+const startMessage = "Click the button to make one hidden detail take over the spotlight.";
 const surpriseMessage = ${JSON.stringify(topic.surpriseMessage)};
-const startButtonLabel = "Reveal a Surprise";
-const surpriseButtonLabel = "Hide the Surprise";
+const startButtonLabel = "Pop the Spotlight";
+const surpriseButtonLabel = "Reset the Spotlight";
 
 let showingSurprise = false;
 
@@ -453,7 +571,7 @@ button.textContent = startButtonLabel;
   },
   "change-the-message": {
     id: "change-the-message",
-    buttonLabel: "Change the Message",
+    buttonLabel: "Display a New Message",
     starterMessage: (topic) => topic.messageSwap[0],
     buildJavaScript: (topic) => `const page = document.querySelector(".remix-page");
 const button = document.getElementById("remix-button");
@@ -461,14 +579,14 @@ const message = document.getElementById("dynamic-message");
 
 const firstMessage = ${JSON.stringify(topic.messageSwap[0])};
 const secondMessage = ${JSON.stringify(topic.messageSwap[1])};
-const firstButtonLabel = "Change the Message";
-const secondButtonLabel = "Show the First Message";
+const firstButtonLabel = "Display a New Message";
+const secondButtonLabel = "Bring Back the First";
 
 let showingFirstMessage = true;
 
 button.addEventListener("click", () => {
   showingFirstMessage = !showingFirstMessage;
-  page.classList.toggle("alt-mode", !showingFirstMessage);
+  page.classList.toggle("message-mode", !showingFirstMessage);
   message.textContent = showingFirstMessage ? firstMessage : secondMessage;
   button.textContent = showingFirstMessage ? firstButtonLabel : secondButtonLabel;
 });
@@ -568,27 +686,27 @@ const builderQuestions: BuilderQuestion[] = [
     options: [
       {
         id: "switch-the-mood",
-        label: "Switch the Mood",
-        description: "One click swaps the page into a second visual state.",
+        label: "Flip the Whole Mood",
+        description: "One click turns the whole page into a bold opposite color world.",
         emoji: "🎛️",
         accentColor: "#7e8fff",
-        previewGradient: "linear-gradient(135deg, rgba(126, 143, 255, 0.24), rgba(255, 180, 200, 0.28))",
+        previewGradient: "linear-gradient(135deg, rgba(25, 11, 47, 0.34), rgba(255, 79, 139, 0.34), rgba(255, 228, 92, 0.34))",
       },
       {
         id: "reveal-a-surprise",
-        label: "Reveal a Surprise",
-        description: "A hidden detail appears when the button is clicked.",
+        label: "Pop the Spotlight",
+        description: "The page dims back while one surprise detail jumps forward.",
         emoji: "🎁",
         accentColor: "#f98580",
-        previewGradient: "linear-gradient(135deg, rgba(249, 133, 128, 0.24), rgba(255, 232, 164, 0.32))",
+        previewGradient: "linear-gradient(135deg, rgba(17, 35, 95, 0.28), rgba(123, 47, 247, 0.28), rgba(241, 7, 163, 0.3))",
       },
       {
         id: "change-the-message",
-        label: "Change the Message",
-        description: "The button swaps one message for another.",
+        label: "Display a New Message",
+        description: "A new message slides into focus with a brighter action panel.",
         emoji: "💬",
         accentColor: "#53c9a4",
-        previewGradient: "linear-gradient(135deg, rgba(83, 201, 164, 0.24), rgba(198, 255, 240, 0.32))",
+        previewGradient: "linear-gradient(135deg, rgba(83, 201, 164, 0.26), rgba(255, 255, 255, 0.42), rgba(198, 255, 240, 0.36))",
       },
     ],
   },
@@ -609,6 +727,8 @@ const finalRemixLessonSteps: LessonStep[] = [
     editorFocus: {
       label: "Your starter preview",
     },
+    feedbackMode: "none",
+    isGate: false,
     showEditor: false,
     showBuilder: true,
   },
@@ -620,8 +740,8 @@ const finalRemixLessonSteps: LessonStep[] = [
     kicker: "Make the content yours",
     title: "Edit the HTML content",
     body:
-      "This step reconnects to Lesson 1. Change the title, intro paragraph, list items, and art label so the page sounds like your version of the idea.",
-    hint: "Stay inside the words between the tags first. Small edits will already make the site feel more personal.",
+      "This step reconnects to Lesson 1. Change the title, intro paragraph, list items, and art label so the page sounds like your version of the idea. In this step, HTML creates the action card elements, but JavaScript controls the button and dynamic message text when the page runs.",
+    hint: "Stay inside the words between the tags first. Personalize the heading, intro, list, and art text here, and leave the action-card button/message wording for the JavaScript step.",
     example: "<h1>Welcome to My Dream Aquarium City</h1>",
     editorFocus: {
       label: "The heading, paragraph, list, and art text",
@@ -637,6 +757,14 @@ const finalRemixLessonSteps: LessonStep[] = [
       },
     ],
     defaultEditorTabId: "html",
+    feedbackMode: "autoCheck",
+    isGate: false,
+    successCriteria: {
+      type: "changedFromStarter",
+    },
+    passMessage: "Nice — the HTML content sounds more like your version now.",
+    notYetMessage:
+      "Add one personal content change to the HTML, like the title, intro, list, or art label. The action-card text gets updated in JavaScript later.",
   },
   {
     id: "style",
@@ -663,6 +791,13 @@ const finalRemixLessonSteps: LessonStep[] = [
       },
     ],
     defaultEditorTabId: "css",
+    feedbackMode: "autoCheck",
+    isGate: false,
+    successCriteria: {
+      type: "changedFromStarter",
+    },
+    passMessage: "Nice — the styling now has your own visual direction.",
+    notYetMessage: "Change at least one style value so the page looks more like your version.",
   },
   {
     id: "interactive",
@@ -672,11 +807,12 @@ const finalRemixLessonSteps: LessonStep[] = [
     kicker: "Make it interactive",
     title: "Edit the JavaScript interaction",
     body:
-      "This step reconnects to Lesson 3. Change the button words or message values inside the starter JavaScript, then test the interaction in the preview.",
-    hint: "Edit the text inside quotes first. Keep the button click structure in place so the project stays stable.",
+      "This step reconnects to Lesson 3. The action-card button and message are JavaScript-controlled content. Change the text through the starter JavaScript variables, then test the interaction in the preview.",
+    hint:
+      "Edit the text inside quotes first. Depending on your starter, customize `firstState.message` and `firstState.buttonLabel`, or `startMessage` and `startButtonLabel`, or `firstMessage` and `firstButtonLabel`. Keep the click structure in place so the project stays stable.",
     example: 'const surpriseMessage = "The best part is the giant hidden waterfall cave.";',
     editorFocus: {
-      label: "The messages and button labels",
+      label: "The JS messages and button labels",
       matchText: "const",
     },
     showEditor: true,
@@ -689,6 +825,14 @@ const finalRemixLessonSteps: LessonStep[] = [
       },
     ],
     defaultEditorTabId: "javascript",
+    feedbackMode: "autoCheck",
+    isGate: false,
+    successCriteria: {
+      type: "changedFromStarter",
+    },
+    passMessage: "Nice — you personalized the interaction layer too.",
+    notYetMessage:
+      "Change one JS-controlled message or button value so the interaction feels more like yours.",
   },
   {
     id: "remix",
@@ -699,14 +843,15 @@ const finalRemixLessonSteps: LessonStep[] = [
     title: "Remix challenge: add one more personal move",
     body:
       "Now choose what you want to improve next. You can jump between content, style, and interaction, then make one final mini remix that feels like your signature.",
-    hint: "Use the tabs above the editor to switch between HTML, CSS, and JavaScript without opening a giant combined file.",
+    hint:
+      "Use the tabs above the editor to switch between HTML, CSS, and JavaScript without opening a giant combined file. HTML creates the action card, and JavaScript changes its message/button text.",
     editorFocus: {
       label: "Any slice you want to remix",
     },
     checklist: [
       "Add one extra detail to the content",
       "Improve one style choice so the vibe feels stronger",
-      "Rename the button so it sounds more like your page",
+      "Rename the button from the JavaScript tab so it sounds more like your page",
       "Test the interaction twice in the preview",
     ],
     showEditor: true,
@@ -731,6 +876,13 @@ const finalRemixLessonSteps: LessonStep[] = [
       },
     ],
     defaultEditorTabId: "html",
+    feedbackMode: "autoCheck",
+    isGate: false,
+    successCriteria: {
+      type: "changedFromStarter",
+    },
+    passMessage: "Nice — you added one more intentional remix move.",
+    notYetMessage: "You can leave this open, or make one more small remix in HTML, CSS, or JavaScript.",
   },
   {
     id: "finish",
@@ -745,6 +897,12 @@ const finalRemixLessonSteps: LessonStep[] = [
     editorFocus: {
       label: "Your finished mini site",
     },
+    feedbackMode: "reflection",
+    isGate: false,
+    reflectionPrompt: "What did you customize in HTML, CSS, and JavaScript?",
+    reflectionPlaceholder: "Name one thing you changed in each layer, or describe the layers you used most.",
+    passMessage: "Nice reflection. You connected the project back to the three layers you used.",
+    notYetMessage: "Take a moment to name what you customized across HTML, CSS, and JavaScript.",
     showEditor: false,
   },
 ];
@@ -754,7 +912,7 @@ const buildCssVars = (cssVars: Record<string, string>) =>
     .map(([key, value]) => `  ${key}: ${value};`)
     .join("\n");
 
-const buildHtmlStarter = (topic: TopicTemplate, interaction: InteractionTemplate) => `<main class="remix-page">
+const buildHtmlStarter = (topic: TopicTemplate) => `<main class="remix-page">
   <div class="remix-grid">
     <section class="hero-card">
       <span class="remix-badge">${topic.badge}</span>
@@ -784,11 +942,13 @@ const buildHtmlStarter = (topic: TopicTemplate, interaction: InteractionTemplate
     </section>
 
     <section class="action-card">
+      <!-- JavaScript updates this button text when the preview runs. -->
       <button id="remix-button" class="remix-button" type="button">
-        ${interaction.buttonLabel}
+        Button
       </button>
+      <!-- JavaScript also replaces this starter message in the live preview. -->
       <p id="dynamic-message" class="dynamic-message">
-        ${interaction.starterMessage(topic)}
+        This message is controlled by JavaScript.
       </p>
     </section>
   </div>
@@ -875,7 +1035,7 @@ const buildFinalRemixStarterCode = (builderSelections: BuilderSelections) => {
   const { topic, vibe, interaction } = getTemplateSelections(builderSelections);
 
   return combineFinalRemixCode({
-    html: buildHtmlStarter(topic, interaction),
+    html: buildHtmlStarter(topic),
     css: buildCssStarter(vibe),
     javascript: interaction.buildJavaScript(topic),
   });
@@ -901,6 +1061,7 @@ export const buildYourOwnMiniSiteProject: LessonProjectConfig = {
     vibe: "ocean",
     interaction: "switch-the-mood",
   }),
+  resetBehavior: "active-tab",
   builder: {
     title: "Creative starter builder",
     body:

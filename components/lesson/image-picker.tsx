@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import type { ImageOption } from "@/lib/projects";
 
 type ImagePickerProps = {
@@ -20,7 +22,14 @@ export function ImagePicker({
           className={`image-card ${selectedImageId === image.id ? "active" : ""}`}
           onClick={() => onSelect(image.id)}
         >
-          <img className="image-thumb" src={image.src} alt={image.alt} />
+          <Image
+            className="image-thumb"
+            src={image.src}
+            alt={image.alt}
+            width={160}
+            height={160}
+            unoptimized
+          />
           <strong>{image.name}</strong>
           <p className="muted">{image.description}</p>
         </button>

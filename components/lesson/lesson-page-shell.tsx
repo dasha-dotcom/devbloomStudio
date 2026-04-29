@@ -4,7 +4,9 @@ import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointer
 import Link from "next/link";
 
 import { AppShell } from "@/components/app-shell";
+import { CheckpointPanel } from "@/components/lesson/checkpoint-panel";
 import { CodeEditor } from "@/components/lesson/code-editor";
+import { FeedbackPanel } from "@/components/lesson/feedback-panel";
 import { FinishScreen } from "@/components/lesson/finish-screen";
 import { ImagePicker } from "@/components/lesson/image-picker";
 import { LessonSidebar } from "@/components/lesson/lesson-sidebar";
@@ -19,6 +21,7 @@ import {
   getStarterImageId,
   type LessonProjectConfig,
 } from "@/lib/projects";
+import { useStepFeedback } from "@/lib/lesson-feedback";
 
 const DEFAULT_EDITOR_WIDTH = 56;
 const MIN_PANE_WIDTH = 320;
@@ -33,6 +36,7 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
   const lastLessonIndex = project.steps.length - 1;
   const firstStep = project.steps[0];
   const [currentStep, setCurrentStep] = useState(0);
+  const [isComplete, setIsComplete] = useState(false);
   const [builderSelections, setBuilderSelections] = useState(() => getDefaultBuilderSelections(project));
   const [activeEditorTabId, setActiveEditorTabId] = useState(() => firstStep.defaultEditorTabId ?? firstStep.editorTabs?.[0]?.id ?? "default");
   const [code, setCode] = useState(() => getStarterCode(project, firstStep, getDefaultBuilderSelections(project)));
@@ -40,6 +44,14 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
   const [selectedImageId, setSelectedImageId] = useState(() =>
     getStarterImageId(project, getStarterCode(project, firstStep, getDefaultBuilderSelections(project))),
   );
+  const [manualChecksByStep, setManualChecksByStep] = useState<Record<string, boolean>>({});
+  const [checkpointAnswersByStep, setCheckpointAnswersByStep] = useState<Record<string, Record<string, number>>>({});
+  const [checkpointSubmittedByStep, setCheckpointSubmittedByStep] = useState<Record<string, boolean>>({});
+  const [reflectionResponses, setReflectionResponses] = useState<Record<string, string>>({});
+  const [stepStartCodeByStep, setStepStartCodeByStep] = useState<Record<string, string>>(() => ({
+    [firstStep.id]: getStarterCode(project, firstStep, getDefaultBuilderSelections(project)),
+  }));
+  const [gateMessage, setGateMessage] = useState<string | null>(null);
   const [paneMode, setPaneMode] = useState<PaneMode>("both");
   const [editorWidth, setEditorWidth] = useState(DEFAULT_EDITOR_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
@@ -52,7 +64,6 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     () => getStarterCode(project, step, builderSelections),
     [builderSelections, project, step],
   );
-  const isResetDisabled = code === starterCode;
   const editorTabs = step.editorTabs ?? [
     {
       id: "default",
@@ -64,6 +75,9 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
   const activeEditorTab =
     editorTabs.find((item) => item.id === activeEditorTabId) ??
     editorTabs[0];
+  const usesActiveTabReset =
+    project.resetBehavior === "active-tab" &&
+    Boolean(project.getEditorCodeSlice && project.applyEditorCodeSlice);
   const editorCode = useMemo(
     () =>
       project.getEditorCodeSlice?.({
@@ -74,6 +88,17 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
       project.transformStepCode?.({ code, step, surface: "editor" }) ??
       code,
     [activeEditorTab.id, code, project, step],
+  );
+  const starterEditorCode = useMemo(
+    () =>
+      project.getEditorCodeSlice?.({
+        code: starterCode,
+        step,
+        editorTabId: activeEditorTab.id,
+      }) ??
+      project.transformStepCode?.({ code: starterCode, step, surface: "editor" }) ??
+      starterCode,
+    [activeEditorTab.id, project, starterCode, step],
   );
   const previewCode = useMemo(
     () => project.transformStepCode?.({ code, step, surface: "preview" }) ?? code,
@@ -88,24 +113,123 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
       }),
     [previewCode, project, selectedImageId, selectedThemeId],
   );
+  const checkpointAnswers = checkpointAnswersByStep[step.id] ?? {};
+  const reflectionResponse = reflectionResponses[step.id] ?? "";
+  const stepStartCode = stepStartCodeByStep[step.id] ?? starterCode;
+  const stepStartEditorCode = useMemo(
+    () =>
+      project.getEditorCodeSlice?.({
+        code: stepStartCode,
+        step,
+        editorTabId: activeEditorTab.id,
+      }) ??
+      project.transformStepCode?.({ code: stepStartCode, step, surface: "editor" }) ??
+      stepStartCode,
+    [activeEditorTab.id, project, step, stepStartCode],
+  );
+  const resetButtonLabel = useMemo(() => {
+    if (!usesActiveTabReset) {
+      return "Reset";
+    }
 
-  const goNext = () => setCurrentStep((value) => Math.min(value + 1, lastLessonIndex));
-  const goBack = () => setCurrentStep((value) => Math.max(value - 1, 0));
+    if (activeEditorTab.id === "html") {
+      return "Reset HTML";
+    }
+
+    if (activeEditorTab.id === "css") {
+      return "Reset CSS";
+    }
+
+    if (activeEditorTab.id === "javascript") {
+      return "Reset JS";
+    }
+
+    return "Reset";
+  }, [activeEditorTab.id, usesActiveTabReset]);
+  const isResetDisabled = usesActiveTabReset
+    ? editorCode === starterEditorCode
+    : code === starterCode;
+  const feedback = useStepFeedback({
+    step,
+    code,
+    starterCode,
+    stepStartCode,
+    editorCode,
+    starterEditorCode,
+    stepStartEditorCode,
+    autoCheckRequested: Boolean(manualChecksByStep[step.id]),
+    checkpointAnswers,
+    checkpointSubmitted: Boolean(checkpointSubmittedByStep[step.id]),
+    reflectionResponse,
+  });
+
+  const goNext = () => {
+    if (step.isGate && !feedback.canGoNext) {
+      setGateMessage("This step needs one more check before you move on.");
+      return;
+    }
+
+    setGateMessage(null);
+
+    if (currentStep === lastLessonIndex) {
+      setIsComplete(true);
+      return;
+    }
+
+    const nextStepIndex = Math.min(currentStep + 1, lastLessonIndex);
+    const nextStep = project.steps[nextStepIndex];
+
+    setStepStartCodeByStep((current) => ({
+      ...current,
+      [nextStep.id]: code,
+    }));
+    setActiveEditorTabId(nextStep.defaultEditorTabId ?? nextStep.editorTabs?.[0]?.id ?? "default");
+    setCurrentStep(nextStepIndex);
+  };
+  const goBack = () => {
+    const previousStepIndex = Math.max(currentStep - 1, 0);
+    const previousStep = project.steps[previousStepIndex];
+
+    setGateMessage(null);
+    setActiveEditorTabId(previousStep.defaultEditorTabId ?? previousStep.editorTabs?.[0]?.id ?? "default");
+    setCurrentStep(previousStepIndex);
+  };
   const resetCode = () => {
-    setCode(starterCode);
-    setSelectedImageId(getStarterImageId(project, starterCode));
+    const nextCode = usesActiveTabReset
+      ? (project.applyEditorCodeSlice?.({
+          currentCode: code,
+          nextSliceCode: starterEditorCode,
+          step,
+          editorTabId: activeEditorTab.id,
+        }) ?? code)
+      : starterCode;
+
+    setCode(nextCode);
+    setManualChecksByStep((current) => ({ ...current, [step.id]: false }));
+    setSelectedImageId(getStarterImageId(project, nextCode));
   };
   const restart = () => {
     const defaultSelections = getDefaultBuilderSelections(project);
+    setIsComplete(false);
     setCurrentStep(0);
     setBuilderSelections(defaultSelections);
     setActiveEditorTabId(firstStep.defaultEditorTabId ?? firstStep.editorTabs?.[0]?.id ?? "default");
     setCode(getStarterCode(project, firstStep, defaultSelections));
     setSelectedThemeId(project.defaultThemeId ?? "");
     setSelectedImageId(getStarterImageId(project, getStarterCode(project, firstStep, defaultSelections)));
+    setManualChecksByStep({});
+    setCheckpointAnswersByStep({});
+    setCheckpointSubmittedByStep({});
+    setReflectionResponses({});
+    setStepStartCodeByStep({
+      [firstStep.id]: getStarterCode(project, firstStep, defaultSelections),
+    });
+    setGateMessage(null);
   };
 
   const updateEditorCode = (nextValue: string) => {
+    setManualChecksByStep((current) => ({ ...current, [step.id]: false }));
+
     if (project.applyEditorCodeSlice) {
       setCode((currentCode) =>
         project.applyEditorCodeSlice?.({
@@ -181,10 +305,6 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  useEffect(() => {
-    setActiveEditorTabId(step.defaultEditorTabId ?? step.editorTabs?.[0]?.id ?? "default");
-  }, [step]);
-
   const showBothPanes = () => {
     setPaneMode("both");
     setEditorWidth((currentWidth) => clampEditorWidth(currentWidth));
@@ -227,6 +347,36 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     });
   };
 
+  const updateCheckpointAnswer = (questionId: string, optionIndex: number) => {
+    setGateMessage(null);
+
+    setCheckpointAnswersByStep((current) => ({
+      ...current,
+      [step.id]: {
+        ...(current[step.id] ?? {}),
+        [questionId]: optionIndex,
+      },
+    }));
+    setCheckpointSubmittedByStep((current) => ({
+      ...current,
+      [step.id]: false,
+    }));
+  };
+
+  const submitCheckpoint = () => {
+    setCheckpointSubmittedByStep((current) => ({
+      ...current,
+      [step.id]: true,
+    }));
+  };
+
+  const runManualCheck = () => {
+    setManualChecksByStep((current) => ({
+      ...current,
+      [step.id]: true,
+    }));
+  };
+
   const beginResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
     if (isCompactViewport || paneMode !== "both") {
       return;
@@ -246,7 +396,7 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
         }%)`
       : undefined;
 
-  if (currentStep === lastLessonIndex) {
+  if (isComplete) {
     return (
       <AppShell>
         <FinishScreen
@@ -323,6 +473,8 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
                     ) : null}
 
                     <CodeEditor
+                      key={step.id}
+                      stepId={step.id}
                       value={editorCode}
                       onChange={updateEditorCode}
                       focus={step.editorFocus}
@@ -337,7 +489,7 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
                             onClick={resetCode}
                             disabled={isResetDisabled}
                           >
-                            Reset
+                            {resetButtonLabel}
                           </button>
                           {paneMode === "both" ? (
                             <button
@@ -361,20 +513,34 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
                     />
                   </>
                 ) : (
-                  <section className="step-panel" style={{ marginTop: 18 }}>
-                    <strong>{project.introCard.title}</strong>
-                    <p className="muted">{project.introCard.body}</p>
-                    <div className="pill-row">
-                      {project.introCard.pills.map((pill) => (
-                        <span key={pill} className="pill">
-                          {pill}
-                        </span>
-                      ))}
-                    </div>
-                  </section>
+                  currentStep === 0 ? (
+                    <section className="step-panel" style={{ marginTop: 18 }}>
+                      <strong>{project.introCard.title}</strong>
+                      <p className="muted">{project.introCard.body}</p>
+                      <div className="pill-row">
+                        {project.introCard.pills.map((pill) => (
+                          <span key={pill} className="pill">
+                            {pill}
+                          </span>
+                        ))}
+                      </div>
+                    </section>
+                  ) : null
                 )}
 
-                {step.activity ? <StepActivityPanel activity={step.activity} /> : null}
+                {step.feedbackMode === "checkpoint" && step.checkpoint ? (
+                  <CheckpointPanel
+                    checkpoint={step.checkpoint}
+                    answers={checkpointAnswers}
+                    onAnswer={updateCheckpointAnswer}
+                    onSubmit={submitCheckpoint}
+                    submitted={Boolean(checkpointSubmittedByStep[step.id])}
+                  />
+                ) : null}
+
+                {step.activity && !(step.feedbackMode === "checkpoint" && step.checkpoint) ? (
+                  <StepActivityPanel activity={step.activity} />
+                ) : null}
 
                 {step.showBuilder && project.builder ? (
                   <ProjectBuilderPanel
@@ -414,6 +580,28 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
                   </section>
                 ) : null}
 
+                {step.feedbackMode && step.feedbackMode !== "none" ? (
+                  <FeedbackPanel
+                    step={step}
+                    state={feedback.state}
+                    message={feedback.message}
+                    isPending={feedback.isPending}
+                    onManualCheck={feedback.needsManualCheck ? runManualCheck : undefined}
+                    gateMessage={gateMessage}
+                    reflectionResponse={reflectionResponse}
+                    onReflectionChange={(value) =>
+                      setReflectionResponses((current) => ({
+                        ...current,
+                        [step.id]: value,
+                      }))
+                    }
+                  />
+                ) : gateMessage ? (
+                  <section className="feedback-panel feedback-notYet">
+                    <p className="feedback-gate-note">{gateMessage}</p>
+                  </section>
+                ) : null}
+
                 <div className="lesson-footer">
                   {currentStep === 0 ? (
                     <Link href="/projects" className="button-ghost">
@@ -426,7 +614,7 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
                   )}
 
                   <button type="button" className="button" onClick={goNext}>
-                    {currentStep === lastLessonIndex - 1 ? "Finish project" : "Next step"}
+                    {currentStep === lastLessonIndex ? "Celebrate project" : currentStep === lastLessonIndex - 1 ? "Finish step" : "Next step"}
                   </button>
                 </div>
               </main>
@@ -445,6 +633,7 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
 
             {paneMode !== "editor-only" ? (
               <LivePreview
+                key={step.id}
                 srcDoc={previewDoc}
                 title={project.previewTitle?.({ selectedThemeId, selectedImageId }) ?? "Live preview"}
                 sandbox={project.previewSandbox}

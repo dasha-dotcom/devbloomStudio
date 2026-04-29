@@ -2,9 +2,9 @@ import { buildPreviewDocument } from "@/lib/preview";
 
 import type { LessonProjectConfig, LessonStep } from "@/lib/projects/types";
 
-const CLASSNAME_LINE = "  page.className = mood.className;";
+const CLASSNAME_LINE_PATTERN = /^\s*page\.className = mood\.className;\s*\n?/m;
 
-const removeMoodClassLine = (code: string) => code.replace(`\n${CLASSNAME_LINE}`, "");
+const removeMoodClassLine = (code: string) => code.replace(CLASSNAME_LINE_PATTERN, "");
 
 export const moodSwitchStarterCode = `const page = document.querySelector(".mood-page");
 const badge = document.getElementById("mood-badge");
@@ -70,6 +70,8 @@ export const moodSwitchLessonSteps: LessonStep[] = [
     editorFocus: {
       label: "Look at the starter JavaScript",
     },
+    feedbackMode: "none",
+    isGate: false,
     showEditor: false,
   },
   {
@@ -96,6 +98,17 @@ export const moodSwitchLessonSteps: LessonStep[] = [
       positiveFeedback: "Right. This object controls the page after the button switches moods.",
       neutralFeedback: "Make one change in `spaceMood`, then click the preview button to check it.",
     },
+    feedbackMode: "autoCheck",
+    isGate: false,
+    successCriteria: {
+      type: "changedInTargetRegion",
+      region: {
+        startAfter: "const spaceMood = {",
+        endBefore: "};",
+      },
+    },
+    passMessage: "Nice — you changed the values that show after the click.",
+    notYetMessage: "This step is about the `spaceMood` object. Change one of the values inside that block.",
     showEditor: true,
   },
   {
@@ -115,6 +128,23 @@ export const moodSwitchLessonSteps: LessonStep[] = [
       helperText:
         "Each mood object includes button words. When that mood is active, JavaScript puts this text onto the button.",
     },
+    feedbackMode: "autoCheck",
+    isGate: false,
+    successCriteria: {
+      type: "anyOf",
+      criteria: [
+        {
+          type: "codeExcludes",
+          value: 'buttonLabel: "Switch to Space"',
+        },
+        {
+          type: "codeExcludes",
+          value: 'buttonLabel: "Back to Ocean"',
+        },
+      ],
+    },
+    passMessage: "Nice — you changed the button words.",
+    notYetMessage: "Look for a `buttonLabel` line and change the text inside the quotes.",
     showEditor: true,
   },
   {
@@ -157,6 +187,30 @@ export const moodSwitchLessonSteps: LessonStep[] = [
         },
       ],
     },
+    feedbackMode: "checkpoint",
+    isGate: true,
+    allowNextWhen: "pass",
+    checkpoint: {
+      title: "Show what the click line means",
+      body: "Connect the event listener code to what you saw in the preview.",
+      questions: [
+        {
+          id: "event",
+          prompt: "Which event starts this code?",
+          options: ["Hover over", "Click", "Scroll"],
+          correctOptionIndex: 1,
+        },
+        {
+          id: "results",
+          prompt: "After that event happens, what changes on the page?",
+          options: ["Only the style changes", "Only the text changes", "Text and style both change"],
+          correctOptionIndex: 2,
+        },
+      ],
+    },
+    passMessage: "Nice — you connected the click event to what changes on the page.",
+    closeMessage: "You're close. Press the preview button again and notice how many parts change together.",
+    notYetMessage: "Something still needs attention here. Look at `addEventListener(\"click\", ...)` and compare it to the page behavior.",
     showEditor: true,
   },
   {
@@ -182,6 +236,24 @@ export const moodSwitchLessonSteps: LessonStep[] = [
       neutralFeedback:
         "Try the button and compare what still changes versus what stays stuck. That will show what the line controls.",
     },
+    feedbackMode: "checkpoint",
+    isGate: true,
+    allowNextWhen: "pass",
+    checkpoint: {
+      title: "Notice what the hidden line controls",
+      body: "Use the missing-line experiment to decide what changes the page style instead of its words.",
+      questions: [
+        {
+          id: "style-line",
+          prompt: "Which part changes the page style instead of the words?",
+          options: ["`page.className = mood.className;`", "`title.textContent = mood.title;`", "`button.textContent = mood.buttonLabel;`"],
+          correctOptionIndex: 0,
+        },
+      ],
+    },
+    passMessage: "Nice — you spotted the line that switches the visual mood.",
+    closeMessage: "You're close. The style switch happens where the page class gets replaced.",
+    notYetMessage: "Check which line changes the page class. That line controls the visual mode.",
     editorReadOnly: true,
     showEditor: true,
   },
@@ -206,6 +278,13 @@ export const moodSwitchLessonSteps: LessonStep[] = [
       "Polish at least one button label",
       "Test the button twice",
     ],
+    feedbackMode: "autoCheck",
+    isGate: false,
+    successCriteria: {
+      type: "changedFromStarter",
+    },
+    passMessage: "Nice — your mood objects now feel more personal.",
+    notYetMessage: "Change at least one mood value so the before-and-after feels more like yours.",
     showEditor: true,
   },
   {
@@ -221,6 +300,12 @@ export const moodSwitchLessonSteps: LessonStep[] = [
     editorFocus: {
       label: "Your interactive page",
     },
+    feedbackMode: "reflection",
+    isGate: false,
+    reflectionPrompt: "What causes the page to change when the button is clicked?",
+    reflectionPlaceholder: "You can mention the click event, the mood objects, or the line that updates the page.",
+    passMessage: "Nice reflection. You connected the click to the code that updates the page.",
+    notYetMessage: "Take a moment to describe what causes the page to change after the click.",
     showEditor: false,
   },
 ];

@@ -816,7 +816,8 @@ select {
 }
 
 .prediction-card,
-.step-checklist-card {
+.step-checklist-card,
+.feedback-panel {
   margin-top: 16px;
   padding: 16px;
   border-radius: 20px;
@@ -877,6 +878,69 @@ select {
   margin: 12px 0 0;
   color: #6d5578;
   font-size: 0.92rem;
+}
+
+.feedback-panel {
+  box-shadow: 0 14px 28px rgba(29, 22, 55, 0.06);
+}
+
+.feedback-topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.feedback-panel.feedback-pass {
+  background: linear-gradient(135deg, rgba(246, 255, 249, 0.92), rgba(237, 252, 242, 0.82));
+}
+
+.feedback-panel.feedback-close {
+  background: linear-gradient(135deg, rgba(255, 251, 241, 0.94), rgba(255, 243, 224, 0.82));
+}
+
+.feedback-panel.feedback-notYet {
+  background: linear-gradient(135deg, rgba(255, 248, 244, 0.92), rgba(255, 241, 232, 0.82));
+}
+
+.feedback-copy {
+  margin-bottom: 0;
+}
+
+.feedback-gate-note {
+  margin: 14px 0 0;
+  color: #7a5662;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.checkpoint-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.reflection-stack {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.reflection-input {
+  width: 100%;
+  min-height: 112px;
+  padding: 14px 16px;
+  border: 1px solid rgba(29, 22, 55, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+
+.reflection-input:focus {
+  outline: 2px solid rgba(255, 127, 102, 0.22);
+  border-color: rgba(255, 127, 102, 0.34);
 }
 
 .step-checklist-item {
