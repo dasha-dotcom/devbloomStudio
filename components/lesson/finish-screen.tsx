@@ -6,6 +6,8 @@ type FinishScreenProps = {
   srcDoc: string;
   onRestart: () => void;
   content: FinishScreenContent;
+  notebookEntry?: string;
+  notebookPrompt?: string;
   sandbox?: string;
 };
 
@@ -13,6 +15,8 @@ export function FinishScreen({
   srcDoc,
   onRestart,
   content,
+  notebookEntry,
+  notebookPrompt,
   sandbox = "allow-same-origin",
 }: FinishScreenProps) {
   return (
@@ -30,6 +34,22 @@ export function FinishScreen({
             ))}
           </div>
         </div>
+        {notebookEntry ? (
+          <section className="finish-notebook-card">
+            <div className="prediction-kicker">Project story</div>
+            <strong className="prediction-question">Your Developer Notebook Entry</strong>
+            <p className="muted finish-notebook-copy">
+              This note is part of your project story. It helps you explain your work like a
+              developer.
+            </p>
+            {notebookPrompt ? (
+              <p className="finish-notebook-prompt">
+                <strong>Prompt:</strong> {notebookPrompt}
+              </p>
+            ) : null}
+            <p className="finish-notebook-entry">{notebookEntry}</p>
+          </section>
+        ) : null}
         <div className="finish-preview">
           <iframe
             srcDoc={srcDoc}

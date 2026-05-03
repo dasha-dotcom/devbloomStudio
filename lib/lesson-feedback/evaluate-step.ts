@@ -25,7 +25,7 @@ const extractRegion = (code: string, region: LessonTargetRegion) => {
 
 const normalizeForCompare = (value: string) => value.replace(/\s+/g, " ").trim();
 
-const hasSubstantiveReflection = (value: string) => {
+export const hasSubstantiveReflection = (value: string) => {
   const nonSpaceCharacterCount = value.replace(/\s/g, "").length;
   const wordCount = value.trim().split(/\s+/).filter(Boolean).length;
 

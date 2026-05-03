@@ -23,7 +23,7 @@ import {
   getStarterImageId,
   type LessonProjectConfig,
 } from "@/lib/projects";
-import { useStepFeedback } from "@/lib/lesson-feedback";
+import { hasSubstantiveReflection, useStepFeedback } from "@/lib/lesson-feedback";
 
 const DEFAULT_EDITOR_WIDTH = 56;
 const MIN_PANE_WIDTH = 320;
@@ -167,6 +167,29 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     checkpointSubmitted: Boolean(checkpointSubmittedByStep[step.id]),
     reflectionResponse,
   });
+  const notebookReflection = useMemo(() => {
+    const lastStep = project.steps[lastLessonIndex];
+    const candidateStep =
+      lastStep?.feedbackMode === "reflection"
+        ? lastStep
+        : [...project.steps].reverse().find((projectStep) => projectStep.feedbackMode === "reflection");
+
+    if (!candidateStep) {
+      return undefined;
+    }
+
+    const candidateResponse = reflectionResponses[candidateStep.id] ?? "";
+    const trimmedResponse = candidateResponse.trim();
+
+    if (!hasSubstantiveReflection(trimmedResponse)) {
+      return undefined;
+    }
+
+    return {
+      entry: trimmedResponse,
+      prompt: candidateStep.reflectionPrompt,
+    };
+  }, [lastLessonIndex, project.steps, reflectionResponses]);
 
   const goNext = () => {
     if (step.isGate && !feedback.canGoNext) {
@@ -411,6 +434,8 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
           srcDoc={previewDoc}
           onRestart={restart}
           content={project.finish}
+          notebookEntry={notebookReflection?.entry}
+          notebookPrompt={notebookReflection?.prompt}
           sandbox={project.previewSandbox}
         />
       </AppShell>

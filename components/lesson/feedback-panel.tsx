@@ -1,3 +1,4 @@
+import { DeveloperNotebook } from "@/components/lesson/developer-notebook";
 import type { FeedbackState } from "@/lib/lesson-feedback";
 import type { LessonStep } from "@/lib/projects";
 
@@ -34,32 +35,24 @@ export function FeedbackPanel({
 
   return (
     <section className={`feedback-panel feedback-${state}`}>
-      <div className="feedback-topbar">
-        <div>
-          <div className="prediction-kicker">
-            {step.feedbackMode === "reflection" ? "Reflection" : "Step feedback"}
-          </div>
-          {step.feedbackMode === "reflection" ? (
-            <strong className="prediction-question">{step.reflectionPrompt}</strong>
-          ) : (
-            <strong className="prediction-question">{statusLabels[state]}</strong>
-          )}
-        </div>
-      </div>
-
       {step.feedbackMode === "reflection" ? (
-        <div className="reflection-stack">
-          <textarea
-            className="reflection-input"
-            value={reflectionResponse ?? ""}
-            onChange={(event) => onReflectionChange?.(event.target.value)}
-            placeholder={step.reflectionPlaceholder ?? "Write one or two sentences."}
-            rows={4}
-          />
-          <p className="prediction-feedback">{message}</p>
-        </div>
+        <DeveloperNotebook
+          prompt={step.reflectionPrompt ?? ""}
+          placeholder={step.reflectionPlaceholder}
+          value={reflectionResponse ?? ""}
+          onChange={(value) => onReflectionChange?.(value)}
+          status={state}
+          statusMessage={message}
+          showSavedPreview={state === "pass"}
+        />
       ) : (
         <>
+          <div className="feedback-topbar">
+            <div>
+              <div className="prediction-kicker">Step feedback</div>
+              <strong className="prediction-question">{statusLabels[state]}</strong>
+            </div>
+          </div>
           <p className="prediction-feedback feedback-copy">{message}</p>
           {onManualCheck ? (
             <div className="checkpoint-actions">

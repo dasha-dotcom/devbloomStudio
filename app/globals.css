@@ -943,6 +943,77 @@ select {
   border-color: rgba(255, 127, 102, 0.34);
 }
 
+.developer-notebook {
+  display: grid;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.developer-notebook-header,
+.developer-notebook-entry,
+.developer-notebook-preview,
+.finish-notebook-card {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 14px 28px rgba(29, 22, 55, 0.06);
+}
+
+.developer-notebook-header,
+.finish-notebook-card {
+  padding: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 253, 247, 0.96), rgba(255, 246, 232, 0.88));
+}
+
+.developer-notebook-copy,
+.finish-notebook-copy {
+  margin: 10px 0 0;
+  line-height: 1.6;
+}
+
+.developer-notebook-entry {
+  padding: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 244, 0.98), rgba(255, 247, 235, 0.9));
+  border-left: 4px solid rgba(255, 180, 95, 0.72);
+}
+
+.developer-notebook-entry .prediction-question {
+  margin-bottom: 14px;
+}
+
+.developer-notebook-input {
+  margin-top: 0;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.developer-notebook-status {
+  margin-top: 12px;
+}
+
+.developer-notebook-preview {
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.developer-notebook-preview-body,
+.finish-notebook-entry {
+  margin: 10px 0 0;
+  color: var(--text);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.finish-notebook-prompt {
+  margin: 14px 0 0;
+  color: #6d5578;
+  line-height: 1.6;
+}
+
+.finish-notebook-card {
+  margin-top: 22px;
+}
+
 .step-checklist-item {
   display: flex;
   align-items: center;
