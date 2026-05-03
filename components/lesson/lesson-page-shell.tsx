@@ -5,7 +5,8 @@ import Link from "next/link";
 
 import { AppShell } from "@/components/app-shell";
 import { CheckpointPanel } from "@/components/lesson/checkpoint-panel";
-import { CodeEditor } from "@/components/lesson/code-editor";
+import { CodeEditor, type CodeEditorHandle } from "@/components/lesson/code-editor";
+import { ErrorHelper } from "@/components/lesson/error-helper";
 import { FeedbackPanel } from "@/components/lesson/feedback-panel";
 import { FinishScreen } from "@/components/lesson/finish-screen";
 import { ImagePicker } from "@/components/lesson/image-picker";
@@ -15,6 +16,7 @@ import { ProjectBuilderPanel } from "@/components/lesson/project-builder-panel";
 import { StepPanel } from "@/components/lesson/step-panel";
 import { StepActivityPanel } from "@/components/lesson/step-activity-panel";
 import { ThemePicker } from "@/components/lesson/theme-picker";
+import type { ActiveEditorError } from "@/lib/editor-errors/types";
 import {
   getDefaultBuilderSelections,
   getStarterCode,
@@ -56,6 +58,8 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
   const [editorWidth, setEditorWidth] = useState(DEFAULT_EDITOR_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
   const [isCompactViewport, setIsCompactViewport] = useState(false);
+  const [activeEditorError, setActiveEditorError] = useState<ActiveEditorError | null>(null);
+  const editorHandleRef = useRef<CodeEditorHandle | null>(null);
   const workspaceRef = useRef<HTMLDivElement | null>(null);
   const dragStartRef = useRef({ pointerX: 0, editorWidth: DEFAULT_EDITOR_WIDTH });
 
@@ -75,6 +79,7 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
   const activeEditorTab =
     editorTabs.find((item) => item.id === activeEditorTabId) ??
     editorTabs[0];
+  const activeEditorModelKey = `${step.id}:${activeEditorTab.id}`;
   const usesActiveTabReset =
     project.resetBehavior === "active-tab" &&
     Boolean(project.getEditorCodeSlice && project.applyEditorCodeSlice);
@@ -179,6 +184,7 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     const nextStepIndex = Math.min(currentStep + 1, lastLessonIndex);
     const nextStep = project.steps[nextStepIndex];
 
+    setActiveEditorError(null);
     setStepStartCodeByStep((current) => ({
       ...current,
       [nextStep.id]: code,
@@ -190,6 +196,7 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     const previousStepIndex = Math.max(currentStep - 1, 0);
     const previousStep = project.steps[previousStepIndex];
 
+    setActiveEditorError(null);
     setGateMessage(null);
     setActiveEditorTabId(previousStep.defaultEditorTabId ?? previousStep.editorTabs?.[0]?.id ?? "default");
     setCurrentStep(previousStepIndex);
@@ -211,6 +218,7 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
   const restart = () => {
     const defaultSelections = getDefaultBuilderSelections(project);
     setIsComplete(false);
+    setActiveEditorError(null);
     setCurrentStep(0);
     setBuilderSelections(defaultSelections);
     setActiveEditorTabId(firstStep.defaultEditorTabId ?? firstStep.editorTabs?.[0]?.id ?? "default");
@@ -464,7 +472,10 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
                             key={tab.id}
                             type="button"
                             className={`editor-tab ${tab.id === activeEditorTab.id ? "active" : ""}`}
-                            onClick={() => setActiveEditorTabId(tab.id)}
+                            onClick={() => {
+                              setActiveEditorError(null);
+                              setActiveEditorTabId(tab.id);
+                            }}
                           >
                             {tab.label}
                           </button>
@@ -473,11 +484,14 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
                     ) : null}
 
                     <CodeEditor
-                      key={step.id}
+                      ref={editorHandleRef}
+                      key={activeEditorModelKey}
                       stepId={step.id}
+                      modelKey={activeEditorModelKey}
                       value={editorCode}
                       onChange={updateEditorCode}
                       focus={step.editorFocus}
+                      onActiveErrorChange={setActiveEditorError}
                       language={activeEditorTab.language}
                       badgeLabel={activeEditorTab.badgeLabel}
                       readOnly={step.editorReadOnly}
@@ -511,6 +525,18 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
                         </>
                       }
                     />
+
+                    {activeEditorError ? (
+                      <ErrorHelper
+                        key={activeEditorError.signature}
+                        error={activeEditorError}
+                        onShowWhere={() => {
+                          if (activeEditorError.lineNumber) {
+                            editorHandleRef.current?.revealLine(activeEditorError.lineNumber);
+                          }
+                        }}
+                      />
+                    ) : null}
                   </>
                 ) : (
                   currentStep === 0 ? (

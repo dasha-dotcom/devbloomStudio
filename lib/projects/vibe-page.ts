@@ -86,6 +86,11 @@ export const vibePageLessonSteps: LessonStep[] = [
     body:
       "Now style the main title. Change its color, size, or both so the page starts to show more personality.",
     hint: "Big changes to the title can make the same words feel calm, loud, dreamy, or electric.",
+    tip: {
+      title: "What is a rule in CSS",
+      short: "A CSS rule is one full styling instruction. It tells the browser what part of the page to target and which style changes to apply.",
+      long: "A rule usually has two main parts: a selector and a block of declarations. The selector picks what gets styled, like `.hero-title`, and the declarations are the style lines inside the curly braces, like `color` or `font-size`.",
+    },
     example: "font-size: 64px;",
     editorFocus: {
       label: "The .hero-title rule",
@@ -228,7 +233,7 @@ export const vibePageLessonSteps: LessonStep[] = [
     },
     feedbackMode: "reflection",
     isGate: false,
-    reflectionPrompt: "How does CSS know which part of the page to style?",
+    reflectionPrompt: "CSS knows which part of the page to style by looking at the ...",
     reflectionPlaceholder: "You can mention selectors, class names, or a rule from this lesson.",
     passMessage: "Nice reflection. You connected CSS styling to the selector idea.",
     notYetMessage: "Take a moment to describe how a CSS rule finds the part to style.",

@@ -18,6 +18,11 @@ export type LessonStep = {
   title: string;
   body: string;
   hint?: string;
+  tip?: {
+    title?: string;
+    short: string;
+    long?: string;
+  };
   example?: string;
   challenge?: string;
   editorFocus: {

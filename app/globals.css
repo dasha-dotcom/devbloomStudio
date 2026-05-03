@@ -995,6 +995,59 @@ select {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.error-helper-card {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255, 249, 240, 0.96), rgba(255, 242, 231, 0.92));
+  border: 1px solid rgba(255, 186, 133, 0.42);
+  box-shadow: 0 14px 28px rgba(29, 22, 55, 0.06);
+}
+
+.error-helper-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.error-helper-eyebrow {
+  color: #8a5d49;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.error-helper-title {
+  font-size: 1rem;
+}
+
+.error-helper-body {
+  margin: 0;
+  color: #6d5578;
+  line-height: 1.6;
+}
+
+.error-helper-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.error-helper-button {
+  padding: 10px 14px;
+}
+
+.error-helper-hint {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #694f60;
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
 .activity-panel {
   margin-top: 18px;
   padding: 18px;
@@ -1188,6 +1241,18 @@ select {
   margin-left: 4px;
 }
 
+.editor-line-helper-highlight {
+  background: linear-gradient(90deg, rgba(255, 211, 90, 0.26), rgba(255, 127, 102, 0.16));
+  border-top: 1px solid rgba(255, 211, 90, 0.38);
+  border-bottom: 1px solid rgba(255, 211, 90, 0.3);
+  animation: editorHelperPulse 900ms ease;
+}
+
+.editor-line-helper-gutter {
+  border-left: 3px solid #ffd35a;
+  margin-left: 4px;
+}
+
 @keyframes editorFocusPulse {
   0% {
     background: rgba(255, 255, 255, 0.18);
@@ -1195,6 +1260,16 @@ select {
 
   100% {
     background: linear-gradient(90deg, rgba(104, 200, 255, 0.14), rgba(255, 127, 102, 0.08));
+  }
+}
+
+@keyframes editorHelperPulse {
+  0% {
+    background: rgba(255, 211, 90, 0.36);
+  }
+
+  100% {
+    background: linear-gradient(90deg, rgba(255, 211, 90, 0.26), rgba(255, 127, 102, 0.16));
   }
 }
 

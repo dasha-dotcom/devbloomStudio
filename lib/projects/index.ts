@@ -20,11 +20,11 @@ export const lessonProjects = [
 
 export const projectCards: ProjectCardData[] = [
   {
-    title: "All About Me Page",
+    title: "Make a Page About Something You Like",
     description:
-      "Create your first personal webpage with a title, short intro, favorite things list, image, and a style theme.",
+      "Pick your topic and build a real mini website about it. Learn HTML with headings, paragraphs, lists, images, and custom colors.",
     level: "Beginner",
-    whatYouMake: "A bright personal homepage",
+    whatYouMake: "A mini webpage about your favorite thing",
     time: "20-25 min",
     href: "/projects/all-about-me",
     artGradient: "linear-gradient(135deg, #ffd981, #ff8e78 52%, #6ecbff)",

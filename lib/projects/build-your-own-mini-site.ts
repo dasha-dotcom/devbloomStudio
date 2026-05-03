@@ -742,6 +742,10 @@ const finalRemixLessonSteps: LessonStep[] = [
     body:
       "This step reconnects to Lesson 1. Change the title, intro paragraph, list items, and art label so the page sounds like your version of the idea. In this step, HTML creates the action card elements, but JavaScript controls the button and dynamic message text when the page runs.",
     hint: "Stay inside the words between the tags first. Personalize the heading, intro, list, and art text here, and leave the action-card button/message wording for the JavaScript step.",
+    tip: {
+      title: "How to add an emoji",
+      short: "Try your computer's emoji shortcut: Mac: Control + Command + Space. Windows: Windows key + Period. Chromebook: Search/Launcher + Shift + Space. You can also copy and paste an emoji from the internet.",
+    },
     example: "<h1>Welcome to My Dream Aquarium City</h1>",
     editorFocus: {
       label: "The heading, paragraph, list, and art text",

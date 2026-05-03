@@ -10,23 +10,23 @@ import type {
 const svgToDataUrl = (svg: string) => `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 
 export const allAboutMeStarterCode = `<main class="page-shell">
-  <span class="badge">All About Me</span>
-  <h1>Hi, I'm Nova!</h1>
+  <span class="badge">My Project</span>
+  <h1>Something I Love</h1>
   <p>
-    I love drawing characters, learning cool facts, and making colorful things on screen.
+    This is something I really enjoy. It makes me happy, and I'd love to share why it's awesome.
   </p>
 
   <img
-    src="image:spark"
-    alt="A stylized bright portrait illustration"
+    src="image:abstract-warm"
+    alt="A colorful abstract design"
   />
 
-  <section class="favorites">
-    <h2>My favorite things</h2>
+  <section class="highlights">
+    <h2>What's great about it</h2>
     <ul>
-      <li>Fruit smoothies</li>
-      <li>Ocean colors</li>
-      <li>Making playlists</li>
+      <li>First thing that makes it special</li>
+      <li>Second thing I really like</li>
+      <li>Third reason it's my favorite</li>
     </ul>
   </section>
 </main>`;
@@ -36,15 +36,15 @@ export const allAboutMeLessonSteps: LessonStep[] = [
     id: "welcome",
     order: 1,
     shortTitle: "Welcome",
-    sidebarCopy: "See what you’ll build.",
+    sidebarCopy: "Pick your topic and get started.",
     kicker: "Project intro",
-    title: "Build your own mini website",
+    title: "Make a page about something you like",
     body:
-      "You’re about to make an All About Me page using real HTML. Each step changes one part of the page, so you can see exactly how your code turns into a website.",
-    hint: "The preview on the right is your project. The code editor is where you shape it.",
-    challenge: "When you reach the end, add one extra detail that feels very you.",
+      "Think of something you love—a game, hobby, animal, sport, show, piece of tech, or anything else that's your favorite. You're going to build a real mini website about it. Each step changes one part of the page.",
+    hint: "Pick a topic before you start: What will your page be about?",
+    challenge: "Examples: your favorite game, hobby, animal, sport/team, show/movie, tech, or anything else you care about.",
     editorFocus: {
-      label: "Look around",
+      label: "Look around and plan",
     },
     feedbackMode: "none",
     isGate: false,
@@ -54,23 +54,23 @@ export const allAboutMeLessonSteps: LessonStep[] = [
     id: "title",
     order: 2,
     shortTitle: "Title",
-    sidebarCopy: "Change the big heading.",
+    sidebarCopy: "Create your page title.",
     kicker: "Headings",
-    title: "Add your title",
+    title: "Give your page a title",
     body:
-      "Find the big heading inside the <h1> tag and change it to your own greeting. This becomes the first thing people see on your page.",
-    hint: "Only change the words between <h1> and </h1>.",
-    example: "<h1>Hi, I'm Zara!</h1>",
+      "HTML helps store the content of your page by using different tags for different types of content. The <h1> tag is for the most important heading on the page. Update the words inside the <h1> to make a title that captures your topic.",
+    hint: "For a game page: try something like 'The Best Features of Elden Ring.' For an animal: 'Why Octopuses Are Amazing.' For a hobby: 'My Photography Journey.'",
+    example: "<h1>The Best Thing About Gaming</h1>",
     editorFocus: {
       label: "The <h1> heading",
       matchText: "<h1>",
     },
     prediction: {
       question: "What do you think will change?",
-      options: ["The big title", "The picture", "The background color"],
+      options: ["The big title on the page", "The background color", "The picture"],
       answerIndex: 0,
-      positiveFeedback: "Nice guess — now try it and see.",
-      neutralFeedback: "Try it and compare the preview.",
+      positiveFeedback: "Exactly — now try it and see.",
+      neutralFeedback: "Make the change and watch the preview.",
     },
     feedbackMode: "autoCheck",
     isGate: false,
@@ -81,22 +81,22 @@ export const allAboutMeLessonSteps: LessonStep[] = [
         endBefore: "</h1>",
       },
     },
-    passMessage: "Nice — that changed the page title.",
-    notYetMessage: "This step is about the big heading. Edit the words inside the <h1> tag.",
+    passMessage: "Great — you created a real page heading.",
+    notYetMessage: "Edit the words inside the <h1> tag to create your title.",
     showEditor: true,
   },
   {
     id: "about",
     order: 3,
-    shortTitle: "About You",
-    sidebarCopy: "Write a short intro.",
+    shortTitle: "Intro",
+    sidebarCopy: "Write your intro paragraph.",
     kicker: "Paragraphs",
-    title: "Write about yourself",
+    title: "Introduce your topic",
     body:
-      "Now edit the paragraph to say a few fun things about you. One or two sentences is perfect.",
-    hint: "Try: what you enjoy, what you’re curious about, or what makes you unique.",
+      "The <p> tag is for paragraphs of text. Update the paragraph to share a quick intro about your topic. What is it? Why do you like it? What makes it special to you?",
+    hint: "Try: What would you tell someone who's never heard of it?",
     example:
-      "<p>I like building tiny worlds, listening to music, and finding the best snacks.</p>",
+      "<p>I've loved skateboarding since I was young. It combines creativity, balance, and endless tricks to learn.</p>",
     editorFocus: {
       label: "The first <p> paragraph",
       matchText: "<p>",
@@ -110,38 +110,38 @@ export const allAboutMeLessonSteps: LessonStep[] = [
         endBefore: "</p>",
       },
     },
-    passMessage: "Nice — your intro changed the paragraph on the page.",
-    notYetMessage: "Something still needs attention here. Change the words inside the first paragraph.",
+    passMessage: "Perfect — your intro paragraph appeared on the page.",
+    notYetMessage: "Edit the text inside the first paragraph tag to write your intro.",
     showEditor: true,
   },
   {
-    id: "favorites",
+    id: "highlights",
     order: 4,
-    shortTitle: "Favorites",
-    sidebarCopy: "Edit your list items.",
+    shortTitle: "Highlights",
+    sidebarCopy: "Create your highlights list.",
     kicker: "Lists",
-    title: "Add your favorites",
+    title: "List what's great about it",
     body:
-      "Lists are great for quick facts. Update the three <li> items with your favorite things so your page feels more personal right away.",
-    hint: "Each <li> is one list item. You can change the words inside each one.",
-    example: "<li>Basketball</li>",
+      "Lists are one of the ways to organize information on your page. The <ul> tag creates a bulleted list, and each <li> inside it is one item in the list. Update the three list items to share your top highlights about your topic.",
+    hint: "Each <li> is one list item. Think of three things that capture why your topic is awesome.",
+    example: "<li>Stunning graphics and world design</li>",
     editorFocus: {
       label: "The <li> list items",
       matchText: "<li>",
     },
     prediction: {
-      question: "Which part of your page will this code control?",
-      options: ["Your favorites list", "The page theme", "The image size"],
+      question: "Which part of your page will this control?",
+      options: ["The highlights list", "The colors and theme", "The title size"],
       answerIndex: 0,
-      positiveFeedback: "That fits — now edit the list and watch it update.",
-      neutralFeedback: "Make one list change and see what part updates.",
+      positiveFeedback: "Perfect — now update the list items.",
+      neutralFeedback: "Make one list change and see what updates on the page.",
     },
     feedbackMode: "checkpoint",
     isGate: true,
     allowNextWhen: "pass",
     checkpoint: {
-      title: "Match the list idea to the code",
-      body: "This step is about how HTML lists are built. Pick the answer that matches the list structure you just edited.",
+      title: "Connect lists to HTML",
+      body: "This step teaches how HTML builds lists. Pick the answers that match what you just edited.",
       submitLabel: "Check my answers",
       questions: [
         {
@@ -152,32 +152,32 @@ export const allAboutMeLessonSteps: LessonStep[] = [
         },
         {
           id: "add-item",
-          prompt: "Which code would add one more favorite to the list?",
-          options: ["<p>Soccer</p>", "<li>Soccer</li>", "<img src=\"soccer.png\" />"],
+          prompt: "Which code would add another item to the list?",
+          options: ["<p>Board games</p>", "<li>Board games</li>", "<img src=\"board-games\" />"],
           correctOptionIndex: 1,
         },
       ],
     },
-    passMessage: "Nice — you connected the list idea to the right HTML tag.",
-    closeMessage: "You're close. This step is asking about which tag makes a list item.",
-    notYetMessage: "Something still needs attention here. Look for the tag that wraps each favorite.",
+    passMessage: "Excellent — you connected the list to the right HTML tag.",
+    closeMessage: "You're close. Look for the tag that wraps each list item.",
+    notYetMessage: "Find the tag that creates each item in the highlights list.",
     showEditor: true,
   },
   {
     id: "image",
     order: 5,
     shortTitle: "Image",
-    sidebarCopy: "Choose a picture style.",
+    sidebarCopy: "Choose an image style.",
     kicker: "Images",
     title: "Pick an image",
     body:
-      "Choose one of the ready-made images below. The <img> tag in your code is what tells the page which picture to show.",
-    hint: "You can swap images as many times as you want.",
+      "Choose an image that matches your page's vibe. The <img> tag will update to tell the page which picture to show. You can swap images anytime.",
+    hint: "Pick whichever style feels right for your topic.",
     editorFocus: {
       label: "The <img> tag",
       matchText: "<img",
       helperText:
-        "This line controls the picture on your page. The <img> tag shows a picture on a webpage.",
+        "This tag controls the picture. The <img> tag displays an image on a webpage.",
     },
     feedbackMode: "none",
     isGate: false,
@@ -188,21 +188,21 @@ export const allAboutMeLessonSteps: LessonStep[] = [
     id: "theme",
     order: 6,
     shortTitle: "Theme",
-    sidebarCopy: "Choose a visual mood.",
-    kicker: "Style mood",
-    title: "Pick a theme",
+    sidebarCopy: "Pick your color theme.",
+    kicker: "Colors & mood",
+    title: "Choose your theme",
     body:
-      "Your HTML stays the same, but the page can still feel totally different. Pick a theme that matches your energy.",
-    hint: "This changes colors and styling only. Your content stays yours.",
+      "Pick a color theme that matches the mood of your page. The HTML stays the same, but the colors and feel change completely.",
+    hint: "Try a few different themes and notice how the mood changes.",
     editorFocus: {
       label: "Your whole page",
     },
     prediction: {
       question: "What will a theme change?",
-      options: ["Only the look", "The words on the page", "The list items"],
+      options: ["Only the colors and look", "The words on the page", "The list items"],
       answerIndex: 0,
-      positiveFeedback: "Exactly — now try a few and compare the mood.",
-      neutralFeedback: "Pick a theme and notice what changes versus what stays the same.",
+      positiveFeedback: "Right — now try a few themes.",
+      neutralFeedback: "Pick a theme and compare how it feels.",
     },
     feedbackMode: "none",
     isGate: false,
@@ -212,49 +212,49 @@ export const allAboutMeLessonSteps: LessonStep[] = [
   {
     id: "final-touches",
     order: 7,
-    shortTitle: "Improve",
-    sidebarCopy: "Polish a few details.",
-    kicker: "Improve your page",
-    title: "Final Touches: Improve Your Page",
+    shortTitle: "Polish",
+    sidebarCopy: "Add your personal touch.",
+    kicker: "Make it yours",
+    title: "Final touches: Make it personal",
     body:
-      "Use this step like a mini polish pass. Pick a few small improvements from the checklist, then make your page sound even more like you.",
-    hint: "You do not need huge changes. One or two thoughtful edits is enough.",
+      "This is your moment to polish. Make one or two small improvements that make the page sound more like you. Small, thoughtful edits are all you need.",
+    hint: "Pick one or two items from the list, not all of them.",
     editorFocus: {
-      label: "Anything you want to improve",
+      label: "Any part you want to improve",
     },
     checklist: [
-      "Make one sentence more specific",
-      "Add one more favorite",
-      "Check that your heading sounds like you",
+      "Add one specific detail or fun fact",
+      "Add one more item to the highlights list",
+      "Make the title or intro sound more like you",
     ],
     feedbackMode: "autoCheck",
     isGate: false,
     successCriteria: {
       type: "changedFromStepStart",
     },
-    passMessage: "Nice — you added a personal polish move to the page.",
-    notYetMessage: "You can leave this step open, or make one small extra change before you move on.",
+    passMessage: "Perfect — you added your personal style to the page.",
+    notYetMessage: "Make one small improvement, or skip ahead if you're happy with your page.",
     showEditor: true,
   },
   {
     id: "finish",
     order: 8,
     shortTitle: "Finish",
-    sidebarCopy: "Celebrate your project.",
-    kicker: "You did it",
-    title: "Finish and celebrate",
+    sidebarCopy: "Celebrate what you built.",
+    kicker: "You're done",
+    title: "You built a real webpage",
     body:
-      "You built a real webpage from code. Take a look at what you made, then open the celebration screen to see your finished project.",
-    hint: "If you want, go back one step first and make one more tiny improvement.",
+      "You coded a mini website from scratch using real HTML. That's a real accomplishment. Take one last look, then celebrate your work.",
+    hint: "Want to make one more tweak? Go back a step.",
     editorFocus: {
       label: "Your finished page",
     },
     feedbackMode: "reflection",
     isGate: false,
-    reflectionPrompt: "What part of your page came from HTML?",
-    reflectionPlaceholder: "For example: the heading, the paragraph, the list, or the image line.",
-    passMessage: "Nice reflection. You named a part that HTML puts on the page.",
-    notYetMessage: "Take a moment to name one part of the page that came from HTML.",
+    reflectionPrompt: "One thing HTML controlled on my page was...",
+    reflectionPlaceholder: "For example: the heading, the paragraph, the list, the picture, or the whole page layout.",
+    passMessage: "Great reflection. You identified exactly how HTML shaped your page.",
+    notYetMessage: "Take a moment to name one thing that HTML created or controlled on your page.",
     showEditor: false,
   },
 ];
@@ -328,74 +328,161 @@ export const allAboutMeThemeOptions: ThemeOption[] = [
       "--shadow": "0 24px 45px rgba(87, 155, 91, 0.16)",
     },
   },
+  {
+    id: "retro",
+    name: "Retro",
+    description: "Warm vintage vibes with timeless style.",
+    swatches: ["#d4a574", "#c85a17", "#e8d4c0"],
+    previewGradient: "linear-gradient(180deg, #e8d4c0, #ead9cc)",
+    cssVars: {
+      "--page-bg": "linear-gradient(180deg, #e8d4c0, #ead9cc)",
+      "--card-bg": "rgba(255,255,255,0.75)",
+      "--card-border": "rgba(200, 90, 23, 0.2)",
+      "--accent": "#b8860b",
+      "--accent-soft": "#f4d9c0",
+      "--headline": "#5c3d25",
+      "--body": "#704a2c",
+      "--shadow": "0 24px 45px rgba(200, 90, 23, 0.12)",
+    },
+  },
+  {
+    id: "minimal",
+    name: "Minimal",
+    description: "Clean, modern, and sophisticated.",
+    swatches: ["#f5f5f5", "#2c2c2c", "#cccccc"],
+    previewGradient: "linear-gradient(180deg, #f9f9f9, #f0f0f0)",
+    cssVars: {
+      "--page-bg": "linear-gradient(180deg, #f9f9f9, #f0f0f0)",
+      "--card-bg": "rgba(255,255,255,0.95)",
+      "--card-border": "rgba(44, 44, 44, 0.1)",
+      "--accent": "#1a1a1a",
+      "--accent-soft": "#e8e8e8",
+      "--headline": "#1a1a1a",
+      "--body": "#4a4a4a",
+      "--shadow": "0 24px 45px rgba(0, 0, 0, 0.08)",
+    },
+  },
 ];
 
 export const allAboutMeImageOptions: ImageOption[] = [
   {
-    id: "spark",
-    name: "Spark Portrait",
-    description: "A bright creative portrait with sketchbook energy.",
-    alt: "A stylized bright portrait illustration",
+    id: "abstract-warm",
+    name: "Warm Vibes",
+    description: "Warm abstract shapes and colors.",
+    alt: "Warm abstract design with orange and pink tones",
     src: svgToDataUrl(`
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240">
         <defs>
           <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
-            <stop stop-color="#ffca70"/>
-            <stop offset="1" stop-color="#ff7c8f"/>
+            <stop stop-color="#ffb347"/>
+            <stop offset="1" stop-color="#ff6b9d"/>
           </linearGradient>
         </defs>
         <rect width="320" height="240" rx="36" fill="url(#bg)"/>
-        <circle cx="110" cy="92" r="42" fill="#fff1d8"/>
-        <path d="M70 188c18-40 58-54 98-54s71 13 89 54" fill="#fff1d8"/>
-        <path d="M84 80c11-31 52-44 79-21 14 12 20 26 17 46-11-8-20-11-38-11-22 0-39 6-58 17-8-9-8-18 0-31z" fill="#61354e"/>
-        <circle cx="220" cy="54" r="18" fill="#fff2b2" opacity=".7"/>
-        <circle cx="250" cy="88" r="9" fill="#8ef0e0" opacity=".8"/>
+        <circle cx="80" cy="60" r="35" fill="#ffd89b" opacity="0.8"/>
+        <rect x="180" y="100" width="90" height="90" rx="15" fill="#ff9db5" opacity="0.7"/>
+        <polygon points="140,180 160,130 180,180" fill="#fff4e6" opacity="0.9"/>
+        <circle cx="240" cy="80" r="25" fill="#ffeaa7" opacity="0.6"/>
       </svg>
     `),
   },
   {
-    id: "wave",
-    name: "Ocean Explorer",
-    description: "A cool portrait with calm blue shapes and waves.",
-    alt: "A stylized ocean-themed portrait illustration",
+    id: "abstract-cool",
+    name: "Cool Vibes",
+    description: "Cool abstract shapes and colors.",
+    alt: "Cool abstract design with blue and teal tones",
     src: svgToDataUrl(`
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240">
         <defs>
           <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
-            <stop stop-color="#87ddff"/>
-            <stop offset="1" stop-color="#4ca7df"/>
+            <stop stop-color="#74b9ff"/>
+            <stop offset="1" stop-color="#0984e3"/>
           </linearGradient>
         </defs>
         <rect width="320" height="240" rx="36" fill="url(#bg)"/>
-        <circle cx="158" cy="86" r="40" fill="#f9e8d1"/>
-        <path d="M97 186c15-36 51-54 90-54s77 15 96 54" fill="#f9e8d1"/>
-        <path d="M116 73c8-26 36-42 62-36 22 5 42 29 36 62-20-13-38-18-58-18-14 0-27 2-44 9-5-5-4-11 4-17z" fill="#174d68"/>
-        <path d="M0 175c31-13 59-13 90 0s59 13 90 0 59-13 90 0 59 13 90 0v65H0z" fill="#e6fbff" opacity=".65"/>
+        <circle cx="100" cy="80" r="40" fill="#81ecec" opacity="0.8"/>
+        <rect x="160" y="120" width="100" height="85" rx="12" fill="#74b9ff" opacity="0.7"/>
+        <polygon points="60,200 40,150 80,150" fill="#a8e6cf" opacity="0.9"/>
+        <circle cx="220" cy="60" r="22" fill="#55efc4" opacity="0.7"/>
       </svg>
     `),
   },
   {
-    id: "cosmic",
-    name: "Cosmic Dreamer",
-    description: "A bold portrait with stars, glow, and space vibes.",
-    alt: "A stylized cosmic portrait illustration",
+    id: "geometric-grid",
+    name: "Geometric Grid",
+    description: "Geometric patterns with retro flair.",
+    alt: "Geometric grid pattern in retro colors",
     src: svgToDataUrl(`
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240">
         <defs>
           <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
-            <stop stop-color="#18133a"/>
-            <stop offset="1" stop-color="#6947d4"/>
+            <stop stop-color="#ffd93d"/>
+            <stop offset="1" stop-color="#ff6b9d"/>
           </linearGradient>
         </defs>
         <rect width="320" height="240" rx="36" fill="url(#bg)"/>
-        <circle cx="160" cy="93" r="42" fill="#ffe8d0"/>
-        <path d="M101 186c18-38 56-54 93-54 38 0 73 15 94 54" fill="#ffe8d0"/>
-        <path d="M117 76c8-26 30-42 56-42 28 0 47 14 57 38 5 11 6 21 2 33-18-13-39-20-70-20-19 0-36 4-50 12-5-7-3-14 5-21z" fill="#0d0a25"/>
-        <circle cx="72" cy="56" r="2.5" fill="#fff"/>
-        <circle cx="90" cy="38" r="1.8" fill="#fff"/>
-        <circle cx="256" cy="54" r="2.5" fill="#fff"/>
-        <circle cx="230" cy="35" r="1.8" fill="#fff"/>
-        <circle cx="245" cy="94" r="8" fill="#ff7cc3" opacity=".55"/>
+        <rect x="40" y="40" width="40" height="40" fill="#6bcf7f" opacity="0.8"/>
+        <rect x="100" y="40" width="40" height="40" fill="#4d96ff" opacity="0.8"/>
+        <rect x="160" y="40" width="40" height="40" fill="#ff6b9d" opacity="0.8"/>
+        <rect x="220" y="40" width="40" height="40" fill="#ffd93d" opacity="0.8"/>
+        <rect x="40" y="100" width="40" height="40" fill="#4d96ff" opacity="0.8"/>
+        <rect x="100" y="100" width="40" height="40" fill="#ff6b9d" opacity="0.8"/>
+        <rect x="160" y="100" width="40" height="40" fill="#ffd93d" opacity="0.8"/>
+        <rect x="220" y="100" width="40" height="40" fill="#6bcf7f" opacity="0.8"/>
+        <rect x="40" y="160" width="40" height="40" fill="#ff6b9d" opacity="0.8"/>
+        <rect x="100" y="160" width="40" height="40" fill="#ffd93d" opacity="0.8"/>
+        <rect x="160" y="160" width="40" height="40" fill="#6bcf7f" opacity="0.8"/>
+        <rect x="220" y="160" width="40" height="40" fill="#4d96ff" opacity="0.8"/>
+      </svg>
+    `),
+  },
+  {
+    id: "neon-lines",
+    name: "Neon Lines",
+    description: "Bold neon lines and glow effects.",
+    alt: "Neon glowing lines and shapes on dark background",
+    src: svgToDataUrl(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240">
+        <defs>
+          <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+            <stop stop-color="#1a1a2e"/>
+            <stop offset="1" stop-color="#16213e"/>
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <rect width="320" height="240" rx="36" fill="url(#bg)"/>
+        <circle cx="100" cy="70" r="30" fill="none" stroke="#00ff00" stroke-width="3" filter="url(#glow)"/>
+        <line x1="160" y1="40" x2="240" y2="120" stroke="#ff00ff" stroke-width="3" filter="url(#glow)"/>
+        <rect x="50" y="140" width="60" height="60" fill="none" stroke="#00ffff" stroke-width="2" filter="url(#glow)"/>
+        <circle cx="240" cy="170" r="35" fill="none" stroke="#ffff00" stroke-width="2" filter="url(#glow)"/>
+      </svg>
+    `),
+  },
+  {
+    id: "nature-collage",
+    name: "Nature Collage",
+    description: "Nature-inspired organic shapes and colors.",
+    alt: "Nature-inspired collage with organic elements",
+    src: svgToDataUrl(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240">
+        <defs>
+          <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+            <stop stop-color="#a8e6cf"/>
+            <stop offset="1" stop-color="#dcedc1"/>
+          </linearGradient>
+        </defs>
+        <rect width="320" height="240" rx="36" fill="url(#bg)"/>
+        <path d="M50 200 Q50 150 80 140 Q100 135 110 160 Q120 145 140 155 Q130 180 150 190 Z" fill="#56ab91" opacity="0.8"/>
+        <circle cx="180" cy="80" r="35" fill="#ffd93d" opacity="0.9"/>
+        <path d="M220 200 L240 140 L260 200 Z" fill="#56ab91" opacity="0.8"/>
+        <ellipse cx="100" cy="60" rx="25" ry="40" fill="#ff6b9d" opacity="0.7"/>
+        <circle cx="250" cy="160" r="20" fill="#81ecec" opacity="0.8"/>
       </svg>
     `),
   },
@@ -423,21 +510,21 @@ export const allAboutMeProject: LessonProjectConfig = {
   steps: allAboutMeLessonSteps,
   sidebar: {
     eyebrow: "Beginner project",
-    title: "All About Me Page",
+    title: "Make a Page About Something You Like",
     description:
-      "Build a real mini website with your own title, favorite things, image, and a style that fits your vibe.",
+      "Pick something you care about and build a real mini website about it. Learn HTML while creating your own unique page.",
   },
   introCard: {
-    title: "Project goal",
+    title: "Build your own topic page",
     body:
-      "By the end, your page will include a heading, intro, image, and favorites list, all styled with the theme you choose.",
+      "Choose something you love, then use real HTML to build a page about it. You'll create a heading, intro, highlights list, and pick colors that match your vibe.",
     pills: ["Real HTML", "Live preview", "Creative themes"],
   },
   finish: {
     eyebrow: "Project complete",
     title: "You built a real webpage.",
     body:
-      "You used real HTML to add a heading, paragraph, list, image, and your own style. That means you didn't just click around a template. You coded it.",
+      "You coded a mini website from scratch. You didn't just fill in blanks—you made real HTML decisions about headings, paragraphs, lists, images, and colors.",
     learnedBadges: [
       "Learned: headings",
       "Learned: paragraphs",
@@ -447,7 +534,7 @@ export const allAboutMeProject: LessonProjectConfig = {
   },
   defaultThemeId: "ocean",
   themeOptions: allAboutMeThemeOptions,
-  defaultImageId: "spark",
+  defaultImageId: "abstract-warm",
   imageOptions: allAboutMeImageOptions,
   previewTitle: ({ selectedThemeId }) => `Theme: ${selectedThemeId}`,
   buildPreviewDocument: ({ code, selectedThemeId, selectedImageId }) =>
@@ -525,7 +612,7 @@ export const allAboutMeProject: LessonProjectConfig = {
           padding-left: 22px;
         }
 
-        .favorites {
+        .highlights {
           margin-top: 22px;
           padding: 20px;
           border-radius: 22px;

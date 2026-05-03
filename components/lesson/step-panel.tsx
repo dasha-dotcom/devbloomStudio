@@ -1,5 +1,6 @@
 import { PredictionCard } from "@/components/lesson/prediction-card";
 import { StepChecklist } from "@/components/lesson/step-checklist";
+import { TipBox } from "@/components/lesson/tip-box";
 import type { LessonStep } from "@/lib/projects";
 
 type StepPanelProps = {
@@ -14,6 +15,7 @@ export function StepPanel({ step }: StepPanelProps) {
       </div>
       <h2 className="step-title">{step.title}</h2>
       <p className="step-body">{step.body}</p>
+      <TipBox tip={step.tip} />
       {step.prediction ? <PredictionCard key={step.id} prediction={step.prediction} /> : null}
       {step.checklist ? <StepChecklist key={`${step.id}-checklist`} items={step.checklist} /> : null}
       {step.hint ? <div className="hint-box">Hint: {step.hint}</div> : null}

@@ -223,6 +223,13 @@ export const moodSwitchLessonSteps: LessonStep[] = [
     body:
       "This step hides one important line: `page.className = mood.className;`. Make a prediction, then test the button and notice what still changes and what no longer switches correctly.",
     hint: "The missing line will come back automatically in the next step. For now, use the preview to figure out what it controls.",
+    tip: {
+      title: "What is Actually Happening",
+      short:
+        "On click, JavaScript updates **text** with `textContent` and the page **look** with `className`. The class swap is what flips the whole mood.",
+      long:
+        "**Words** and the **button label** use `textContent`. **Colors** and **layout** use `className`. The line `page.className = mood.className;` swaps the page class from `ocean-mode` to `space-mode`, so the CSS changes instantly. That **class switch** is what makes the whole page feel different.",
+    },
     editorFocus: {
       label: "The missing className line",
       helperText:
@@ -267,6 +274,10 @@ export const moodSwitchLessonSteps: LessonStep[] = [
     body:
       "Now personalize both moods. Change mood names, messages, emoji, and button labels so the before-and-after feels clearly yours.",
     hint: "Keep the structure the same. You’re customizing the values, not rebuilding the whole JavaScript file.",
+    tip: {
+      title: "How to add an emoji",
+      short: "Try your computer's emoji shortcut: Mac: Control + Command + Space. Windows: Windows key + Period. Chromebook: Search/Launcher + Shift + Space. You can also copy and paste an emoji from the internet.",
+    },
     editorFocus: {
       label: "The oceanMood and spaceMood objects",
       matchText: "const oceanMood",
@@ -302,10 +313,10 @@ export const moodSwitchLessonSteps: LessonStep[] = [
     },
     feedbackMode: "reflection",
     isGate: false,
-    reflectionPrompt: "What causes the page to change when the button is clicked?",
-    reflectionPlaceholder: "You can mention the click event, the mood objects, or the line that updates the page.",
+    reflectionPrompt: "JavaScript changes the page because of ...",
+    reflectionPlaceholder: "You can mention listening to the click event, the mood objects, or the line that updates the page.",
     passMessage: "Nice reflection. You connected the click to the code that updates the page.",
-    notYetMessage: "Take a moment to describe what causes the page to change after the click.",
+    notYetMessage: "Take a moment to describe what causes the page to change.",
     showEditor: false,
   },
 ];
