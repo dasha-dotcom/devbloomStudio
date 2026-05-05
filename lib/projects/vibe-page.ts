@@ -325,8 +325,18 @@ const vibePageBaseCss = `
 
 export const vibePageProject: LessonProjectConfig = {
   slug: "vibe-page",
+  contentVersion: "v1",
   editorLanguage: "css",
   editorBadgeLabel: "Starter CSS",
+  projectCard: {
+    title: "Vibe Page",
+    description:
+      "Style a mini webpage with real CSS and discover how colors, text, spacing, and card design can completely change the mood.",
+    level: "Beginner+",
+    whatYouMake: "A mood-driven mini webpage",
+    time: "20-25 min",
+    artGradient: "linear-gradient(135deg, #7ed0ff, #ffd86d 46%, #ff8db3)",
+  },
   starterCode: vibePageStarterCode,
   steps: vibePageLessonSteps,
   sidebar: {

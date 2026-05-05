@@ -1,8 +1,10 @@
 import { AppShell } from "@/components/app-shell";
 import { ProjectCard } from "@/components/project-card";
-import { projectCards } from "@/lib/projects";
+import { getAllProjectCards } from "@/lib/projects";
 
 export default function ProjectsPage() {
+  const projectCards = getAllProjectCards();
+
   return (
     <AppShell>
       <section className="page-hero">

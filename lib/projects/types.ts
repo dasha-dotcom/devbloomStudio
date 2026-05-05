@@ -9,6 +9,8 @@ export type ProjectCardData = {
   locked?: boolean;
 };
 
+export type ProjectLibraryCard = Omit<ProjectCardData, "href">;
+
 export type LessonStep = {
   id: string;
   order: number;
@@ -199,8 +201,10 @@ export type LessonBuilderConfig = {
 
 export type LessonProjectConfig = {
   slug: string;
+  contentVersion: string;
   editorLanguage: string;
   editorBadgeLabel: string;
+  projectCard: ProjectLibraryCard;
   starterCode: string;
   resetBehavior?: "full" | "active-tab";
   builder?: LessonBuilderConfig;

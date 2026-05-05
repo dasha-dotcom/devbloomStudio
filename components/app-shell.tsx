@@ -1,10 +1,13 @@
 import Link from "next/link";
+import { getAllProjects, getProjectHref } from "@/lib/projects";
 
 type AppShellProps = {
   children: React.ReactNode;
 };
 
 export function AppShell({ children }: AppShellProps) {
+  const defaultProject = getAllProjects()[0];
+
   return (
     <div className="page">
       <div className="shell">
@@ -20,7 +23,7 @@ export function AppShell({ children }: AppShellProps) {
             <Link href="/projects" className="nav-link">
               Projects
             </Link>
-            <Link href="/projects/all-about-me" className="button">
+            <Link href={getProjectHref(defaultProject.slug)} className="button">
               Open Lesson
             </Link>
           </nav>

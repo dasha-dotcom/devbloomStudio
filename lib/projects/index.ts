@@ -18,47 +18,26 @@ export const lessonProjects = [
   buildYourOwnMiniSiteProject,
 ];
 
-export const projectCards: ProjectCardData[] = [
-  {
-    title: "Make a Page About Something You Like",
-    description:
-      "Pick your topic and build a real mini website about it. Learn HTML with headings, paragraphs, lists, images, and custom colors.",
-    level: "Beginner",
-    whatYouMake: "A mini webpage about your favorite thing",
-    time: "20-25 min",
-    href: "/projects/all-about-me",
-    artGradient: "linear-gradient(135deg, #ffd981, #ff8e78 52%, #6ecbff)",
-  },
-  {
-    title: "Vibe Page",
-    description:
-      "Style a mini webpage with real CSS and discover how colors, text, spacing, and card design can completely change the mood.",
-    level: "Beginner+",
-    whatYouMake: "A mood-driven mini webpage",
-    time: "20-25 min",
-    href: "/projects/vibe-page",
-    artGradient: "linear-gradient(135deg, #7ed0ff, #ffd86d 46%, #ff8db3)",
-  },
-  {
-    title: "Mood Switch",
-    description:
-      "Build your first JavaScript interaction by making one button switch a mini webpage between ocean and space moods.",
-    level: "Beginner+",
-    whatYouMake: "An interactive mood toggle page",
-    time: "20-25 min",
-    href: "/projects/mood-switch",
-    artGradient: "linear-gradient(135deg, #63d4ff, #133a8a 52%, #25164f 78%, #ff8ac8)",
-  },
-  {
-    title: "Build Your Own Mini Site",
-    description:
-      "Create a final remix project by choosing a topic, visual vibe, and interaction, then personalize the HTML, CSS, and JavaScript step by step.",
-    level: "Capstone",
-    whatYouMake: "A one-page creative mini site",
-    time: "25-30 min",
-    href: "/projects/build-your-own-mini-site",
-    artGradient: "linear-gradient(135deg, #6ee7d7, #65b8ff 34%, #a67dff 68%, #ffab7a)",
-  },
+export const getProjectHref = (slug: string) => `/projects/${slug}`;
+
+const createProjectRegistry = () => {
+  const registry = new Map(lessonProjects.map((project) => [project.slug, project]));
+
+  if (registry.size !== lessonProjects.length) {
+    throw new Error("Duplicate project slug detected while building the project registry.");
+  }
+
+  return registry;
+};
+
+const projectBySlug = createProjectRegistry();
+
+const lessonProjectCards: ProjectCardData[] = lessonProjects.map((project) => ({
+  ...project.projectCard,
+  href: getProjectHref(project.slug),
+}));
+
+const upcomingProjectCards: ProjectCardData[] = [
   {
     title: "Pet Fan Club",
     description:
@@ -82,3 +61,17 @@ export const projectCards: ProjectCardData[] = [
     locked: true,
   },
 ];
+
+const lessonProjectCardBySlug = new Map(
+  lessonProjects.map((project, index) => [project.slug, lessonProjectCards[index]]),
+);
+
+export const getAllProjects = () => lessonProjects;
+
+export const getProjectBySlug = (slug: string) => projectBySlug.get(slug);
+
+export const getProjectCardData = (slug: string) => lessonProjectCardBySlug.get(slug);
+
+export const getAllProjectCards = () => [...lessonProjectCards, ...upcomingProjectCards];
+
+export const projectCards = getAllProjectCards();

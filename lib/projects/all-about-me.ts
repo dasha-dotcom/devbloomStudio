@@ -505,8 +505,18 @@ const updateImageTagInCode = (currentCode: string, image: ImageOption) => {
 
 export const allAboutMeProject: LessonProjectConfig = {
   slug: "all-about-me",
+  contentVersion: "v1",
   editorLanguage: "html",
   editorBadgeLabel: "Starter HTML",
+  projectCard: {
+    title: "Make a Page About Something You Like",
+    description:
+      "Pick your topic and build a real mini website about it. Learn HTML with headings, paragraphs, lists, images, and custom colors.",
+    level: "Beginner",
+    whatYouMake: "A mini webpage about your favorite thing",
+    time: "20-25 min",
+    artGradient: "linear-gradient(135deg, #ffd981, #ff8e78 52%, #6ecbff)",
+  },
   starterCode: allAboutMeStarterCode,
   steps: allAboutMeLessonSteps,
   sidebar: {

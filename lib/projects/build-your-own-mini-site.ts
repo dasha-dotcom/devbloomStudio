@@ -1058,8 +1058,18 @@ const buildFinalRemixPreviewDocument = (code: string) => {
 
 export const buildYourOwnMiniSiteProject: LessonProjectConfig = {
   slug: "build-your-own-mini-site",
+  contentVersion: "v1",
   editorLanguage: "html",
   editorBadgeLabel: "Final Project HTML",
+  projectCard: {
+    title: "Build Your Own Mini Site",
+    description:
+      "Create a final remix project by choosing a topic, visual vibe, and interaction, then personalize the HTML, CSS, and JavaScript step by step.",
+    level: "Capstone",
+    whatYouMake: "A one-page creative mini site",
+    time: "25-30 min",
+    artGradient: "linear-gradient(135deg, #6ee7d7, #65b8ff 34%, #a67dff 68%, #ffab7a)",
+  },
   starterCode: buildFinalRemixStarterCode({
     topic: "hobby",
     vibe: "ocean",

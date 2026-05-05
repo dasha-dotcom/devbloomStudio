@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { HeroPreview } from "@/components/hero-preview";
+import { getAllProjects, getProjectHref } from "@/lib/projects";
 
 export default function LandingPage() {
+  const defaultProject = getAllProjects()[0];
+
   return (
     <AppShell>
       <section className="hero">
@@ -18,7 +21,7 @@ export default function LandingPage() {
             <Link href="/projects" className="button">
               Choose a project
             </Link>
-            <Link href="/projects/all-about-me" className="button-ghost">
+            <Link href={getProjectHref(defaultProject.slug)} className="button-ghost">
               Jump into the lesson
             </Link>
           </div>

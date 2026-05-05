@@ -547,8 +547,18 @@ const moodSwitchBaseCss = `
 
 export const moodSwitchProject: LessonProjectConfig = {
   slug: "mood-switch",
+  contentVersion: "v1",
   editorLanguage: "javascript",
   editorBadgeLabel: "Starter JavaScript",
+  projectCard: {
+    title: "Mood Switch",
+    description:
+      "Build your first JavaScript interaction by making one button switch a mini webpage between ocean and space moods.",
+    level: "Beginner+",
+    whatYouMake: "An interactive mood toggle page",
+    time: "20-25 min",
+    artGradient: "linear-gradient(135deg, #63d4ff, #133a8a 52%, #25164f 78%, #ff8ac8)",
+  },
   starterCode: moodSwitchStarterCode,
   steps: moodSwitchLessonSteps,
   sidebar: {
