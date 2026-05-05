@@ -639,7 +639,8 @@ select {
 .pane-toggle-group,
 .pane-actions,
 .editor-meta,
-.preview-meta {
+.preview-meta,
+.lesson-toolbar-actions {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -654,6 +655,33 @@ select {
 .pane-toggle-group {
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.lesson-toolbar-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.save-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(29, 22, 55, 0.1);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.save-status-saving {
+  color: var(--text);
+}
+
+.save-status-error {
+  color: #a53a2a;
 }
 
 .pane-toggle,

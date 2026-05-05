@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import Link from "next/link";
 
 import { AppShell } from "@/components/app-shell";
@@ -16,6 +16,7 @@ import { ProjectBuilderPanel } from "@/components/lesson/project-builder-panel";
 import { StepPanel } from "@/components/lesson/step-panel";
 import { StepActivityPanel } from "@/components/lesson/step-activity-panel";
 import { ThemePicker } from "@/components/lesson/theme-picker";
+import { useProjectAttemptPersistence } from "@/hooks/use-project-attempt-persistence";
 import type { ActiveEditorError } from "@/lib/editor-errors/types";
 import {
   getDefaultBuilderSelections,
@@ -25,6 +26,13 @@ import {
   type LessonStep,
 } from "@/lib/projects";
 import { evaluateStepFeedback, hasSubstantiveReflection, useStepFeedback } from "@/lib/lesson-feedback";
+import {
+  createFreshProjectAttempt,
+  getDefaultEditorTabId,
+  resolveSavedStepId,
+  type ProjectAttempt,
+  type ProjectAttemptStatus,
+} from "@/lib/persistence/project-attempts";
 
 const DEFAULT_EDITOR_WIDTH = 56;
 const MIN_PANE_WIDTH = 320;
@@ -45,6 +53,7 @@ const getStepEditorTabId = (step: LessonStep) => step.defaultEditorTabId ?? step
 export function LessonPageShell({ project }: LessonPageShellProps) {
   const lastLessonIndex = project.steps.length - 1;
   const firstStep = project.steps[0];
+  const [initialAttempt] = useState(() => createFreshProjectAttempt(project));
   const [currentStep, setCurrentStep] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [builderSelections, setBuilderSelections] = useState(() => getDefaultBuilderSelections(project));
@@ -75,6 +84,13 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
   const editorHandleRef = useRef<CodeEditorHandle | null>(null);
   const workspaceRef = useRef<HTMLDivElement | null>(null);
   const dragStartRef = useRef({ pointerX: 0, editorWidth: DEFAULT_EDITOR_WIDTH });
+  const skipAutosaveRef = useRef(false);
+  const attemptMetaRef = useRef({
+    attemptId: initialAttempt.attemptId,
+    startedAt: initialAttempt.startedAt,
+    finishedAt: initialAttempt.finishedAt,
+    finalCodeSnapshot: initialAttempt.finalCodeSnapshot,
+  });
 
   const step = project.steps[currentStep];
   const starterCode = useMemo(
@@ -349,6 +365,183 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     };
   }, [lastLessonIndex, project.steps, reflectionResponses]);
 
+  const buildAttemptSnapshot = useCallback((overrides: {
+    status?: ProjectAttemptStatus;
+    currentStepId?: string;
+    activeEditorTabId?: string;
+    latestCode?: string;
+    selectedThemeId?: string;
+    selectedImageId?: string;
+    builderSelections?: Record<string, string>;
+    predictionAnswersByStep?: Record<string, number>;
+    activityAnswersByStep?: Record<string, Record<string, number>>;
+    checkpointAnswersByStep?: Record<string, Record<string, number>>;
+    checkpointSubmittedByStep?: Record<string, boolean>;
+    reflectionResponses?: Record<string, string>;
+    builderTouchedByStep?: Record<string, Record<string, boolean>>;
+    imagePickerTouchedByStep?: Record<string, boolean>;
+    themePickerTouchedByStep?: Record<string, boolean>;
+    stepStartCodeByStep?: Record<string, string>;
+    progressPercent?: number;
+    finishedAt?: string | null;
+    finalCodeSnapshot?: string;
+  } = {}): ProjectAttempt => {
+    const status = overrides.status ?? (isComplete ? "completed" : "in_progress");
+    const finishedAt =
+      status === "completed"
+        ? overrides.finishedAt ?? attemptMetaRef.current.finishedAt ?? new Date().toISOString()
+        : null;
+    const finalCodeSnapshot =
+      status === "completed"
+        ? overrides.finalCodeSnapshot ?? attemptMetaRef.current.finalCodeSnapshot ?? (overrides.latestCode ?? code)
+        : undefined;
+
+    return {
+      schemaVersion: 1,
+      attemptId: attemptMetaRef.current.attemptId,
+      projectSlug: project.slug,
+      contentVersion: project.contentVersion,
+      status,
+      currentStepId: overrides.currentStepId ?? step.id,
+      activeEditorTabId: overrides.activeEditorTabId ?? activeEditorTabId,
+      progressPercent: overrides.progressPercent ?? progressSummary.progressPercent,
+      latestCode: overrides.latestCode ?? code,
+      selectedThemeId: overrides.selectedThemeId ?? selectedThemeId,
+      selectedImageId: overrides.selectedImageId ?? selectedImageId,
+      builderSelections: overrides.builderSelections ?? builderSelections,
+      predictionAnswersByStep: overrides.predictionAnswersByStep ?? predictionAnswersByStep,
+      activityAnswersByStep: overrides.activityAnswersByStep ?? activityAnswersByStep,
+      checkpointAnswersByStep: overrides.checkpointAnswersByStep ?? checkpointAnswersByStep,
+      checkpointSubmittedByStep: overrides.checkpointSubmittedByStep ?? checkpointSubmittedByStep,
+      reflectionResponses: overrides.reflectionResponses ?? reflectionResponses,
+      builderTouchedByStep: overrides.builderTouchedByStep ?? builderTouchedByStep,
+      imagePickerTouchedByStep: overrides.imagePickerTouchedByStep ?? imagePickerTouchedByStep,
+      themePickerTouchedByStep: overrides.themePickerTouchedByStep ?? themePickerTouchedByStep,
+      stepStartCodeByStep: overrides.stepStartCodeByStep ?? stepStartCodeByStep,
+      startedAt: attemptMetaRef.current.startedAt,
+      lastActiveAt: new Date().toISOString(),
+      finishedAt,
+      finalCodeSnapshot,
+    };
+  }, [
+    activeEditorTabId,
+    activityAnswersByStep,
+    builderSelections,
+    builderTouchedByStep,
+    checkpointAnswersByStep,
+    checkpointSubmittedByStep,
+    code,
+    imagePickerTouchedByStep,
+    isComplete,
+    predictionAnswersByStep,
+    progressSummary.progressPercent,
+    project.contentVersion,
+    project.slug,
+    reflectionResponses,
+    selectedImageId,
+    selectedThemeId,
+    step.id,
+    stepStartCodeByStep,
+    themePickerTouchedByStep,
+  ]);
+
+  const hydrateAttempt = useCallback((attempt: ProjectAttempt | null) => {
+      skipAutosaveRef.current = true;
+
+      if (!attempt) {
+        attemptMetaRef.current = {
+          attemptId: initialAttempt.attemptId,
+          startedAt: initialAttempt.startedAt,
+          finishedAt: null,
+          finalCodeSnapshot: undefined,
+        };
+        return;
+      }
+
+      attemptMetaRef.current = {
+        attemptId: attempt.attemptId,
+        startedAt: attempt.startedAt,
+        finishedAt: attempt.finishedAt,
+        finalCodeSnapshot: attempt.finalCodeSnapshot,
+      };
+
+      const resolvedStepId = resolveSavedStepId(
+        project,
+        attempt.currentStepId,
+        attempt.status === "completed" ? "last" : "first",
+      );
+      const stepIndex = project.steps.findIndex((projectStep) => projectStep.id === resolvedStepId);
+
+      setCurrentStep(stepIndex === -1 ? 0 : stepIndex);
+      setIsComplete(attempt.status === "completed");
+      setBuilderSelections(attempt.builderSelections);
+      setActiveEditorTabId(attempt.activeEditorTabId);
+      setCode(attempt.latestCode);
+      setSelectedThemeId(attempt.selectedThemeId);
+      setSelectedImageId(attempt.selectedImageId);
+      setPredictionAnswersByStep(attempt.predictionAnswersByStep);
+      setActivityAnswersByStep(attempt.activityAnswersByStep);
+      setCheckpointAnswersByStep(attempt.checkpointAnswersByStep);
+      setCheckpointSubmittedByStep(attempt.checkpointSubmittedByStep);
+      setReflectionResponses(attempt.reflectionResponses);
+      setBuilderTouchedByStep(attempt.builderTouchedByStep);
+      setImagePickerTouchedByStep(attempt.imagePickerTouchedByStep);
+      setThemePickerTouchedByStep(attempt.themePickerTouchedByStep);
+      setStepStartCodeByStep(attempt.stepStartCodeByStep);
+      setGateMessage(null);
+      setActiveEditorError(null);
+    }, [initialAttempt, project]);
+
+  const { hasHydrated, saveState, queueSave, saveNow, clearSavedAttempt } = useProjectAttemptPersistence({
+    project,
+    onHydrate: hydrateAttempt,
+  });
+
+  useEffect(() => {
+    if (!hasHydrated) {
+      return;
+    }
+
+    if (skipAutosaveRef.current) {
+      skipAutosaveRef.current = false;
+      return;
+    }
+
+    queueSave(buildAttemptSnapshot());
+  }, [
+    activeEditorTabId,
+    activityAnswersByStep,
+    builderSelections,
+    builderTouchedByStep,
+    checkpointAnswersByStep,
+    checkpointSubmittedByStep,
+    code,
+    currentStep,
+    hasHydrated,
+    imagePickerTouchedByStep,
+    isComplete,
+    predictionAnswersByStep,
+    progressSummary.progressPercent,
+    buildAttemptSnapshot,
+    queueSave,
+    reflectionResponses,
+    selectedImageId,
+    selectedThemeId,
+    stepStartCodeByStep,
+    themePickerTouchedByStep,
+  ]);
+
+  const persistImmediately = (attempt: ProjectAttempt) => {
+    skipAutosaveRef.current = true;
+    attemptMetaRef.current = {
+      attemptId: attempt.attemptId,
+      startedAt: attempt.startedAt,
+      finishedAt: attempt.finishedAt,
+      finalCodeSnapshot: attempt.finalCodeSnapshot,
+    };
+    saveNow(attempt);
+  };
+
   const goNext = () => {
     if (step.isGate && !feedback.canGoNext) {
       setGateMessage("This step needs one more check before you move on.");
@@ -358,29 +551,53 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     setGateMessage(null);
 
     if (currentStep === lastLessonIndex) {
+      const finishedAt = new Date().toISOString();
+      const completedAttempt = buildAttemptSnapshot({
+        status: "completed",
+        finishedAt,
+        finalCodeSnapshot: code,
+      });
+
       setIsComplete(true);
+      persistImmediately(completedAttempt);
       return;
     }
 
     const nextStepIndex = Math.min(currentStep + 1, lastLessonIndex);
     const nextStep = project.steps[nextStepIndex];
+    const nextStepStartCodeByStep = {
+      ...stepStartCodeByStep,
+      [nextStep.id]: code,
+    };
+    const nextActiveEditorTabId = nextStep.defaultEditorTabId ?? nextStep.editorTabs?.[0]?.id ?? "default";
 
     setActiveEditorError(null);
-    setStepStartCodeByStep((current) => ({
-      ...current,
-      [nextStep.id]: code,
-    }));
-    setActiveEditorTabId(nextStep.defaultEditorTabId ?? nextStep.editorTabs?.[0]?.id ?? "default");
+    setStepStartCodeByStep(nextStepStartCodeByStep);
+    setActiveEditorTabId(nextActiveEditorTabId);
     setCurrentStep(nextStepIndex);
+    persistImmediately(
+      buildAttemptSnapshot({
+        currentStepId: nextStep.id,
+        activeEditorTabId: nextActiveEditorTabId,
+        stepStartCodeByStep: nextStepStartCodeByStep,
+      }),
+    );
   };
   const goBack = () => {
     const previousStepIndex = Math.max(currentStep - 1, 0);
     const previousStep = project.steps[previousStepIndex];
+    const previousActiveEditorTabId = previousStep.defaultEditorTabId ?? previousStep.editorTabs?.[0]?.id ?? "default";
 
     setActiveEditorError(null);
     setGateMessage(null);
-    setActiveEditorTabId(previousStep.defaultEditorTabId ?? previousStep.editorTabs?.[0]?.id ?? "default");
+    setActiveEditorTabId(previousActiveEditorTabId);
     setCurrentStep(previousStepIndex);
+    persistImmediately(
+      buildAttemptSnapshot({
+        currentStepId: previousStep.id,
+        activeEditorTabId: previousActiveEditorTabId,
+      }),
+    );
   };
   const resetCode = () => {
     const nextCode = usesActiveTabReset
@@ -394,19 +611,40 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
 
     setCode(nextCode);
     setManualChecksByStep((current) => ({ ...current, [step.id]: false }));
-    setSelectedImageId(getStarterImageId(project, nextCode));
+    const nextSelectedImageId = getStarterImageId(project, nextCode);
+    setSelectedImageId(nextSelectedImageId);
+    persistImmediately(
+      buildAttemptSnapshot({
+        latestCode: nextCode,
+        selectedImageId: nextSelectedImageId,
+      }),
+    );
   };
 
   const restart = () => {
-    const defaultSelections = getDefaultBuilderSelections(project);
+    const shouldClear = window.confirm("Clear your saved progress for this project and start over?");
+
+    if (!shouldClear) {
+      return;
+    }
+
+    const nextAttempt = createFreshProjectAttempt(project);
+    attemptMetaRef.current = {
+      attemptId: nextAttempt.attemptId,
+      startedAt: nextAttempt.startedAt,
+      finishedAt: null,
+      finalCodeSnapshot: undefined,
+    };
+
+    clearSavedAttempt();
     setIsComplete(false);
     setActiveEditorError(null);
     setCurrentStep(0);
-    setBuilderSelections(defaultSelections);
+    setBuilderSelections(nextAttempt.builderSelections);
     setActiveEditorTabId(firstStep.defaultEditorTabId ?? firstStep.editorTabs?.[0]?.id ?? "default");
-    setCode(getStarterCode(project, firstStep, defaultSelections));
+    setCode(nextAttempt.latestCode);
     setSelectedThemeId(project.defaultThemeId ?? "");
-    setSelectedImageId(getStarterImageId(project, getStarterCode(project, firstStep, defaultSelections)));
+    setSelectedImageId(nextAttempt.selectedImageId);
     setManualChecksByStep({});
     setPredictionAnswersByStep({});
     setActivityAnswersByStep({});
@@ -416,10 +654,32 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     setBuilderTouchedByStep({});
     setImagePickerTouchedByStep({});
     setThemePickerTouchedByStep({});
-    setStepStartCodeByStep({
-      [firstStep.id]: getStarterCode(project, firstStep, defaultSelections),
-    });
+    setStepStartCodeByStep(nextAttempt.stepStartCodeByStep);
     setGateMessage(null);
+  };
+
+  const continueEditing = () => {
+    const resumeStepId = resolveSavedStepId(project, step.id, "last");
+    const resumeStepIndex = project.steps.findIndex((projectStep) => projectStep.id === resumeStepId);
+    const safeStepIndex = resumeStepIndex === -1 ? 0 : resumeStepIndex;
+    const resumeStep = project.steps[safeStepIndex];
+    const resumeActiveEditorTabId =
+      resumeStep.editorTabs?.some((tab) => tab.id === activeEditorTabId)
+        ? activeEditorTabId
+        : getDefaultEditorTabId(project, resumeStep.id);
+    const resumedAttempt = buildAttemptSnapshot({
+      status: "in_progress",
+      currentStepId: resumeStep.id,
+      activeEditorTabId: resumeActiveEditorTabId,
+      finishedAt: null,
+    });
+
+    setIsComplete(false);
+    setActiveEditorError(null);
+    setGateMessage(null);
+    setCurrentStep(safeStepIndex);
+    setActiveEditorTabId(resumeActiveEditorTabId);
+    persistImmediately(resumedAttempt);
   };
 
   const updateEditorCode = (nextValue: string) => {
@@ -515,79 +775,132 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
 
   const selectImage = (imageId: string) => {
     const image = project.imageOptions?.find((item) => item.id === imageId);
+    const nextImagePickerTouchedByStep = { ...imagePickerTouchedByStep, [step.id]: true };
+    const nextCode = image && project.onSelectImage ? project.onSelectImage(code, image) ?? code : code;
 
     setSelectedImageId(imageId);
-    setImagePickerTouchedByStep((current) => ({ ...current, [step.id]: true }));
+    setImagePickerTouchedByStep(nextImagePickerTouchedByStep);
 
     if (!image || !project.onSelectImage) {
+      persistImmediately(
+        buildAttemptSnapshot({
+          selectedImageId: imageId,
+          imagePickerTouchedByStep: nextImagePickerTouchedByStep,
+        }),
+      );
       return;
     }
 
-    setCode((currentCode) => project.onSelectImage?.(currentCode, image) ?? currentCode);
+    setCode(nextCode);
+    persistImmediately(
+      buildAttemptSnapshot({
+        latestCode: nextCode,
+        selectedImageId: imageId,
+        imagePickerTouchedByStep: nextImagePickerTouchedByStep,
+      }),
+    );
   };
 
   const updateBuilderSelection = (questionId: string, optionId: string) => {
-    setBuilderTouchedByStep((current) => ({
-      ...current,
+    const nextBuilderTouchedByStep = {
+      ...builderTouchedByStep,
       [step.id]: {
-        ...(current[step.id] ?? {}),
+        ...(builderTouchedByStep[step.id] ?? {}),
         [questionId]: true,
       },
-    }));
-    setBuilderSelections((currentSelections) => {
-      const nextSelections = {
-        ...currentSelections,
-        [questionId]: optionId,
-      };
+    };
+    const nextSelections = {
+      ...builderSelections,
+      [questionId]: optionId,
+    };
+    const nextStarterCode = step.showBuilder ? getStarterCode(project, step, nextSelections) : code;
+    const nextSelectedImageId = step.showBuilder ? getStarterImageId(project, nextStarterCode) : selectedImageId;
 
-      if (step.showBuilder) {
-        const nextStarterCode = getStarterCode(project, step, nextSelections);
-        setCode(nextStarterCode);
-        setSelectedImageId(getStarterImageId(project, nextStarterCode));
-      }
+    setBuilderTouchedByStep(nextBuilderTouchedByStep);
+    setBuilderSelections(nextSelections);
 
-      return nextSelections;
-    });
+    if (step.showBuilder) {
+      setCode(nextStarterCode);
+      setSelectedImageId(nextSelectedImageId);
+    }
+
+    persistImmediately(
+      buildAttemptSnapshot({
+        builderSelections: nextSelections,
+        builderTouchedByStep: nextBuilderTouchedByStep,
+        latestCode: nextStarterCode,
+        selectedImageId: nextSelectedImageId,
+      }),
+    );
   };
 
   const updatePredictionAnswer = (optionIndex: number) => {
-    setPredictionAnswersByStep((current) => ({
-      ...current,
+    const nextPredictionAnswersByStep = {
+      ...predictionAnswersByStep,
       [step.id]: optionIndex,
-    }));
+    };
+
+    setPredictionAnswersByStep(nextPredictionAnswersByStep);
+    persistImmediately(
+      buildAttemptSnapshot({
+        predictionAnswersByStep: nextPredictionAnswersByStep,
+      }),
+    );
   };
 
   const updateActivityAnswer = (questionId: string, optionIndex: number) => {
-    setActivityAnswersByStep((current) => ({
-      ...current,
+    const nextActivityAnswersByStep = {
+      ...activityAnswersByStep,
       [step.id]: {
-        ...(current[step.id] ?? {}),
+        ...(activityAnswersByStep[step.id] ?? {}),
         [questionId]: optionIndex,
       },
-    }));
+    };
+
+    setActivityAnswersByStep(nextActivityAnswersByStep);
+    persistImmediately(
+      buildAttemptSnapshot({
+        activityAnswersByStep: nextActivityAnswersByStep,
+      }),
+    );
   };
 
   const updateCheckpointAnswer = (questionId: string, optionIndex: number) => {
     setGateMessage(null);
-
-    setCheckpointAnswersByStep((current) => ({
-      ...current,
+    const nextCheckpointAnswersByStep = {
+      ...checkpointAnswersByStep,
       [step.id]: {
-        ...(current[step.id] ?? {}),
+        ...(checkpointAnswersByStep[step.id] ?? {}),
         [questionId]: optionIndex,
       },
-    }));
-    setCheckpointSubmittedByStep((current) => ({
-      ...current,
+    };
+    const nextCheckpointSubmittedByStep = {
+      ...checkpointSubmittedByStep,
       [step.id]: false,
-    }));
+    };
+
+    setCheckpointAnswersByStep(nextCheckpointAnswersByStep);
+    setCheckpointSubmittedByStep(nextCheckpointSubmittedByStep);
+    persistImmediately(
+      buildAttemptSnapshot({
+        checkpointAnswersByStep: nextCheckpointAnswersByStep,
+        checkpointSubmittedByStep: nextCheckpointSubmittedByStep,
+      }),
+    );
   };
 
   const submitCheckpoint = () => {
-    setCheckpointSubmittedByStep((current) => ({
-      ...current,
+    const nextCheckpointSubmittedByStep = {
+      ...checkpointSubmittedByStep,
       [step.id]: true,
-    }));
+    };
+
+    setCheckpointSubmittedByStep(nextCheckpointSubmittedByStep);
+    persistImmediately(
+      buildAttemptSnapshot({
+        checkpointSubmittedByStep: nextCheckpointSubmittedByStep,
+      }),
+    );
   };
 
   const runManualCheck = () => {
@@ -598,8 +911,16 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
   };
 
   const updateThemeSelection = (themeId: string) => {
+    const nextThemePickerTouchedByStep = { ...themePickerTouchedByStep, [step.id]: true };
+
     setSelectedThemeId(themeId);
-    setThemePickerTouchedByStep((current) => ({ ...current, [step.id]: true }));
+    setThemePickerTouchedByStep(nextThemePickerTouchedByStep);
+    persistImmediately(
+      buildAttemptSnapshot({
+        selectedThemeId: themeId,
+        themePickerTouchedByStep: nextThemePickerTouchedByStep,
+      }),
+    );
   };
 
   const beginResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -626,7 +947,8 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
       <AppShell>
         <FinishScreen
           srcDoc={previewDoc}
-          onRestart={restart}
+          onContinueEditing={continueEditing}
+          onStartOver={restart}
           content={project.finish}
           progressPercent={progressSummary.progressPercent}
           notebookEntry={notebookReflection?.entry}
@@ -657,28 +979,33 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
               <span className="pill">Drag to resize</span>
               <span className="pill">Hide either pane</span>
             </div>
-            <div className="pane-toggle-group" role="group" aria-label="Workspace layout">
-              <button
-                type="button"
-                className={paneMode === "both" ? "pane-toggle active" : "pane-toggle"}
-                onClick={showBothPanes}
-              >
-                Show both
-              </button>
-              <button
-                type="button"
-                className={paneMode === "editor-only" ? "pane-toggle active" : "pane-toggle"}
-                onClick={showEditorOnly}
-              >
-                Editor only
-              </button>
-              <button
-                type="button"
-                className={paneMode === "preview-only" ? "pane-toggle active" : "pane-toggle"}
-                onClick={showPreviewOnly}
-              >
-                Preview only
-              </button>
+            <div className="lesson-toolbar-actions">
+              <span className={`save-status save-status-${saveState}`} aria-live="polite">
+                {saveState === "saving" ? "Saving..." : saveState === "error" ? "Save error" : "Saved"}
+              </span>
+              <div className="pane-toggle-group" role="group" aria-label="Workspace layout">
+                <button
+                  type="button"
+                  className={paneMode === "both" ? "pane-toggle active" : "pane-toggle"}
+                  onClick={showBothPanes}
+                >
+                  Show both
+                </button>
+                <button
+                  type="button"
+                  className={paneMode === "editor-only" ? "pane-toggle active" : "pane-toggle"}
+                  onClick={showEditorOnly}
+                >
+                  Editor only
+                </button>
+                <button
+                  type="button"
+                  className={paneMode === "preview-only" ? "pane-toggle active" : "pane-toggle"}
+                  onClick={showPreviewOnly}
+                >
+                  Preview only
+                </button>
+              </div>
             </div>
           </div>
 
@@ -851,12 +1178,12 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
                     onManualCheck={feedback.needsManualCheck ? runManualCheck : undefined}
                     gateMessage={gateMessage}
                     reflectionResponse={reflectionResponse}
-                    onReflectionChange={(value) =>
+                    onReflectionChange={(value) => {
                       setReflectionResponses((current) => ({
                         ...current,
                         [step.id]: value,
-                      }))
-                    }
+                      }));
+                    }}
                   />
                 ) : gateMessage ? (
                   <section className="feedback-panel feedback-notYet">

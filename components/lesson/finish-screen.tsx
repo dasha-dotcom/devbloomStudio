@@ -5,7 +5,8 @@ import type { FinishScreenContent } from "@/lib/projects";
 
 type FinishScreenProps = {
   srcDoc: string;
-  onRestart: () => void;
+  onContinueEditing: () => void;
+  onStartOver: () => void;
   content: FinishScreenContent;
   progressPercent: number;
   notebookEntry?: string;
@@ -15,7 +16,8 @@ type FinishScreenProps = {
 
 export function FinishScreen({
   srcDoc,
-  onRestart,
+  onContinueEditing,
+  onStartOver,
   content,
   progressPercent,
   notebookEntry,
@@ -71,8 +73,11 @@ export function FinishScreen({
           />
         </div>
         <div className="hero-actions">
-          <button type="button" className="button" onClick={onRestart}>
-            Edit again
+          <button type="button" className="button" onClick={onContinueEditing}>
+            Continue editing
+          </button>
+          <button type="button" className="button-ghost" onClick={onStartOver}>
+            Start over
           </button>
           <Link href="/projects" className="button-ghost">
             Back to projects
