@@ -61,6 +61,7 @@ export const moodSwitchLessonSteps: LessonStep[] = [
     order: 1,
     shortTitle: "Welcome",
     sidebarCopy: "See your first JavaScript project.",
+    countsTowardProgress: false,
     kicker: "Project intro",
     title: "Make a webpage react to a click",
     body:

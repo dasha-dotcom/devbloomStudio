@@ -22,8 +22,9 @@ import {
   getStarterCode,
   getStarterImageId,
   type LessonProjectConfig,
+  type LessonStep,
 } from "@/lib/projects";
-import { hasSubstantiveReflection, useStepFeedback } from "@/lib/lesson-feedback";
+import { evaluateStepFeedback, hasSubstantiveReflection, useStepFeedback } from "@/lib/lesson-feedback";
 
 const DEFAULT_EDITOR_WIDTH = 56;
 const MIN_PANE_WIDTH = 320;
@@ -33,6 +34,13 @@ type PaneMode = "both" | "editor-only" | "preview-only";
 type LessonPageShellProps = {
   project: LessonProjectConfig;
 };
+
+const normalizeForCompare = (value: string) => value.replace(/\s+/g, " ").trim();
+
+const hasAnyCodeChange = (currentCode: string, previousCode: string) =>
+  normalizeForCompare(currentCode) !== normalizeForCompare(previousCode);
+
+const getStepEditorTabId = (step: LessonStep) => step.defaultEditorTabId ?? step.editorTabs?.[0]?.id ?? "default";
 
 export function LessonPageShell({ project }: LessonPageShellProps) {
   const lastLessonIndex = project.steps.length - 1;
@@ -47,9 +55,14 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     getStarterImageId(project, getStarterCode(project, firstStep, getDefaultBuilderSelections(project))),
   );
   const [manualChecksByStep, setManualChecksByStep] = useState<Record<string, boolean>>({});
+  const [predictionAnswersByStep, setPredictionAnswersByStep] = useState<Record<string, number>>({});
+  const [activityAnswersByStep, setActivityAnswersByStep] = useState<Record<string, Record<string, number>>>({});
   const [checkpointAnswersByStep, setCheckpointAnswersByStep] = useState<Record<string, Record<string, number>>>({});
   const [checkpointSubmittedByStep, setCheckpointSubmittedByStep] = useState<Record<string, boolean>>({});
   const [reflectionResponses, setReflectionResponses] = useState<Record<string, string>>({});
+  const [builderTouchedByStep, setBuilderTouchedByStep] = useState<Record<string, Record<string, boolean>>>({});
+  const [imagePickerTouchedByStep, setImagePickerTouchedByStep] = useState<Record<string, boolean>>({});
+  const [themePickerTouchedByStep, setThemePickerTouchedByStep] = useState<Record<string, boolean>>({});
   const [stepStartCodeByStep, setStepStartCodeByStep] = useState<Record<string, string>>(() => ({
     [firstStep.id]: getStarterCode(project, firstStep, getDefaultBuilderSelections(project)),
   }));
@@ -119,6 +132,8 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     [previewCode, project, selectedImageId, selectedThemeId],
   );
   const checkpointAnswers = checkpointAnswersByStep[step.id] ?? {};
+  const predictionAnswer = predictionAnswersByStep[step.id] ?? null;
+  const activityAnswers = activityAnswersByStep[step.id] ?? {};
   const reflectionResponse = reflectionResponses[step.id] ?? "";
   const stepStartCode = stepStartCodeByStep[step.id] ?? starterCode;
   const stepStartEditorCode = useMemo(
@@ -167,6 +182,149 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     checkpointSubmitted: Boolean(checkpointSubmittedByStep[step.id]),
     reflectionResponse,
   });
+  const completedStepIds = useMemo(
+    () =>
+      project.steps
+        .filter((projectStep) => {
+          const stepIndex = project.steps.findIndex(({ id }) => id === projectStep.id);
+          const isReadOnlyIntroStep =
+            projectStep.countsTowardProgress === false &&
+            !projectStep.showEditor &&
+            !projectStep.showBuilder &&
+            !projectStep.showImagePicker &&
+            !projectStep.showThemePicker &&
+            !projectStep.prediction &&
+            !projectStep.activity &&
+            (!projectStep.feedbackMode || projectStep.feedbackMode === "none");
+
+          if (isReadOnlyIntroStep) {
+            return currentStep > stepIndex;
+          }
+
+          const rendersActivity = Boolean(projectStep.activity && !(projectStep.feedbackMode === "checkpoint" && projectStep.checkpoint));
+          const activityQuestionCount = projectStep.activity?.questions.length ?? 0;
+          const currentStarterCode = getStarterCode(project, projectStep, builderSelections);
+          const currentStepStartCode = stepStartCodeByStep[projectStep.id];
+          const hasEnteredStep = currentStepStartCode !== undefined;
+
+          if (!hasEnteredStep && projectStep.id !== firstStep.id) {
+            return false;
+          }
+
+          const effectiveStepStartCode = currentStepStartCode ?? currentStarterCode;
+          const editorTabId = getStepEditorTabId(projectStep);
+          const currentEditorCode =
+            project.getEditorCodeSlice?.({
+              code,
+              step: projectStep,
+              editorTabId,
+            }) ??
+            project.transformStepCode?.({ code, step: projectStep, surface: "editor" }) ??
+            code;
+          const currentStarterEditorCode =
+            project.getEditorCodeSlice?.({
+              code: currentStarterCode,
+              step: projectStep,
+              editorTabId,
+            }) ??
+            project.transformStepCode?.({ code: currentStarterCode, step: projectStep, surface: "editor" }) ??
+            currentStarterCode;
+          const currentStepStartEditorCode =
+            project.getEditorCodeSlice?.({
+              code: effectiveStepStartCode,
+              step: projectStep,
+              editorTabId,
+            }) ??
+            project.transformStepCode?.({ code: effectiveStepStartCode, step: projectStep, surface: "editor" }) ??
+            effectiveStepStartCode;
+          const stepFeedback = evaluateStepFeedback({
+            step: projectStep,
+            code,
+            starterCode: currentStarterCode,
+            stepStartCode: effectiveStepStartCode,
+            editorCode: currentEditorCode,
+            starterEditorCode: currentStarterEditorCode,
+            stepStartEditorCode: currentStepStartEditorCode,
+            autoCheckRequested: Boolean(manualChecksByStep[projectStep.id]),
+            checkpointAnswers: checkpointAnswersByStep[projectStep.id] ?? {},
+            checkpointSubmitted: Boolean(checkpointSubmittedByStep[projectStep.id]),
+            reflectionResponse: reflectionResponses[projectStep.id] ?? "",
+          });
+
+          const requiresFeedbackCheck = projectStep.feedbackMode && projectStep.feedbackMode !== "none";
+          const feedbackDone = !requiresFeedbackCheck || stepFeedback.state === "pass";
+          const predictionDone = !projectStep.prediction || predictionAnswersByStep[projectStep.id] !== undefined;
+          const activityDone =
+            !rendersActivity ||
+            Object.keys(activityAnswersByStep[projectStep.id] ?? {}).length === activityQuestionCount;
+          const builderDone =
+            !projectStep.showBuilder ||
+            (project.builder?.questions.every((question) => builderTouchedByStep[projectStep.id]?.[question.id]) ??
+              false);
+          const imagePickerDone = !projectStep.showImagePicker || Boolean(imagePickerTouchedByStep[projectStep.id]);
+          const themePickerDone = !projectStep.showThemePicker || Boolean(themePickerTouchedByStep[projectStep.id]);
+          const needsCodeEditCheck =
+            projectStep.showEditor &&
+            !projectStep.showImagePicker &&
+            !projectStep.showThemePicker &&
+            !projectStep.showBuilder &&
+            !requiresFeedbackCheck;
+          const codeEditDone = !needsCodeEditCheck || hasAnyCodeChange(currentEditorCode, currentStepStartEditorCode);
+          const hasTrackedRequirement =
+            requiresFeedbackCheck ||
+            Boolean(projectStep.prediction) ||
+            rendersActivity ||
+            Boolean(projectStep.showBuilder) ||
+            Boolean(projectStep.showImagePicker) ||
+            Boolean(projectStep.showThemePicker) ||
+            needsCodeEditCheck;
+
+          if (!hasTrackedRequirement) {
+            return false;
+          }
+
+          return (
+            feedbackDone &&
+            predictionDone &&
+            activityDone &&
+            builderDone &&
+            imagePickerDone &&
+            themePickerDone &&
+            codeEditDone
+          );
+        })
+        .map((projectStep) => projectStep.id),
+    [
+      activityAnswersByStep,
+      builderSelections,
+      builderTouchedByStep,
+      checkpointAnswersByStep,
+      checkpointSubmittedByStep,
+      code,
+      currentStep,
+      imagePickerTouchedByStep,
+      manualChecksByStep,
+      project,
+      predictionAnswersByStep,
+      reflectionResponses,
+      stepStartCodeByStep,
+      themePickerTouchedByStep,
+      firstStep.id,
+    ],
+  );
+  const progressSummary = useMemo(() => {
+    const progressSteps = project.steps.filter((projectStep) => projectStep.countsTowardProgress !== false);
+    const completedStepIdSet = new Set(completedStepIds);
+    const completedProgressSteps = progressSteps.filter((projectStep) => completedStepIdSet.has(projectStep.id)).length;
+    const totalProgressSteps = progressSteps.length;
+    const progressPercent = Math.round((completedProgressSteps / Math.max(totalProgressSteps, 1)) * 100);
+
+    return {
+      completedProgressSteps,
+      totalProgressSteps,
+      progressPercent,
+    };
+  }, [completedStepIds, project.steps]);
   const notebookReflection = useMemo(() => {
     const lastStep = project.steps[lastLessonIndex];
     const candidateStep =
@@ -238,6 +396,7 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     setManualChecksByStep((current) => ({ ...current, [step.id]: false }));
     setSelectedImageId(getStarterImageId(project, nextCode));
   };
+
   const restart = () => {
     const defaultSelections = getDefaultBuilderSelections(project);
     setIsComplete(false);
@@ -249,9 +408,14 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     setSelectedThemeId(project.defaultThemeId ?? "");
     setSelectedImageId(getStarterImageId(project, getStarterCode(project, firstStep, defaultSelections)));
     setManualChecksByStep({});
+    setPredictionAnswersByStep({});
+    setActivityAnswersByStep({});
     setCheckpointAnswersByStep({});
     setCheckpointSubmittedByStep({});
     setReflectionResponses({});
+    setBuilderTouchedByStep({});
+    setImagePickerTouchedByStep({});
+    setThemePickerTouchedByStep({});
     setStepStartCodeByStep({
       [firstStep.id]: getStarterCode(project, firstStep, defaultSelections),
     });
@@ -353,6 +517,7 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     const image = project.imageOptions?.find((item) => item.id === imageId);
 
     setSelectedImageId(imageId);
+    setImagePickerTouchedByStep((current) => ({ ...current, [step.id]: true }));
 
     if (!image || !project.onSelectImage) {
       return;
@@ -362,6 +527,13 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
   };
 
   const updateBuilderSelection = (questionId: string, optionId: string) => {
+    setBuilderTouchedByStep((current) => ({
+      ...current,
+      [step.id]: {
+        ...(current[step.id] ?? {}),
+        [questionId]: true,
+      },
+    }));
     setBuilderSelections((currentSelections) => {
       const nextSelections = {
         ...currentSelections,
@@ -376,6 +548,23 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
 
       return nextSelections;
     });
+  };
+
+  const updatePredictionAnswer = (optionIndex: number) => {
+    setPredictionAnswersByStep((current) => ({
+      ...current,
+      [step.id]: optionIndex,
+    }));
+  };
+
+  const updateActivityAnswer = (questionId: string, optionIndex: number) => {
+    setActivityAnswersByStep((current) => ({
+      ...current,
+      [step.id]: {
+        ...(current[step.id] ?? {}),
+        [questionId]: optionIndex,
+      },
+    }));
   };
 
   const updateCheckpointAnswer = (questionId: string, optionIndex: number) => {
@@ -408,6 +597,11 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     }));
   };
 
+  const updateThemeSelection = (themeId: string) => {
+    setSelectedThemeId(themeId);
+    setThemePickerTouchedByStep((current) => ({ ...current, [step.id]: true }));
+  };
+
   const beginResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
     if (isCompactViewport || paneMode !== "both") {
       return;
@@ -434,6 +628,7 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
           srcDoc={previewDoc}
           onRestart={restart}
           content={project.finish}
+          progressPercent={progressSummary.progressPercent}
           notebookEntry={notebookReflection?.entry}
           notebookPrompt={notebookReflection?.prompt}
           sandbox={project.previewSandbox}
@@ -445,7 +640,15 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
   return (
     <AppShell>
       <div className="lesson-shell">
-        <LessonSidebar steps={project.steps} currentStep={currentStep} meta={project.sidebar} />
+        <LessonSidebar
+          steps={project.steps}
+          currentStep={currentStep}
+          completedStepIds={completedStepIds}
+          progressPercent={progressSummary.progressPercent}
+          completedProgressSteps={progressSummary.completedProgressSteps}
+          totalProgressSteps={progressSummary.totalProgressSteps}
+          meta={project.sidebar}
+        />
 
         <section className="lesson-workspace-shell">
           <div className="lesson-workspace-toolbar">
@@ -486,7 +689,11 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
           >
             {paneMode !== "preview-only" ? (
               <main className="lesson-main lesson-editor-pane">
-                <StepPanel step={step} />
+                <StepPanel
+                  step={step}
+                  predictionAnswer={predictionAnswer}
+                  onPredictionAnswer={updatePredictionAnswer}
+                />
 
                 {step.showEditor ? (
                   <>
@@ -590,7 +797,11 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
                 ) : null}
 
                 {step.activity && !(step.feedbackMode === "checkpoint" && step.checkpoint) ? (
-                  <StepActivityPanel activity={step.activity} />
+                  <StepActivityPanel
+                    activity={step.activity}
+                    selectedAnswers={activityAnswers}
+                    onAnswer={updateActivityAnswer}
+                  />
                 ) : null}
 
                 {step.showBuilder && project.builder ? (
@@ -626,7 +837,7 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
                     <ThemePicker
                       themes={project.themeOptions}
                       selectedThemeId={selectedThemeId}
-                      onSelect={setSelectedThemeId}
+                      onSelect={updateThemeSelection}
                     />
                   </section>
                 ) : null}

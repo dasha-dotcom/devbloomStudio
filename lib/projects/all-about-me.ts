@@ -37,6 +37,7 @@ export const allAboutMeLessonSteps: LessonStep[] = [
     order: 1,
     shortTitle: "Welcome",
     sidebarCopy: "Pick your topic and get started.",
+    countsTowardProgress: false,
     kicker: "Project intro",
     title: "Make a page about something you like",
     body:

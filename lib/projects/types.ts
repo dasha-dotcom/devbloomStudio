@@ -14,6 +14,7 @@ export type LessonStep = {
   order: number;
   shortTitle: string;
   sidebarCopy: string;
+  countsTowardProgress?: boolean;
   kicker: string;
   title: string;
   body: string;

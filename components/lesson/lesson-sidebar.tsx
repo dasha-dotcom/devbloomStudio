@@ -3,11 +3,23 @@ import type { LessonSidebarMeta, LessonStep } from "@/lib/projects";
 type LessonSidebarProps = {
   steps: LessonStep[];
   currentStep: number;
+  completedStepIds: string[];
+  progressPercent: number;
+  completedProgressSteps: number;
+  totalProgressSteps: number;
   meta: LessonSidebarMeta;
 };
 
-export function LessonSidebar({ steps, currentStep, meta }: LessonSidebarProps) {
-  const progress = Math.round((currentStep / Math.max(steps.length - 1, 1)) * 100);
+export function LessonSidebar({
+  steps,
+  currentStep,
+  completedStepIds,
+  progressPercent,
+  completedProgressSteps,
+  totalProgressSteps,
+  meta,
+}: LessonSidebarProps) {
+  const completedStepIdSet = new Set(completedStepIds);
 
   return (
     <aside className="lesson-sidebar">
@@ -19,20 +31,20 @@ export function LessonSidebar({ steps, currentStep, meta }: LessonSidebarProps) 
 
       <div className="progress-meta">
         <div>
-          <strong>{progress}% complete</strong>
+          <strong>{progressPercent}% complete</strong>
           <p className="muted">
-            Step {currentStep + 1} of {steps.length}
+            {completedProgressSteps} of {totalProgressSteps} progress steps complete
           </p>
         </div>
         <div className="progress-track" aria-hidden>
-          <div className="progress-fill" style={{ width: `${progress}%` }} />
+          <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
         </div>
       </div>
 
       <div className="checklist">
         {steps.map((step, index) => {
           const isActive = index === currentStep;
-          const isDone = index < currentStep;
+          const isDone = completedStepIdSet.has(step.id);
 
           return (
             <div

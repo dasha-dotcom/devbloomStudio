@@ -1,18 +1,20 @@
 "use client";
 
-import { useState } from "react";
-
 import type { LessonStep } from "@/lib/projects";
 
 type SelectionActivity = Extract<NonNullable<LessonStep["activity"]>, { type: "selection" }>;
 
 type StepActivityPanelProps = {
   activity: SelectionActivity;
+  selectedAnswers: Record<string, number>;
+  onAnswer: (questionId: string, optionIndex: number) => void;
 };
 
-export function StepActivityPanel({ activity }: StepActivityPanelProps) {
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
-
+export function StepActivityPanel({
+  activity,
+  selectedAnswers,
+  onAnswer,
+}: StepActivityPanelProps) {
   const completedCount = Object.keys(selectedAnswers).length;
   const totalQuestions = activity.questions.length;
   const isComplete = completedCount === totalQuestions;
@@ -53,12 +55,7 @@ export function StepActivityPanel({ activity }: StepActivityPanelProps) {
                       key={option}
                       type="button"
                       className={`match-card choice-card${isSelected ? " selected" : ""}`}
-                      onClick={() =>
-                        setSelectedAnswers((current) => ({
-                          ...current,
-                          [question.id]: index,
-                        }))
-                      }
+                      onClick={() => onAnswer(question.id, index)}
                     >
                       <strong>{option}</strong>
                     </button>

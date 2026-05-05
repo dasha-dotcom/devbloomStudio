@@ -1,11 +1,13 @@
 import Link from "next/link";
 
+import { DeveloperProgressRing } from "@/components/lesson/developer-progress-ring";
 import type { FinishScreenContent } from "@/lib/projects";
 
 type FinishScreenProps = {
   srcDoc: string;
   onRestart: () => void;
   content: FinishScreenContent;
+  progressPercent: number;
   notebookEntry?: string;
   notebookPrompt?: string;
   sandbox?: string;
@@ -15,6 +17,7 @@ export function FinishScreen({
   srcDoc,
   onRestart,
   content,
+  progressPercent,
   notebookEntry,
   notebookPrompt,
   sandbox = "allow-same-origin",
@@ -34,6 +37,16 @@ export function FinishScreen({
             ))}
           </div>
         </div>
+        <section className="finish-process-card">
+          <div className="finish-process-copy">
+            <div className="prediction-kicker">Developer Process</div>
+            <strong className="prediction-question">{progressPercent}% complete</strong>
+            <p className="muted finish-process-body">
+              This shows how much of the developer work you completed — coding, predicting, and reflecting on your choices.
+            </p>
+          </div>
+          <DeveloperProgressRing percent={progressPercent} label="Developer Process" />
+        </section>
         {notebookEntry ? (
           <section className="finish-notebook-card">
             <div className="prediction-kicker">Project story</div>

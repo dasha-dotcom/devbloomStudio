@@ -28,6 +28,7 @@ export const vibePageLessonSteps: LessonStep[] = [
     order: 1,
     shortTitle: "Welcome",
     sidebarCopy: "See the styling mission.",
+    countsTowardProgress: false,
     kicker: "Project intro",
     title: "Turn a plain page into a full vibe",
     body:
