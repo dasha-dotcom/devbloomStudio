@@ -206,7 +206,7 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(function
   }, [onActiveErrorChange]);
 
   return (
-    <div className="editor-frame">
+    <div className="editor-frame" data-tour-id="lesson-editor">
       <div className="editor-topbar">
         <div className="editor-meta">
           <span className="editor-badge">{badgeLabel}</span>

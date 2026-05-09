@@ -684,6 +684,22 @@ select {
   color: #a53a2a;
 }
 
+.lesson-tour-trigger {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 8px 6px;
+  transition: color 160ms ease, opacity 160ms ease;
+}
+
+.lesson-tour-trigger:hover,
+.lesson-tour-trigger:focus-visible {
+  color: var(--text);
+}
+
 .pane-toggle,
 .pane-action-button {
   display: inline-flex;
@@ -1078,7 +1094,10 @@ select {
   .step-checklist-item,
   .prediction-bulb-icon,
   .prediction-bulb-glow,
-  .prediction-bulb-rays {
+  .prediction-bulb-rays,
+  .lesson-tour-trigger,
+  .lesson-tour-highlight,
+  .lesson-tour-dialog {
     transition: none;
     animation: none;
   }
@@ -1672,6 +1691,105 @@ select {
   margin-top: 18px;
 }
 
+.lesson-tour-root {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+}
+
+.lesson-tour-overlay {
+  position: fixed;
+  background: rgba(18, 14, 35, 0.58);
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+}
+
+.lesson-tour-overlay-full {
+  inset: 0;
+}
+
+.lesson-tour-highlight {
+  position: fixed;
+  border-radius: 28px;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 0 0 9999px rgba(18, 14, 35, 0.4),
+    0 20px 50px rgba(17, 13, 40, 0.28);
+  pointer-events: none;
+  transition:
+    top 180ms ease,
+    left 180ms ease,
+    width 180ms ease,
+    height 180ms ease;
+}
+
+.lesson-tour-dialog {
+  position: fixed;
+  width: min(320px, calc(100vw - 32px));
+  padding: 20px;
+  overflow-y: auto;
+  border-radius: 24px;
+  background: rgba(255, 251, 243, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 24px 60px rgba(29, 22, 55, 0.22);
+  color: var(--text);
+  pointer-events: auto;
+  outline: none;
+  transition: top 180ms ease, left 180ms ease, transform 180ms ease;
+}
+
+.lesson-tour-dialog.is-centered {
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+}
+
+.lesson-tour-dialog.is-anchored {
+  transform: translateY(0);
+}
+
+.lesson-tour-kicker {
+  color: #7d5a65;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lesson-tour-title {
+  margin: 10px 0 8px;
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
+}
+
+.lesson-tour-body {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.lesson-tour-footer,
+.lesson-tour-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lesson-tour-footer {
+  justify-content: space-between;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.lesson-tour-actions {
+  justify-content: flex-end;
+}
+
+.lesson-tour-skip {
+  background: rgba(255, 255, 255, 0.66);
+}
+
 .preview-frame {
   width: 100%;
   min-height: 630px;
@@ -1879,6 +1997,11 @@ select {
     min-height: auto;
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .lesson-tour-dialog.is-anchored {
+    inset: auto 16px 16px 16px;
+    width: auto;
   }
 
   .pane-toggle-group {

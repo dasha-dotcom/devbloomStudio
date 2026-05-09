@@ -22,7 +22,7 @@ export function LessonSidebar({
   const completedStepIdSet = new Set(completedStepIds);
 
   return (
-    <aside className="lesson-sidebar">
+    <aside className="lesson-sidebar" data-tour-id="lesson-progress">
       <div className="lesson-meta">
         <span className="eyebrow">{meta.eyebrow}</span>
         <h1 className="lesson-title">{meta.title}</h1>

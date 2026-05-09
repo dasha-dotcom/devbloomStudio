@@ -12,11 +12,13 @@ type StepPanelProps = {
 export function StepPanel({ step, predictionAnswer, onPredictionAnswer }: StepPanelProps) {
   return (
     <section className="step-panel">
-      <div className="step-kicker">
-        Step {step.order} · {step.kicker}
+      <div data-tour-id="lesson-mission">
+        <div className="step-kicker">
+          Step {step.order} · {step.kicker}
+        </div>
+        <h2 className="step-title">{step.title}</h2>
+        <p className="step-body">{step.body}</p>
       </div>
-      <h2 className="step-title">{step.title}</h2>
-      <p className="step-body">{step.body}</p>
       <TipBox tip={step.tip} />
       {step.prediction ? (
         <PredictionCard

@@ -10,6 +10,7 @@ import { ErrorHelper } from "@/components/lesson/error-helper";
 import { FeedbackPanel } from "@/components/lesson/feedback-panel";
 import { FinishScreen } from "@/components/lesson/finish-screen";
 import { ImagePicker } from "@/components/lesson/image-picker";
+import { LessonTour } from "@/components/lesson/lesson-tour";
 import { LessonSidebar } from "@/components/lesson/lesson-sidebar";
 import { LivePreview } from "@/components/lesson/live-preview";
 import { ProjectBuilderPanel } from "@/components/lesson/project-builder-panel";
@@ -81,6 +82,9 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
   const [isResizing, setIsResizing] = useState(false);
   const [isCompactViewport, setIsCompactViewport] = useState(false);
   const [activeEditorError, setActiveEditorError] = useState<ActiveEditorError | null>(null);
+  const [isTourOpen, setIsTourOpen] = useState(false);
+  const [hasDismissedAutoTourThisSession, setHasDismissedAutoTourThisSession] = useState(false);
+  const [tourSessionKey, setTourSessionKey] = useState(0);
   const editorHandleRef = useRef<CodeEditorHandle | null>(null);
   const workspaceRef = useRef<HTMLDivElement | null>(null);
   const dragStartRef = useRef({ pointerX: 0, editorWidth: DEFAULT_EDITOR_WIDTH });
@@ -93,6 +97,9 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
   });
 
   const step = project.steps[currentStep];
+  const onboardingTour = project.onboardingTour;
+  const isTourEnabled = Boolean(onboardingTour?.enabled);
+  const hasReachedTourTrigger = isTourEnabled && currentStep >= (onboardingTour?.triggerStepIndex ?? Number.POSITIVE_INFINITY);
   const starterCode = useMemo(
     () => getStarterCode(project, step, builderSelections),
     [builderSelections, project, step],
@@ -760,6 +767,33 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    if (
+      !isTourEnabled ||
+      !onboardingTour ||
+      currentStep !== onboardingTour.triggerStepIndex ||
+      hasDismissedAutoTourThisSession ||
+      isComplete ||
+      isTourOpen
+    ) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setTourSessionKey((current) => current + 1);
+      setIsTourOpen(true);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [
+    currentStep,
+    hasDismissedAutoTourThisSession,
+    isComplete,
+    isTourEnabled,
+    isTourOpen,
+    onboardingTour,
+  ]);
+
   const showBothPanes = () => {
     setPaneMode("both");
     setEditorWidth((currentWidth) => clampEditorWidth(currentWidth));
@@ -771,6 +805,16 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
 
   const showPreviewOnly = () => {
     setPaneMode("preview-only");
+  };
+
+  const dismissTour = () => {
+    setHasDismissedAutoTourThisSession(true);
+    setIsTourOpen(false);
+  };
+
+  const reopenTour = () => {
+    setTourSessionKey((current) => current + 1);
+    setIsTourOpen(true);
   };
 
   const selectImage = (imageId: string) => {
@@ -983,6 +1027,15 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
               <span className={`save-status save-status-${saveState}`} aria-live="polite">
                 {saveState === "saving" ? "Saving..." : saveState === "error" ? "Save error" : "Saved"}
               </span>
+              {hasReachedTourTrigger ? (
+                <button
+                  type="button"
+                  className="lesson-tour-trigger"
+                  onClick={reopenTour}
+                >
+                  Show tour again
+                </button>
+              ) : null}
               <div className="pane-toggle-group" role="group" aria-label="Workspace layout">
                 <button
                   type="button"
@@ -1250,6 +1303,15 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
           </div>
         </section>
       </div>
+      {isTourEnabled && onboardingTour && isTourOpen ? (
+        <LessonTour
+          key={tourSessionKey}
+          isOpen={isTourOpen}
+          steps={onboardingTour.steps}
+          onSkip={dismissTour}
+          onFinish={dismissTour}
+        />
+      ) : null}
     </AppShell>
   );
 }

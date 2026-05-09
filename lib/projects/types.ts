@@ -199,6 +199,19 @@ export type LessonBuilderConfig = {
   questions: BuilderQuestion[];
 };
 
+export type LessonOnboardingTourStep = {
+  targetId: string;
+  title: string;
+  body: string;
+};
+
+export type LessonOnboardingTourConfig = {
+  enabled: boolean;
+  triggerStepIndex: number;
+  showEveryTime?: boolean;
+  steps: LessonOnboardingTourStep[];
+};
+
 export type LessonProjectConfig = {
   slug: string;
   contentVersion: string;
@@ -244,4 +257,5 @@ export type LessonProjectConfig = {
     editorTabId: string;
   }) => string;
   onSelectImage?: (currentCode: string, image: ImageOption) => string;
+  onboardingTour?: LessonOnboardingTourConfig;
 };

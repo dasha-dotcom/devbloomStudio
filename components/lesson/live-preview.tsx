@@ -16,7 +16,7 @@ export function LivePreview({
   sandbox = "allow-same-origin",
 }: LivePreviewProps) {
   return (
-    <div className="lesson-preview-card">
+    <div className="lesson-preview-card" data-tour-id="lesson-preview">
       <div className="preview-label">
         <div>
           <strong>Live preview</strong>

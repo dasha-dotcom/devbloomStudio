@@ -19,7 +19,10 @@ export function PredictionCard({ prediction, selectedIndex, onSelect }: Predicti
         : prediction.neutralFeedback ?? "Try it and see what changes in the preview.";
 
   return (
-    <div className={`prediction-card ${isAnswered ? "answered" : "unanswered"}`}>
+    <div
+      className={`prediction-card ${isAnswered ? "answered" : "unanswered"}`}
+      data-tour-id="lesson-prediction"
+    >
       <div className="prediction-topbar">
         <div>
           <div className="prediction-kicker">Pause and predict</div>
@@ -37,7 +40,7 @@ export function PredictionCard({ prediction, selectedIndex, onSelect }: Predicti
       <p className="prediction-support-copy">
         {isAnswered
           ? "Idea unlocked. Now test your guess and see what the code actually does."
-          : "Developers make a guess before testing code. Pick what you think will happen first."}
+          : "Make a quick prediction before you test. It helps you understand what your code is doing."}
       </p>
       <div className="prediction-options" role="group" aria-label={prediction.question}>
         {prediction.options.map((option, index) => {
