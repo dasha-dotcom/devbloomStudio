@@ -806,6 +806,33 @@ select {
   transform: translateX(2px);
 }
 
+.teacher-auth-form {
+  display: grid;
+  gap: 16px;
+}
+
+.teacher-auth-field {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.teacher-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(29, 22, 55, 0.14);
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--text);
+  font: inherit;
+}
+
+.teacher-input:focus {
+  outline: 2px solid rgba(110, 203, 255, 0.5);
+  outline-offset: 2px;
+}
+
 .checklist-item.done .check-bubble,
 .checklist-item.active .check-bubble {
   background: linear-gradient(135deg, var(--coral), var(--gold));

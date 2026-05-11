@@ -9,13 +9,19 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "validate:projects": "node --experimental-strip-types scripts/validate-projects.mjs"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.105.4",
+    "drizzle-orm": "^0.45.2",
     "next": "^16.2.3",
+    "postgres": "^3.4.9",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -23,6 +29,8 @@
     "@types/node": "^22.14.1",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.4",
     "typescript": "^5.8.3",
