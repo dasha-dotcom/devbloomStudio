@@ -833,6 +833,93 @@ select {
   outline-offset: 2px;
 }
 
+.teacher-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.teacher-panel {
+  padding: 24px;
+}
+
+.teacher-panel-copy {
+  margin: 8px 0 0;
+}
+
+.teacher-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.teacher-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(33, 25, 61, 0.1);
+  background: rgba(255, 255, 255, 0.62);
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.teacher-list-item:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.84);
+  border-color: rgba(33, 25, 61, 0.16);
+}
+
+.teacher-list-copy {
+  margin: 6px 0 0;
+}
+
+.teacher-inline-note {
+  margin: 0;
+}
+
+.teacher-success-note {
+  color: #236f52;
+  font-weight: 700;
+}
+
+.teacher-pin-card {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: rgba(115, 216, 175, 0.12);
+  border: 1px solid rgba(115, 216, 175, 0.3);
+}
+
+.teacher-pin-value {
+  display: inline-flex;
+  width: fit-content;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(33, 25, 61, 0.08);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.teacher-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.teacher-meta-card {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(33, 25, 61, 0.1);
+  background: rgba(255, 255, 255, 0.62);
+}
+
 .checklist-item.done .check-bubble,
 .checklist-item.active .check-bubble {
   background: linear-gradient(135deg, var(--coral), var(--gold));

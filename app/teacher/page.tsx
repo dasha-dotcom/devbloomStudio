@@ -1,8 +1,13 @@
+import Link from "next/link";
+
 import { signOutTeacher } from "@/app/auth/actions";
+import { CreateClassForm } from "@/components/teacher/create-class-form";
 import { getCurrentTeacher } from "@/lib/auth/get-current-teacher";
+import { getTeacherClasses } from "@/lib/teacher/get-teacher-classes";
 
 export default async function TeacherDashboardPage() {
   const teacher = await getCurrentTeacher();
+  const teacherClasses = await getTeacherClasses();
 
   return (
     <section className="section">
@@ -12,41 +17,51 @@ export default async function TeacherDashboardPage() {
           <h1 className="section-title">Welcome back</h1>
         </div>
         <p className="section-copy">
-          Teacher auth is connected. Class setup and student roster management are the next step.
+          Create classes, manage your roster, and prepare student access for the next phase.
         </p>
       </div>
 
-      <div className="steps-grid">
-        <article className="step-card">
-          <div className="step-number">1</div>
-          <strong>Signed-in teacher</strong>
-          <p className="muted" style={{ marginBottom: 0 }}>
-            {teacher.email}
+      <div className="teacher-grid">
+        <div className="glass-card teacher-panel">
+          <strong>Your classes</strong>
+          <p className="muted teacher-panel-copy">
+            Signed in as {teacher.email}. Open a class to view the roster and student details.
           </p>
-        </article>
 
-        <article className="step-card">
-          <div className="step-number">2</div>
-          <strong>Teacher profile</strong>
-          <p className="muted" style={{ marginBottom: 0 }}>
-            Profile created and linked to your Supabase auth user.
-          </p>
-        </article>
+          <div className="teacher-list">
+            {teacherClasses.length === 0 ? (
+              <p className="muted" style={{ margin: 0 }}>
+                No classes yet. Create your first class to get started.
+              </p>
+            ) : (
+              teacherClasses.map((teacherClass) => (
+                <Link
+                  key={teacherClass.id}
+                  href={`/teacher/classes/${teacherClass.id}`}
+                  className="teacher-list-item"
+                >
+                  <div>
+                    <strong>{teacherClass.name}</strong>
+                    <p className="muted teacher-list-copy">
+                      Join code {teacherClass.joinCode} • {teacherClass.rosterCount} student
+                      {teacherClass.rosterCount === 1 ? "" : "s"}
+                    </p>
+                  </div>
+                  <span className="pill">Open</span>
+                </Link>
+              ))
+            )}
+          </div>
+        </div>
 
-        <article className="step-card">
-          <div className="step-number">3</div>
-          <strong>Classes placeholder</strong>
-          <p className="muted" style={{ marginBottom: 0 }}>
-            No classes yet. Class creation will be added in Phase 2B.
-          </p>
-        </article>
+        <CreateClassForm />
       </div>
 
-      <div className="glass-card" style={{ padding: 24, marginTop: 24 }}>
+      <div className="glass-card teacher-panel" style={{ marginTop: 24 }}>
         <strong>Class area</strong>
-        <p className="muted">
-          This is intentionally minimal for Phase 2A. The backend auth and database scaffold are ready for class
-          management next.
+        <p className="muted teacher-panel-copy">
+          Student join flow and backend project attempts are still deferred. For now, you can create classes and
+          student profiles safely under your teacher account.
         </p>
 
         <form action={signOutTeacher}>
