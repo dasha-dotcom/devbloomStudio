@@ -15,6 +15,13 @@
       "when": 1778421919558,
       "tag": "0001_jazzy_dracula",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778515271670,
+      "tag": "0002_lethal_sunspot",
+      "breakpoints": true
     }
   ]
 }
