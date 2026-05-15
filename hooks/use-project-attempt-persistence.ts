@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   localStorageProjectAttemptStorage,
+  type ProjectAttemptStorage,
   type ProjectAttempt,
 } from "@/lib/persistence/project-attempts";
 import type { LessonProjectConfig } from "@/lib/projects";
@@ -12,6 +13,7 @@ export type AttemptSaveState = "saving" | "saved" | "error";
 
 type UseProjectAttemptPersistenceOptions = {
   project: LessonProjectConfig;
+  storage?: ProjectAttemptStorage;
   autosaveDelayMs?: number;
   onHydrate: (attempt: ProjectAttempt | null) => void;
 };
@@ -20,23 +22,25 @@ type UseProjectAttemptPersistenceResult = {
   hasHydrated: boolean;
   saveState: AttemptSaveState;
   queueSave: (attempt: ProjectAttempt) => void;
-  saveNow: (attempt: ProjectAttempt) => void;
+  saveNow: (attempt: ProjectAttempt) => Promise<boolean>;
   clearSavedAttempt: () => void;
 };
 
 export function useProjectAttemptPersistence({
   project,
+  storage = localStorageProjectAttemptStorage,
   autosaveDelayMs = 700,
   onHydrate,
 }: UseProjectAttemptPersistenceOptions): UseProjectAttemptPersistenceResult {
   const [hasHydrated, setHasHydrated] = useState(false);
   const [saveState, setSaveState] = useState<AttemptSaveState>("saved");
   const timeoutRef = useRef<number | null>(null);
-  const isMountedRef = useRef(true);
+  const isMountedRef = useRef(false);
   const loadRequestIdRef = useRef(0);
-  const storage = localStorageProjectAttemptStorage;
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     return () => {
       isMountedRef.current = false;
     };
@@ -54,18 +58,36 @@ export function useProjectAttemptPersistence({
     });
 
     void (async () => {
-      const savedAttempt = await storage.loadAttempt(project);
+      try {
+        const savedAttempt = await storage.loadAttempt(project);
 
-      if (isCancelled || !isMountedRef.current || loadRequestIdRef.current !== requestId) {
-        return;
-      }
-
-      onHydrate(savedAttempt);
-      queueMicrotask(() => {
-        if (!isCancelled && isMountedRef.current && loadRequestIdRef.current === requestId) {
-          setHasHydrated(true);
+        if (isCancelled || !isMountedRef.current || loadRequestIdRef.current !== requestId) {
+          return;
         }
-      });
+
+        onHydrate(savedAttempt);
+        queueMicrotask(() => {
+          if (!isCancelled && isMountedRef.current && loadRequestIdRef.current === requestId) {
+            setHasHydrated(true);
+          }
+        });
+      } catch (error) {
+        if (isCancelled || !isMountedRef.current || loadRequestIdRef.current !== requestId) {
+          return;
+        }
+
+        setSaveState("error");
+        onHydrate(null);
+        queueMicrotask(() => {
+          if (!isCancelled && isMountedRef.current && loadRequestIdRef.current === requestId) {
+            setHasHydrated(true);
+          }
+        });
+
+        if (process.env.NODE_ENV !== "production") {
+          console.error("Failed to load project attempt.", error);
+        }
+      }
     })();
 
     return () => {
@@ -82,13 +104,14 @@ export function useProjectAttemptPersistence({
       await storage.saveAttempt(attempt);
 
       if (!isMountedRef.current) {
-        return;
+        return true;
       }
 
       setSaveState("saved");
+      return true;
     } catch (error) {
       if (!isMountedRef.current) {
-        return;
+        return false;
       }
 
       setSaveState("error");
@@ -96,6 +119,8 @@ export function useProjectAttemptPersistence({
       if (process.env.NODE_ENV !== "production") {
         console.error("Failed to save project attempt.", error);
       }
+
+      return false;
     }
   }, [storage]);
 
@@ -115,9 +140,9 @@ export function useProjectAttemptPersistence({
     }, autosaveDelayMs);
   }, [autosaveDelayMs, hasHydrated, persistAttempt]);
 
-  const saveNow = useCallback((attempt: ProjectAttempt) => {
+  const saveNow = useCallback(async (attempt: ProjectAttempt) => {
     if (!hasHydrated) {
-      return;
+      return false;
     }
 
     if (timeoutRef.current !== null) {
@@ -126,7 +151,7 @@ export function useProjectAttemptPersistence({
     }
 
     setSaveState("saving");
-    void persistAttempt(attempt);
+    return persistAttempt(attempt);
   }, [hasHydrated, persistAttempt]);
 
   const clearSavedAttempt = useCallback(() => {

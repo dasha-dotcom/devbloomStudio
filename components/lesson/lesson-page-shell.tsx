@@ -32,6 +32,7 @@ import {
   getDefaultEditorTabId,
   resolveSavedStepId,
   type ProjectAttempt,
+  type ProjectAttemptStorage,
   type ProjectAttemptStatus,
 } from "@/lib/persistence/project-attempts";
 
@@ -39,9 +40,13 @@ const DEFAULT_EDITOR_WIDTH = 56;
 const MIN_PANE_WIDTH = 320;
 
 type PaneMode = "both" | "editor-only" | "preview-only";
+type FinalExitState = "idle" | "saving" | "saved" | "error";
 
 type LessonPageShellProps = {
   project: LessonProjectConfig;
+  storage?: ProjectAttemptStorage;
+  autosaveDelayMs?: number;
+  projectsHref?: string;
 };
 
 const normalizeForCompare = (value: string) => value.replace(/\s+/g, " ").trim();
@@ -51,7 +56,12 @@ const hasAnyCodeChange = (currentCode: string, previousCode: string) =>
 
 const getStepEditorTabId = (step: LessonStep) => step.defaultEditorTabId ?? step.editorTabs?.[0]?.id ?? "default";
 
-export function LessonPageShell({ project }: LessonPageShellProps) {
+export function LessonPageShell({
+  project,
+  storage,
+  autosaveDelayMs,
+  projectsHref = "/projects",
+}: LessonPageShellProps) {
   const lastLessonIndex = project.steps.length - 1;
   const firstStep = project.steps[0];
   const [initialAttempt] = useState(() => createFreshProjectAttempt(project));
@@ -85,6 +95,7 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
   const [isTourOpen, setIsTourOpen] = useState(false);
   const [hasDismissedAutoTourThisSession, setHasDismissedAutoTourThisSession] = useState(false);
   const [tourSessionKey, setTourSessionKey] = useState(0);
+  const [finalExitState, setFinalExitState] = useState<FinalExitState>("idle");
   const editorHandleRef = useRef<CodeEditorHandle | null>(null);
   const workspaceRef = useRef<HTMLDivElement | null>(null);
   const dragStartRef = useRef({ pointerX: 0, editorWidth: DEFAULT_EDITOR_WIDTH });
@@ -453,54 +464,56 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
   ]);
 
   const hydrateAttempt = useCallback((attempt: ProjectAttempt | null) => {
-      skipAutosaveRef.current = true;
+    skipAutosaveRef.current = true;
 
-      if (!attempt) {
-        attemptMetaRef.current = {
-          attemptId: initialAttempt.attemptId,
-          startedAt: initialAttempt.startedAt,
-          finishedAt: null,
-          finalCodeSnapshot: undefined,
-        };
-        return;
-      }
-
+    if (!attempt) {
       attemptMetaRef.current = {
-        attemptId: attempt.attemptId,
-        startedAt: attempt.startedAt,
-        finishedAt: attempt.finishedAt,
-        finalCodeSnapshot: attempt.finalCodeSnapshot,
+        attemptId: initialAttempt.attemptId,
+        startedAt: initialAttempt.startedAt,
+        finishedAt: null,
+        finalCodeSnapshot: undefined,
       };
+      return;
+    }
 
-      const resolvedStepId = resolveSavedStepId(
-        project,
-        attempt.currentStepId,
-        attempt.status === "completed" ? "last" : "first",
-      );
-      const stepIndex = project.steps.findIndex((projectStep) => projectStep.id === resolvedStepId);
+    attemptMetaRef.current = {
+      attemptId: attempt.attemptId,
+      startedAt: attempt.startedAt,
+      finishedAt: attempt.finishedAt,
+      finalCodeSnapshot: attempt.finalCodeSnapshot,
+    };
 
-      setCurrentStep(stepIndex === -1 ? 0 : stepIndex);
-      setIsComplete(attempt.status === "completed");
-      setBuilderSelections(attempt.builderSelections);
-      setActiveEditorTabId(attempt.activeEditorTabId);
-      setCode(attempt.latestCode);
-      setSelectedThemeId(attempt.selectedThemeId);
-      setSelectedImageId(attempt.selectedImageId);
-      setPredictionAnswersByStep(attempt.predictionAnswersByStep);
-      setActivityAnswersByStep(attempt.activityAnswersByStep);
-      setCheckpointAnswersByStep(attempt.checkpointAnswersByStep);
-      setCheckpointSubmittedByStep(attempt.checkpointSubmittedByStep);
-      setReflectionResponses(attempt.reflectionResponses);
-      setBuilderTouchedByStep(attempt.builderTouchedByStep);
-      setImagePickerTouchedByStep(attempt.imagePickerTouchedByStep);
-      setThemePickerTouchedByStep(attempt.themePickerTouchedByStep);
-      setStepStartCodeByStep(attempt.stepStartCodeByStep);
-      setGateMessage(null);
-      setActiveEditorError(null);
-    }, [initialAttempt, project]);
+    const resolvedStepId = resolveSavedStepId(
+      project,
+      attempt.currentStepId,
+      attempt.status === "completed" ? "last" : "first",
+    );
+    const stepIndex = project.steps.findIndex((projectStep) => projectStep.id === resolvedStepId);
+
+    setCurrentStep(stepIndex === -1 ? 0 : stepIndex);
+    setIsComplete(attempt.status === "completed");
+    setBuilderSelections(attempt.builderSelections);
+    setActiveEditorTabId(attempt.activeEditorTabId);
+    setCode(attempt.latestCode);
+    setSelectedThemeId(attempt.selectedThemeId);
+    setSelectedImageId(attempt.selectedImageId);
+    setPredictionAnswersByStep(attempt.predictionAnswersByStep);
+    setActivityAnswersByStep(attempt.activityAnswersByStep);
+    setCheckpointAnswersByStep(attempt.checkpointAnswersByStep);
+    setCheckpointSubmittedByStep(attempt.checkpointSubmittedByStep);
+    setReflectionResponses(attempt.reflectionResponses);
+    setBuilderTouchedByStep(attempt.builderTouchedByStep);
+    setImagePickerTouchedByStep(attempt.imagePickerTouchedByStep);
+    setThemePickerTouchedByStep(attempt.themePickerTouchedByStep);
+    setStepStartCodeByStep(attempt.stepStartCodeByStep);
+    setGateMessage(null);
+    setActiveEditorError(null);
+  }, [initialAttempt, project]);
 
   const { hasHydrated, saveState, queueSave, saveNow, clearSavedAttempt } = useProjectAttemptPersistence({
     project,
+    storage,
+    autosaveDelayMs,
     onHydrate: hydrateAttempt,
   });
 
@@ -546,7 +559,13 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
       finishedAt: attempt.finishedAt,
       finalCodeSnapshot: attempt.finalCodeSnapshot,
     };
-    saveNow(attempt);
+    void saveNow(attempt);
+  };
+
+  const saveAndExit = async () => {
+    setFinalExitState("saving");
+    const saved = await saveNow(buildAttemptSnapshot({ status: "completed" }));
+    setFinalExitState(saved ? "saved" : "error");
   };
 
   const goNext = () => {
@@ -635,7 +654,11 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
       return;
     }
 
-    const nextAttempt = createFreshProjectAttempt(project);
+    const freshAttempt = createFreshProjectAttempt(project);
+    const nextAttempt = {
+      ...freshAttempt,
+      attemptId: attemptMetaRef.current.attemptId,
+    };
     attemptMetaRef.current = {
       attemptId: nextAttempt.attemptId,
       startedAt: nextAttempt.startedAt,
@@ -644,6 +667,7 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     };
 
     clearSavedAttempt();
+    setFinalExitState("idle");
     setIsComplete(false);
     setActiveEditorError(null);
     setCurrentStep(0);
@@ -682,6 +706,7 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
     });
 
     setIsComplete(false);
+    setFinalExitState("idle");
     setActiveEditorError(null);
     setGateMessage(null);
     setCurrentStep(safeStepIndex);
@@ -986,6 +1011,22 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
         }%)`
       : undefined;
 
+  if (storage && !hasHydrated) {
+    return (
+      <AppShell>
+        <div className="lesson-shell lesson-shell-loading">
+          <section className="lesson-workspace-shell">
+            <div className="lesson-loading-card">
+              <p className="lesson-loading-eyebrow">Loading saved project</p>
+              <h1>Restoring your work...</h1>
+              <p>Hold on for a second while your saved attempt loads.</p>
+            </div>
+          </section>
+        </div>
+      </AppShell>
+    );
+  }
+
   if (isComplete) {
     return (
       <AppShell>
@@ -993,11 +1034,15 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
           srcDoc={previewDoc}
           onContinueEditing={continueEditing}
           onStartOver={restart}
+          onSaveAndExit={saveAndExit}
           content={project.finish}
           progressPercent={progressSummary.progressPercent}
           notebookEntry={notebookReflection?.entry}
           notebookPrompt={notebookReflection?.prompt}
           sandbox={project.previewSandbox}
+          projectsHref={projectsHref}
+          showSaveAndExit={projectsHref === "/student/projects"}
+          saveAndExitState={finalExitState}
         />
       </AppShell>
     );
@@ -1246,7 +1291,7 @@ export function LessonPageShell({ project }: LessonPageShellProps) {
 
                 <div className="lesson-footer">
                   {currentStep === 0 ? (
-                    <Link href="/projects" className="button-ghost">
+                    <Link href={projectsHref} className="button-ghost">
                       Back to projects
                     </Link>
                   ) : (

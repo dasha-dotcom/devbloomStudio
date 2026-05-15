@@ -1,15 +1,12 @@
 import { AppShell } from "@/components/app-shell";
-import { ProjectCard } from "@/components/project-card";
 import { leaveStudentSession } from "@/app/student/actions";
-import { getAllProjects, getProjectHref } from "@/lib/projects";
+import { StudentProjectLaunchCard } from "@/components/student/student-project-launch-card";
+import { getAllProjects } from "@/lib/projects";
 import { requireStudentSession } from "@/lib/student/require-student-session";
 
 export default async function StudentProjectsPage() {
   const session = await requireStudentSession();
-  const projectCards = getAllProjects().map((project) => ({
-    ...project.projectCard,
-    href: getProjectHref(project.slug),
-  }));
+  const projects = getAllProjects();
 
   return (
     <AppShell>
@@ -26,7 +23,7 @@ export default async function StudentProjectsPage() {
           <div>
             <strong>Your class session</strong>
             <p className="muted teacher-panel-copy">
-              Choose any project to start building. Project progress still saves locally on this device for now.
+              Choose any project to start building. Your project attempt will resume here the next time you return.
             </p>
           </div>
 
@@ -39,8 +36,8 @@ export default async function StudentProjectsPage() {
 
         <section className="section" style={{ paddingTop: 28 }}>
           <div className="project-grid">
-            {projectCards.map((project) => (
-              <ProjectCard key={project.href} project={project} />
+            {projects.map((project) => (
+              <StudentProjectLaunchCard key={project.slug} project={project} />
             ))}
           </div>
         </section>

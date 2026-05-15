@@ -538,6 +538,10 @@ select {
   padding-top: 22px;
 }
 
+.lesson-shell-loading {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .lesson-sidebar,
 .lesson-main,
 .lesson-preview-card {
@@ -578,6 +582,36 @@ select {
   display: grid;
   gap: 18px;
   min-width: 0;
+}
+
+.lesson-loading-card {
+  padding: 28px;
+  border-radius: 28px;
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+  min-height: 240px;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+}
+
+.lesson-loading-card h1,
+.lesson-loading-card p {
+  margin: 0;
+}
+
+.lesson-loading-card p {
+  color: var(--muted);
+}
+
+.lesson-loading-eyebrow {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 
 .lesson-workspace-toolbar {
@@ -885,6 +919,31 @@ select {
   font-weight: 700;
 }
 
+.finish-save-exit-button.finish-save-exit-saved {
+  background: linear-gradient(135deg, #2f9e6f, #73d8af);
+  box-shadow: 0 16px 30px rgba(47, 158, 111, 0.24);
+  animation: finishSavePulse 700ms ease-out 1;
+}
+
+.finish-save-exit-button.finish-save-exit-error {
+  background: linear-gradient(135deg, #d46857, #f39b7d);
+  box-shadow: 0 16px 30px rgba(212, 104, 87, 0.22);
+}
+
+.finish-save-exit-note {
+  margin: 14px 0 0;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.finish-save-exit-note-saved {
+  color: #236f52;
+}
+
+.finish-save-exit-note-error {
+  color: #9b4d42;
+}
+
 .teacher-pin-card {
   display: grid;
   gap: 8px;
@@ -918,6 +977,23 @@ select {
   border-radius: 20px;
   border: 1px solid rgba(33, 25, 61, 0.1);
   background: rgba(255, 255, 255, 0.62);
+}
+
+@keyframes finishSavePulse {
+  0% {
+    transform: scale(0.98);
+    box-shadow: 0 0 0 rgba(47, 158, 111, 0);
+  }
+
+  45% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 12px rgba(115, 216, 175, 0.18);
+  }
+
+  100% {
+    transform: scale(1);
+    box-shadow: 0 16px 30px rgba(47, 158, 111, 0.24);
+  }
 }
 
 .student-page-section {

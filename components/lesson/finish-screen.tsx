@@ -7,22 +7,30 @@ type FinishScreenProps = {
   srcDoc: string;
   onContinueEditing: () => void;
   onStartOver: () => void;
+  onSaveAndExit?: () => Promise<void> | void;
   content: FinishScreenContent;
   progressPercent: number;
   notebookEntry?: string;
   notebookPrompt?: string;
   sandbox?: string;
+  projectsHref?: string;
+  showSaveAndExit?: boolean;
+  saveAndExitState?: "idle" | "saving" | "saved" | "error";
 };
 
 export function FinishScreen({
   srcDoc,
   onContinueEditing,
   onStartOver,
+  onSaveAndExit,
   content,
   progressPercent,
   notebookEntry,
   notebookPrompt,
   sandbox = "allow-same-origin",
+  projectsHref = "/projects",
+  showSaveAndExit = false,
+  saveAndExitState = "idle",
 }: FinishScreenProps) {
   return (
     <div className="finish-wrap">
@@ -73,16 +81,50 @@ export function FinishScreen({
           />
         </div>
         <div className="hero-actions">
+          {showSaveAndExit ? (
+            <button
+              type="button"
+              className={`button finish-save-exit-button finish-save-exit-${saveAndExitState}`}
+              onClick={() => {
+                if (onSaveAndExit) {
+                  void onSaveAndExit();
+                }
+              }}
+              disabled={saveAndExitState === "saving"}
+            >
+              {saveAndExitState === "saving"
+                ? "Saving..."
+                : saveAndExitState === "saved"
+                  ? "Saved. Safe to exit"
+                  : saveAndExitState === "error"
+                    ? "Save error. Try again"
+                    : "Save and exit"}
+            </button>
+          ) : null}
           <button type="button" className="button" onClick={onContinueEditing}>
             Continue editing
           </button>
           <button type="button" className="button-ghost" onClick={onStartOver}>
             Start over
           </button>
-          <Link href="/projects" className="button-ghost">
+          <Link href={projectsHref} className="button-ghost">
             Back to projects
           </Link>
         </div>
+        {showSaveAndExit ? (
+          <p
+            className={`finish-save-exit-note finish-save-exit-note-${saveAndExitState}`}
+            aria-live="polite"
+          >
+            {saveAndExitState === "saving"
+              ? "Saving your finished project now."
+              : saveAndExitState === "saved"
+                ? "Your work is saved. You can safely close this tab or leave this page."
+                : saveAndExitState === "error"
+                  ? "We could not confirm the save yet. Try the button again before exiting."
+                  : "Use this before closing the tab if you want a clear saved signal."}
+          </p>
+        ) : null}
       </div>
     </div>
   );
