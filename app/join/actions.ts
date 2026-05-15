@@ -17,6 +17,16 @@ export type JoinStudentActionState = {
 
 const normalizeClassCode = (value: string) => value.trim().toUpperCase();
 
+export async function goToJoinClassPage(formData: FormData) {
+  const classCode = normalizeClassCode(String(formData.get("classCode") ?? ""));
+
+  if (!classCode) {
+    redirect("/join");
+  }
+
+  redirect(`/join/${classCode}`);
+}
+
 export async function joinStudentClassAction(
   classCode: string,
   _previousState: JoinStudentActionState,

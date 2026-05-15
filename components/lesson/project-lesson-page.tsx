@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { notFound } from "next/navigation";
 
+import type { AppShellNavMode } from "@/components/app-shell";
 import { LessonPageShell } from "@/components/lesson/lesson-page-shell";
 import { createServerProjectAttemptStorage, type ProjectAttempt } from "@/lib/persistence/project-attempts";
 import { getProjectBySlug } from "@/lib/projects";
@@ -11,6 +12,7 @@ type ProjectLessonPageProps = {
   slug: string;
   projectsHref?: string;
   autosaveDelayMs?: number;
+  navMode?: AppShellNavMode;
   serverAttempt?: {
     attemptId: string;
     initialAttempt: ProjectAttempt;
@@ -21,6 +23,7 @@ export function ProjectLessonPage({
   slug,
   projectsHref,
   autosaveDelayMs,
+  navMode,
   serverAttempt,
 }: ProjectLessonPageProps) {
   const [stableServerAttempt] = useState(serverAttempt);
@@ -47,6 +50,7 @@ export function ProjectLessonPage({
       storage={storage}
       autosaveDelayMs={autosaveDelayMs}
       projectsHref={projectsHref}
+      navMode={navMode}
     />
   );
 }

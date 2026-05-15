@@ -10,5 +10,5 @@ export default async function TeacherLayout({
 }>) {
   await ensureTeacherProfile();
 
-  return <AppShell>{children}</AppShell>;
+  return <AppShell navMode="teacher">{children}</AppShell>;
 }

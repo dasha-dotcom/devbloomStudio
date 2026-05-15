@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import Link from "next/link";
 
-import { AppShell } from "@/components/app-shell";
+import { AppShell, type AppShellNavMode } from "@/components/app-shell";
 import { CheckpointPanel } from "@/components/lesson/checkpoint-panel";
 import { CodeEditor, type CodeEditorHandle } from "@/components/lesson/code-editor";
 import { ErrorHelper } from "@/components/lesson/error-helper";
@@ -47,6 +47,7 @@ type LessonPageShellProps = {
   storage?: ProjectAttemptStorage;
   autosaveDelayMs?: number;
   projectsHref?: string;
+  navMode?: AppShellNavMode;
 };
 
 const normalizeForCompare = (value: string) => value.replace(/\s+/g, " ").trim();
@@ -61,6 +62,7 @@ export function LessonPageShell({
   storage,
   autosaveDelayMs,
   projectsHref = "/projects",
+  navMode,
 }: LessonPageShellProps) {
   const lastLessonIndex = project.steps.length - 1;
   const firstStep = project.steps[0];
@@ -1013,7 +1015,7 @@ export function LessonPageShell({
 
   if (storage && !hasHydrated) {
     return (
-      <AppShell>
+      <AppShell navMode={navMode}>
         <div className="lesson-shell lesson-shell-loading">
           <section className="lesson-workspace-shell">
             <div className="lesson-loading-card">
@@ -1029,7 +1031,7 @@ export function LessonPageShell({
 
   if (isComplete) {
     return (
-      <AppShell>
+      <AppShell navMode={navMode}>
         <FinishScreen
           srcDoc={previewDoc}
           onContinueEditing={continueEditing}
@@ -1049,7 +1051,7 @@ export function LessonPageShell({
   }
 
   return (
-    <AppShell>
+    <AppShell navMode={navMode}>
       <div className="lesson-shell">
         <LessonSidebar
           steps={project.steps}

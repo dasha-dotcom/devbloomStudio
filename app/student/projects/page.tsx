@@ -9,7 +9,7 @@ export default async function StudentProjectsPage() {
   const projects = getAllProjects();
 
   return (
-    <AppShell>
+    <AppShell navMode="student">
       <section className="section">
         <div className="section-head">
           <div>

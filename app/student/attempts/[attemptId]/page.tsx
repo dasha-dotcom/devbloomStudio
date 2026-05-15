@@ -16,6 +16,7 @@ export default async function StudentAttemptPage({ params }: StudentAttemptPageP
       slug={project.slug}
       projectsHref="/student/projects"
       autosaveDelayMs={2000}
+      navMode="student"
       serverAttempt={{
         attemptId,
         initialAttempt: attempt,

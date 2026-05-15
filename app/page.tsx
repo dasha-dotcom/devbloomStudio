@@ -25,6 +25,11 @@ export default function LandingPage() {
               Jump into the lesson
             </Link>
           </div>
+          <p className="muted" style={{ marginTop: 14, marginBottom: 0 }}>
+            Student with a class code? <Link href="/join">Join class</Link>
+            {" · "}
+            Teacher? <Link href="/teacher">Open dashboard</Link>
+          </p>
           <div className="hero-stats">
             <div className="stat-pill">
               <strong>1 focused lesson</strong>
