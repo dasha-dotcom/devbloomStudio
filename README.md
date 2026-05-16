@@ -1,6 +1,6 @@
 # DevBloom Studio
 
-DevBloom Studio is a guided creative coding app for ages 10-14 that helps beginners learn HTML, CSS, and JavaScript through visual, project-based lessons.
+DevBloom Studio is a guided creative coding app for ages 9-12 that helps beginners learn HTML, CSS, and JavaScript through visual, project-based lessons.
 
 Many beginner coding resources feel abstract, text-heavy, or intimidating. DevBloom is designed to make coding feel more creative and understandable by letting learners build real web projects, edit code in the browser, see their changes instantly in a live preview, answer prediction/checkpoint questions, and reflect on what they built.
 
