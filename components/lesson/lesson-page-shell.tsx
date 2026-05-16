@@ -10,6 +10,7 @@ import { ErrorHelper } from "@/components/lesson/error-helper";
 import { FeedbackPanel } from "@/components/lesson/feedback-panel";
 import { FinishScreen } from "@/components/lesson/finish-screen";
 import { ImagePicker } from "@/components/lesson/image-picker";
+import { LessonProgressStrip } from "@/components/lesson/lesson-progress-strip";
 import { LessonTour } from "@/components/lesson/lesson-tour";
 import { LessonSidebar } from "@/components/lesson/lesson-sidebar";
 import { LivePreview } from "@/components/lesson/live-preview";
@@ -36,7 +37,7 @@ import {
   type ProjectAttemptStatus,
 } from "@/lib/persistence/project-attempts";
 
-const DEFAULT_EDITOR_WIDTH = 56;
+const DEFAULT_EDITOR_WIDTH = 64;
 const MIN_PANE_WIDTH = 320;
 
 type PaneMode = "both" | "editor-only" | "preview-only";
@@ -1053,17 +1054,27 @@ export function LessonPageShell({
   return (
     <AppShell navMode={navMode}>
       <div className="lesson-shell">
-        <LessonSidebar
-          steps={project.steps}
-          currentStep={currentStep}
-          completedStepIds={completedStepIds}
-          progressPercent={progressSummary.progressPercent}
-          completedProgressSteps={progressSummary.completedProgressSteps}
-          totalProgressSteps={progressSummary.totalProgressSteps}
-          meta={project.sidebar}
-        />
+        {isCompactViewport ? (
+          <LessonSidebar
+            steps={project.steps}
+            currentStep={currentStep}
+            completedStepIds={completedStepIds}
+            progressPercent={progressSummary.progressPercent}
+            completedProgressSteps={progressSummary.completedProgressSteps}
+            totalProgressSteps={progressSummary.totalProgressSteps}
+            meta={project.sidebar}
+          />
+        ) : null}
 
         <section className="lesson-workspace-shell">
+          {!isCompactViewport ? (
+            <LessonProgressStrip
+              steps={project.steps}
+              currentStep={currentStep}
+              completedStepIds={completedStepIds}
+            />
+          ) : null}
+
           <div className="lesson-workspace-toolbar">
             <div className="pill-row">
               <span className="pill">Workspace</span>
