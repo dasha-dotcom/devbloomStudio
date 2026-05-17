@@ -31,11 +31,15 @@ const HIGHLIGHT_PADDING = 14;
 const VIEWPORT_PADDING = 20;
 const DIALOG_WIDTH = 320;
 const DIALOG_GAP = 16;
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 const getTargetSelector = (targetId: string) => `[data-tour-id="${targetId}"]`;
 
 const clamp = (value: number, minimum: number, maximum: number) =>
   Math.min(Math.max(value, minimum), maximum);
+
+const getScrollBehavior = (): ScrollBehavior =>
+  window.matchMedia(REDUCED_MOTION_QUERY).matches ? "auto" : "smooth";
 
 export function LessonTour({ isOpen, steps, onSkip, onFinish }: LessonTourProps) {
   const [activeStepIndex, setActiveStepIndex] = useState(0);
@@ -50,6 +54,36 @@ export function LessonTour({ isOpen, steps, onSkip, onFinish }: LessonTourProps)
   >(undefined);
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const activeStep = steps[activeStepIndex];
+
+  useEffect(() => {
+    if (!isOpen || !activeStep) {
+      return;
+    }
+
+    const target = document.querySelector<HTMLElement>(getTargetSelector(activeStep.targetId));
+
+    if (!target) {
+      return;
+    }
+
+    const rect = target.getBoundingClientRect();
+    const viewportTop = VIEWPORT_PADDING * 2;
+    const viewportBottom = window.innerHeight - VIEWPORT_PADDING * 2;
+    const isTargetVisible = rect.top >= viewportTop && rect.bottom <= viewportBottom;
+
+    if (isTargetVisible) {
+      return;
+    }
+
+    target.scrollIntoView({
+      behavior: getScrollBehavior(),
+      block:
+        rect.height > window.innerHeight - VIEWPORT_PADDING * 4
+          ? "start"
+          : "center",
+      inline: "nearest",
+    });
+  }, [activeStep, isOpen]);
 
   useEffect(() => {
     if (!isOpen || !activeStep) {
@@ -102,9 +136,6 @@ export function LessonTour({ isOpen, steps, onSkip, onFinish }: LessonTourProps)
       return;
     }
 
-    const { overflow } = document.body.style;
-    document.body.style.overflow = "hidden";
-
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -148,7 +179,6 @@ export function LessonTour({ isOpen, steps, onSkip, onFinish }: LessonTourProps)
 
     document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.body.style.overflow = overflow;
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, onSkip]);

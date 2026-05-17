@@ -577,6 +577,11 @@ export const allAboutMeProject: LessonProjectConfig = {
         title: "Track your progress",
         body: "This shows how far you are in the project. It fills up as you edit the code and complete questions in each step.",
       },
+      {
+        targetId: "lesson-next-step",
+        title: "Go next when you're done",
+        body: "Finish the tasks on this page first. When you are done, click Next step to move to the next part of the project.",
+      },
     ],
   },
   defaultThemeId: "ocean",

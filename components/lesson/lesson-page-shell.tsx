@@ -101,7 +101,9 @@ export function LessonPageShell({
   const [finalExitState, setFinalExitState] = useState<FinalExitState>("idle");
   const editorHandleRef = useRef<CodeEditorHandle | null>(null);
   const workspaceRef = useRef<HTMLDivElement | null>(null);
+  const lessonMainRef = useRef<HTMLElement | null>(null);
   const dragStartRef = useRef({ pointerX: 0, editorWidth: DEFAULT_EDITOR_WIDTH });
+  const shouldScrollStepToTopRef = useRef(false);
   const skipAutosaveRef = useRef(false);
   const attemptMetaRef = useRef({
     attemptId: initialAttempt.attemptId,
@@ -603,6 +605,7 @@ export function LessonPageShell({
     setActiveEditorError(null);
     setStepStartCodeByStep(nextStepStartCodeByStep);
     setActiveEditorTabId(nextActiveEditorTabId);
+    shouldScrollStepToTopRef.current = true;
     setCurrentStep(nextStepIndex);
     persistImmediately(
       buildAttemptSnapshot({
@@ -735,7 +738,7 @@ export function LessonPageShell({
     setCode(nextValue);
   };
 
-  const clampEditorWidth = (nextWidth: number) => {
+  const clampEditorWidth = useCallback((nextWidth: number) => {
     const workspaceWidth = workspaceRef.current?.getBoundingClientRect().width ?? 0;
 
     if (!workspaceWidth) {
@@ -747,7 +750,7 @@ export function LessonPageShell({
     const maximum = Math.min(65, 100 - minWidthPercentage);
 
     return Math.max(minimum, Math.min(maximum, nextWidth));
-  };
+  }, []);
 
   useEffect(() => {
     if (!isResizing) {
@@ -782,7 +785,7 @@ export function LessonPageShell({
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
-  }, [isResizing]);
+  }, [clampEditorWidth, isResizing]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -793,7 +796,14 @@ export function LessonPageShell({
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [clampEditorWidth]);
+
+  const openTour = useCallback(() => {
+    setPaneMode("both");
+    setEditorWidth((currentWidth) => clampEditorWidth(currentWidth));
+    setTourSessionKey((current) => current + 1);
+    setIsTourOpen(true);
+  }, [clampEditorWidth]);
 
   useEffect(() => {
     if (
@@ -808,8 +818,7 @@ export function LessonPageShell({
     }
 
     const timeoutId = window.setTimeout(() => {
-      setTourSessionKey((current) => current + 1);
-      setIsTourOpen(true);
+      openTour();
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
@@ -820,7 +829,17 @@ export function LessonPageShell({
     isTourEnabled,
     isTourOpen,
     onboardingTour,
+    openTour,
   ]);
+
+  useEffect(() => {
+    if (!shouldScrollStepToTopRef.current) {
+      return;
+    }
+
+    shouldScrollStepToTopRef.current = false;
+    lessonMainRef.current?.scrollIntoView({ block: "start" });
+  }, [currentStep]);
 
   const showBothPanes = () => {
     setPaneMode("both");
@@ -841,8 +860,7 @@ export function LessonPageShell({
   };
 
   const reopenTour = () => {
-    setTourSessionKey((current) => current + 1);
-    setIsTourOpen(true);
+    openTour();
   };
 
   const selectImage = (imageId: string) => {
@@ -1126,7 +1144,7 @@ export function LessonPageShell({
             style={workspaceColumns ? { gridTemplateColumns: workspaceColumns } : undefined}
           >
             {paneMode !== "preview-only" ? (
-              <main className="lesson-main lesson-editor-pane">
+              <main ref={lessonMainRef} className="lesson-main lesson-editor-pane">
                 <StepPanel
                   step={step}
                   predictionAnswer={predictionAnswer}
@@ -1313,7 +1331,12 @@ export function LessonPageShell({
                     </button>
                   )}
 
-                  <button type="button" className="button" onClick={goNext}>
+                  <button
+                    type="button"
+                    className="button"
+                    data-tour-id="lesson-next-step"
+                    onClick={goNext}
+                  >
                     {currentStep === lastLessonIndex ? "Celebrate project" : currentStep === lastLessonIndex - 1 ? "Finish step" : "Next step"}
                   </button>
                 </div>
