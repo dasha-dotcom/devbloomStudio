@@ -4,6 +4,7 @@ import { asc, eq } from "drizzle-orm";
 import { CreateStudentForm } from "@/components/teacher/create-student-form";
 import { getDb } from "@/lib/db";
 import { studentProfiles } from "@/lib/db/schema";
+import { getClassAttemptSummaries } from "@/lib/teacher/get-class-attempt-summaries";
 import { requireTeacherClass } from "@/lib/teacher/require-teacher-class";
 
 type TeacherClassDetailPageProps = {
@@ -21,6 +22,7 @@ export default async function TeacherClassDetailPage({ params }: TeacherClassDet
     where: eq(studentProfiles.classId, teacherClass.id),
     orderBy: [asc(studentProfiles.displayName), asc(studentProfiles.createdAt)],
   });
+  const attemptSummaries = await getClassAttemptSummaries(teacherClass.id);
 
   return (
     <section className="section">
@@ -47,21 +49,38 @@ export default async function TeacherClassDetailPage({ params }: TeacherClassDet
                 Add your first student to create a class roster.
               </p>
             ) : (
-              roster.map((student) => (
-                <Link
-                  key={student.id}
-                  href={`/teacher/classes/${teacherClass.id}/students/${student.id}`}
-                  className="teacher-list-item"
-                >
-                  <div>
-                    <strong>{student.displayName}</strong>
-                    <p className="muted teacher-list-copy">
-                      {student.isActive ? "Active" : "Inactive"}
-                    </p>
-                  </div>
-                  <span className="pill">Open</span>
-                </Link>
-              ))
+              roster.map((student) => {
+                const attemptSummary = attemptSummaries.get(student.id);
+                const latestAttemptLabel = !attemptSummary
+                  ? "No project attempts yet."
+                  : attemptSummary.latestProjectStatus === "completed"
+                    ? `Latest: ${attemptSummary.latestProjectTitle} completed`
+                    : `Latest: ${attemptSummary.latestProjectTitle} ${attemptSummary.latestProgressPercent ?? 0}%`;
+
+                const progressSummary = !attemptSummary
+                  ? null
+                  : `${attemptSummary.completedCount} completed • active ${attemptSummary.latestActiveAt?.toLocaleString() ?? "recently"}`;
+
+                return (
+                  <Link
+                    key={student.id}
+                    href={`/teacher/classes/${teacherClass.id}/students/${student.id}`}
+                    className="teacher-list-item"
+                  >
+                    <div>
+                      <strong>{student.displayName}</strong>
+                      <p className="muted teacher-list-copy">
+                        {student.isActive ? "Active" : "Inactive"}
+                      </p>
+                      <p className="muted teacher-list-copy teacher-attempt-summary">{latestAttemptLabel}</p>
+                      {progressSummary ? (
+                        <p className="muted teacher-list-copy teacher-attempt-summary">{progressSummary}</p>
+                      ) : null}
+                    </div>
+                    <span className="pill">Open</span>
+                  </Link>
+                );
+              })
             )}
           </div>
         </div>

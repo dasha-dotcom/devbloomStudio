@@ -17,7 +17,7 @@ export default async function TeacherDashboardPage() {
           <h1 className="section-title">Welcome back</h1>
         </div>
         <p className="section-copy">
-          Create classes, manage your roster, and prepare student access for the next phase.
+          Create classes, manage your roster, and open read-only student project progress by class.
         </p>
       </div>
 
@@ -60,8 +60,8 @@ export default async function TeacherDashboardPage() {
       <div className="glass-card teacher-panel" style={{ marginTop: 24 }}>
         <strong>Class area</strong>
         <p className="muted teacher-panel-copy">
-          Student join flow and backend project attempts are still deferred. For now, you can create classes and
-          student profiles safely under your teacher account.
+          Student join and saved project attempts are live. Open a class to review the roster, student attempt
+          summaries, and read-only project details.
         </p>
 
         <form action={signOutTeacher}>

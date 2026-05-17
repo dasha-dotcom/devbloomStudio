@@ -5,6 +5,8 @@ import type { ReactNode } from "react";
 type LivePreviewProps = {
   srcDoc: string;
   title?: string;
+  label?: string;
+  description?: string;
   actions?: ReactNode;
   sandbox?: string;
 };
@@ -12,6 +14,8 @@ type LivePreviewProps = {
 export function LivePreview({
   srcDoc,
   title = "Live preview",
+  label = "Live preview",
+  description = "Your page updates as you type.",
   actions,
   sandbox = "allow-same-origin",
 }: LivePreviewProps) {
@@ -19,8 +23,8 @@ export function LivePreview({
     <div className="lesson-preview-card" data-tour-id="lesson-preview">
       <div className="preview-label">
         <div>
-          <strong>Live preview</strong>
-          <p className="muted">Your page updates as you type.</p>
+          <strong>{label}</strong>
+          <p className="muted">{description}</p>
         </div>
         <div className="preview-meta">
           <span className="preview-badge">{title}</span>

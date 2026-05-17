@@ -51,9 +51,11 @@ export function AppShell({ children, navMode = "public" }: AppShellProps) {
             <Link href="/" className="nav-link">
               Home
             </Link>
-            <Link href={nav.secondaryHref} className="nav-link">
-              {nav.secondaryLabel}
-            </Link>
+            {navMode === "public" ? (
+              <Link href={nav.secondaryHref} className="nav-link">
+                {nav.secondaryLabel}
+              </Link>
+            ) : null}
             {navMode === "public" ? (
               <Link href="/join" className="nav-link">
                 Join Class
