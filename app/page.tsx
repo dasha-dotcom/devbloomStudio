@@ -10,7 +10,7 @@ export default function LandingPage() {
     <AppShell>
       <section className="hero">
         <div>
-          <span className="eyebrow">Creative coding for ages 10-14</span>
+          <span className="eyebrow">Creative coding for ages 9-12</span>
           <h1>Make cool things with real code.</h1>
           <p>
             DevBloom Studio helps kids build creative projects step by step. You

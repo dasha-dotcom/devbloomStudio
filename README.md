@@ -23,7 +23,7 @@ The app currently includes:
 - A lesson shell with Monaco editor, live preview, checkpoints, prediction prompts, reflection, finish screens, and restart/reset flows
 - Local persistence for public lesson progress
 - Teacher authentication with Supabase
-- Teacher dashboards for creating classes, generating join codes, and managing student rosters
+- Teacher dashboards for creating classes, generating join codes, managing student rosters, and reviewing student progress
 - Student join flow using a class code, roster selection, and 6-digit PIN
 - Server-backed student project attempts with resume, autosave, reset, and save-and-exit support
 
@@ -112,4 +112,4 @@ npm run validate:projects
 
 - Public lessons under `/projects/[slug]` save progress in local storage.
 - Student lessons under `/student/attempts/[attemptId]` save through the database-backed attempt API.
-- Teacher-facing class and roster management are implemented. Teacher-side progress reporting is planned as a future improvement.
+- Teacher-facing class and roster management are implemented, including class-level attempt summaries, per-student attempt lists, and read-only student project previews with reflection details.
