@@ -187,6 +187,7 @@ export const createFreshProjectAttempt = (project: LessonProjectConfig): Project
     checkpointAnswersByStep: {},
     checkpointSubmittedByStep: {},
     reflectionResponses: {},
+    textEntryResponses: {},
     builderTouchedByStep: {},
     imagePickerTouchedByStep: {},
     themePickerTouchedByStep: {},
@@ -246,6 +247,7 @@ const sanitizeProjectAttemptV1 = (
     ),
     checkpointSubmittedByStep: sanitizeFlatBooleanByStep(project, rawValue.checkpointSubmittedByStep),
     reflectionResponses: sanitizeFlatStringByStep(project, rawValue.reflectionResponses),
+    textEntryResponses: sanitizeFlatStringByStep(project, rawValue.textEntryResponses),
     builderTouchedByStep: sanitizeNestedEntries(
       project,
       rawValue.builderTouchedByStep,

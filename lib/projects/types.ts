@@ -33,6 +33,14 @@ export type LessonStep = {
     matchText?: string;
     helperText?: string;
   };
+  textEntry?: {
+    label: string;
+    placeholder?: string;
+    note?: string;
+    maxLength?: number;
+    passState?: "nonEmpty" | "substantiveReflection";
+    autoFocus?: boolean;
+  };
   prediction?: {
     question: string;
     options: string[];

@@ -52,6 +52,11 @@ export function FeedbackPanel({
               <div className="prediction-kicker">Step feedback</div>
               <strong className="prediction-question">{statusLabels[state]}</strong>
             </div>
+            <div className="feedback-status-mark" aria-hidden="true">
+              <span className="feedback-status-box">
+                <span className="feedback-status-check" />
+              </span>
+            </div>
           </div>
           <p className="prediction-feedback feedback-copy">{message}</p>
           {onManualCheck ? (

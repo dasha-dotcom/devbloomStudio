@@ -83,6 +83,7 @@ export function LessonPageShell({
   const [checkpointAnswersByStep, setCheckpointAnswersByStep] = useState<Record<string, Record<string, number>>>({});
   const [checkpointSubmittedByStep, setCheckpointSubmittedByStep] = useState<Record<string, boolean>>({});
   const [reflectionResponses, setReflectionResponses] = useState<Record<string, string>>({});
+  const [textEntryResponses, setTextEntryResponses] = useState<Record<string, string>>({});
   const [builderTouchedByStep, setBuilderTouchedByStep] = useState<Record<string, Record<string, boolean>>>({});
   const [imagePickerTouchedByStep, setImagePickerTouchedByStep] = useState<Record<string, boolean>>({});
   const [themePickerTouchedByStep, setThemePickerTouchedByStep] = useState<Record<string, boolean>>({});
@@ -174,6 +175,7 @@ export function LessonPageShell({
   const predictionAnswer = predictionAnswersByStep[step.id] ?? null;
   const activityAnswers = activityAnswersByStep[step.id] ?? {};
   const reflectionResponse = reflectionResponses[step.id] ?? "";
+  const textEntryResponse = textEntryResponses[step.id] ?? "";
   const stepStartCode = stepStartCodeByStep[step.id] ?? starterCode;
   const stepStartEditorCode = useMemo(
     () =>
@@ -401,6 +403,7 @@ export function LessonPageShell({
     checkpointAnswersByStep?: Record<string, Record<string, number>>;
     checkpointSubmittedByStep?: Record<string, boolean>;
     reflectionResponses?: Record<string, string>;
+    textEntryResponses?: Record<string, string>;
     builderTouchedByStep?: Record<string, Record<string, boolean>>;
     imagePickerTouchedByStep?: Record<string, boolean>;
     themePickerTouchedByStep?: Record<string, boolean>;
@@ -437,6 +440,7 @@ export function LessonPageShell({
       checkpointAnswersByStep: overrides.checkpointAnswersByStep ?? checkpointAnswersByStep,
       checkpointSubmittedByStep: overrides.checkpointSubmittedByStep ?? checkpointSubmittedByStep,
       reflectionResponses: overrides.reflectionResponses ?? reflectionResponses,
+      textEntryResponses: overrides.textEntryResponses ?? textEntryResponses,
       builderTouchedByStep: overrides.builderTouchedByStep ?? builderTouchedByStep,
       imagePickerTouchedByStep: overrides.imagePickerTouchedByStep ?? imagePickerTouchedByStep,
       themePickerTouchedByStep: overrides.themePickerTouchedByStep ?? themePickerTouchedByStep,
@@ -461,6 +465,7 @@ export function LessonPageShell({
     project.contentVersion,
     project.slug,
     reflectionResponses,
+    textEntryResponses,
     selectedImageId,
     selectedThemeId,
     step.id,
@@ -507,6 +512,7 @@ export function LessonPageShell({
     setCheckpointAnswersByStep(attempt.checkpointAnswersByStep);
     setCheckpointSubmittedByStep(attempt.checkpointSubmittedByStep);
     setReflectionResponses(attempt.reflectionResponses);
+    setTextEntryResponses(attempt.textEntryResponses);
     setBuilderTouchedByStep(attempt.builderTouchedByStep);
     setImagePickerTouchedByStep(attempt.imagePickerTouchedByStep);
     setThemePickerTouchedByStep(attempt.themePickerTouchedByStep);
@@ -550,6 +556,7 @@ export function LessonPageShell({
     buildAttemptSnapshot,
     queueSave,
     reflectionResponses,
+    textEntryResponses,
     selectedImageId,
     selectedThemeId,
     stepStartCodeByStep,
@@ -688,6 +695,7 @@ export function LessonPageShell({
     setCheckpointAnswersByStep({});
     setCheckpointSubmittedByStep({});
     setReflectionResponses({});
+    setTextEntryResponses({});
     setBuilderTouchedByStep({});
     setImagePickerTouchedByStep({});
     setThemePickerTouchedByStep({});
@@ -857,6 +865,9 @@ export function LessonPageShell({
   const dismissTour = () => {
     setHasDismissedAutoTourThisSession(true);
     setIsTourOpen(false);
+    window.requestAnimationFrame(() => {
+      lessonMainRef.current?.scrollIntoView({ block: "start" });
+    });
   };
 
   const reopenTour = () => {
@@ -1149,6 +1160,13 @@ export function LessonPageShell({
                   step={step}
                   predictionAnswer={predictionAnswer}
                   onPredictionAnswer={updatePredictionAnswer}
+                  textEntryValue={textEntryResponse}
+                  onTextEntryChange={(value) => {
+                    setTextEntryResponses((current) => ({
+                      ...current,
+                      [step.id]: value,
+                    }));
+                  }}
                 />
 
                 {step.showEditor ? (

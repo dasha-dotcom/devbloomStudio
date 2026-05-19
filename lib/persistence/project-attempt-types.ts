@@ -20,6 +20,7 @@ export type ProjectAttempt = {
   checkpointAnswersByStep: Record<string, Record<string, number>>;
   checkpointSubmittedByStep: Record<string, boolean>;
   reflectionResponses: Record<string, string>;
+  textEntryResponses: Record<string, string>;
   builderTouchedByStep: Record<string, Record<string, boolean>>;
   imagePickerTouchedByStep: Record<string, boolean>;
   themePickerTouchedByStep: Record<string, boolean>;

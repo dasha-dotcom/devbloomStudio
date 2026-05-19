@@ -41,8 +41,16 @@ export const allAboutMeLessonSteps: LessonStep[] = [
     kicker: "Project intro",
     title: "Pick your topic",
     body:
-      "What do you want your page to be about? Choose something you like: a game, animal, sport, show, hobby, food, tech, or anything else. Next, you'll make the title.",
+      "What do you want your page to be about? Write your topic in the box below. Choose something you like: a game, animal, sport, show, hobby, food, tech, or anything else. Next, you'll make the title.",
     hint: "Need ideas? Try your favorite game, animal, sport, show, hobby, food, or piece of tech.",
+    textEntry: {
+      label: "Write the topic of your website.",
+      placeholder: "Examples: cats, Roblox, baking, soccer...",
+      note: "When you're done writing your topic, click Next step ->",
+      maxLength: 80,
+      passState: "nonEmpty",
+      autoFocus: true,
+    },
     editorFocus: {
       label: "Look around and plan",
     },
