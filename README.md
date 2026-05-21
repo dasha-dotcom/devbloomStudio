@@ -10,7 +10,7 @@ Live demo: https://devbloom-studio.vercel.app
 
 The public lesson projects can be viewed without an account at the live demo link.
 
-For hackathon judging, the classroom features can be explored with demo-only credentials:
+The classroom features can also be explored with demo-only credentials:
 
 Teacher demo:
 
