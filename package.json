@@ -11,6 +11,7 @@
     "start": "next start",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "seed:demo": "node --experimental-strip-types scripts/seed-demo.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "validate:projects": "node --experimental-strip-types scripts/validate-projects.mjs"

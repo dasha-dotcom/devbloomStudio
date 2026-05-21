@@ -6,6 +6,30 @@ Many beginner coding resources feel abstract, text-heavy, or intimidating. DevBl
 
 Live demo: https://devbloom-studio.vercel.app
 
+## Demo accounts
+
+The public lesson projects can be viewed without an account at the live demo link.
+
+For hackathon judging, the classroom features can be explored with demo-only credentials:
+
+Teacher demo:
+
+- Email: `demo-teacher@devbloom.local`
+- Password: `DevBloomDemo123!`
+
+Student demo:
+
+- Class code: `DEMO25`
+- Student: `Ava Demo`
+- PIN: `123456`
+
+Additional demo students:
+
+- `Leo Demo` / `234567`
+- `Maya Demo` / `345678`
+
+These accounts are for demo purposes only and do not contain real student information.
+
 ## Why I built this
 
 I built DevBloom because I teach kids coding and noticed that many beginners do not struggle because they are “bad at coding.” They struggle because coding often feels abstract, text-heavy, and disconnected from what they can actually see or create.
@@ -63,6 +87,7 @@ npm install
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
 DATABASE_URL=...
 DIRECT_DATABASE_URL=...
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
@@ -72,6 +97,7 @@ Notes:
 
 - `DIRECT_DATABASE_URL` is optional, but Drizzle will prefer it when running CLI commands.
 - `NEXT_PUBLIC_SITE_URL` is recommended for auth email redirects. If omitted, the app falls back to the request host.
+- `SUPABASE_SERVICE_ROLE_KEY` is only required for `npm run seed:demo`. Keep it server-side only and never expose it in client code.
 
 3. Apply database migrations:
 
@@ -87,6 +113,14 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+## Seed demo data locally
+
+Run the demo seed after configuring your database and Supabase env vars:
+
+```bash
+npm run seed:demo
+```
+
 ## Useful scripts
 
 ```bash
@@ -96,6 +130,7 @@ npm run start
 npm run lint
 npm run db:generate
 npm run db:migrate
+npm run seed:demo
 npm run validate:projects
 ```
 

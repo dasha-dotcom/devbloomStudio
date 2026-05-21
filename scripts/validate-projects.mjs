@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import path from "node:path";
 import { registerHooks } from "node:module";
 import { pathToFileURL } from "node:url";
@@ -9,14 +9,14 @@ const resolveAliasPath = (specifier) => {
   const relativePath = specifier.slice(2);
   const basePath = path.join(projectRoot, relativePath);
   const candidates = [
-    basePath,
     `${basePath}.ts`,
     `${basePath}.tsx`,
     path.join(basePath, "index.ts"),
     path.join(basePath, "index.tsx"),
+    basePath,
   ];
 
-  return candidates.find((candidate) => existsSync(candidate));
+  return candidates.find((candidate) => existsSync(candidate) && !statSync(candidate).isDirectory());
 };
 
 registerHooks({
