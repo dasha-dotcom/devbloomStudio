@@ -45,12 +45,23 @@ export function CheckpointPanel({
               <div className="activity-stack" style={{ marginTop: 14 }}>
                 {question.options.map((option, index) => {
                   const isSelected = selectedIndex === index;
+                  const isCorrect = question.correctOptionIndex === index;
+                  const checkpointChoiceClassName = [
+                    "match-card",
+                    "choice-card",
+                    "checkpoint-choice-card",
+                    isSelected ? "selected" : "",
+                    submitted && isSelected && isCorrect ? "checkpoint-choice-correct" : "",
+                    submitted && isSelected && !isCorrect ? "checkpoint-choice-incorrect" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
 
                   return (
                     <button
                       key={option}
                       type="button"
-                      className={`match-card choice-card${isSelected ? " selected" : ""}`}
+                      className={checkpointChoiceClassName}
                       onClick={() => onAnswer(question.id, index)}
                       aria-pressed={isSelected}
                     >
@@ -65,7 +76,11 @@ export function CheckpointPanel({
       </div>
 
       <div className="checkpoint-actions">
-        <button type="button" className="button" onClick={onSubmit}>
+        <button
+          type="button"
+          className={`button checkpoint-submit-button${submitted ? " is-submitted" : ""}`}
+          onClick={onSubmit}
+        >
           {checkpoint.submitLabel ?? (submitted ? "Check again" : "Check my answers")}
         </button>
       </div>

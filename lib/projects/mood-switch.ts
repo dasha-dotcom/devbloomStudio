@@ -585,6 +585,17 @@ export const moodSwitchProject: LessonProjectConfig = {
       "Learned: switching page mood",
     ],
   },
+  onboardingTour: {
+    enabled: true,
+    triggerStepIndex: 1,
+    steps: [
+      {
+        targetId: "lesson-preview",
+        title: "Try the button",
+        body: "JavaScript lets your page be interactive now. Try pressing the button and watch the mood switch.",
+      },
+    ],
+  },
   previewSandbox: "allow-same-origin allow-scripts",
   transformStepCode: ({ code, step }) =>
     step.id === "whole-mood" ? removeMoodClassLine(code) : code,
