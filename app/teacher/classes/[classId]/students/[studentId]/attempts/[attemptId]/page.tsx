@@ -1,6 +1,7 @@
 import { LivePreview } from "@/components/lesson/live-preview";
 import { getProjectBySlug } from "@/lib/projects";
 import { normalizeProjectAttempt } from "@/lib/persistence/project-attempt-sanitizer";
+import { deriveTeacherAttemptSummary, type TeacherAttemptStepSummary } from "@/lib/teacher/derive-attempt-summary";
 import { requireTeacherProjectAttempt } from "@/lib/teacher/require-teacher-project-attempt";
 
 type TeacherAttemptDetailPageProps = {
@@ -17,6 +18,52 @@ const getTeacherPreviewSandbox = (sandbox: string | undefined) =>
     .filter(Boolean)
     .filter((token) => token !== "allow-same-origin")
     .join(" ");
+
+const formatApproximateDuration = (durationMs: number | null) => {
+  if (durationMs === null || durationMs < 0) {
+    return "Unknown";
+  }
+
+  const totalMinutes = Math.max(1, Math.round(durationMs / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours === 0) {
+    return `${totalMinutes} min`;
+  }
+
+  if (minutes === 0) {
+    return `${hours} hr`;
+  }
+
+  return `${hours} hr ${minutes} min`;
+};
+
+const getStepSignalPills = (step: TeacherAttemptStepSummary) => {
+  const pills = [
+    step.isCurrent ? "Current" : null,
+    step.isCompleted ? "Completed" : step.isVisited ? "Visited" : "Not visited",
+    step.predictionStatus === "answered"
+      ? "Prediction answered"
+      : step.predictionStatus === "pending"
+        ? "Prediction pending"
+        : null,
+    step.checkpointStatus === "pass"
+      ? "Checkpoint passed"
+      : step.checkpointStatus === "close"
+        ? "Checkpoint close"
+        : step.checkpointStatus === "pending"
+          ? "Checkpoint pending"
+          : null,
+    step.reflectionStatus === "complete"
+      ? "Reflection complete"
+      : step.reflectionStatus === "pending"
+        ? "Reflection pending"
+        : null,
+  ];
+
+  return pills.filter((pill): pill is string => Boolean(pill));
+};
 
 export default async function TeacherAttemptDetailPage({ params }: TeacherAttemptDetailPageProps) {
   const { classId, studentId, attemptId } = await params;
@@ -46,6 +93,7 @@ export default async function TeacherAttemptDetailPage({ params }: TeacherAttemp
   }
 
   const normalizedAttempt = normalizeProjectAttempt(project, attemptRow.stateJson);
+  const derivedSummary = normalizedAttempt ? deriveTeacherAttemptSummary(project, normalizedAttempt) : null;
   const currentStepId = normalizedAttempt?.currentStepId ?? attemptRow.currentStepId;
   const currentStep = project.steps.find((step) => step.id === currentStepId);
   const reflectionEntries =
@@ -105,19 +153,74 @@ export default async function TeacherAttemptDetailPage({ params }: TeacherAttemp
             </div>
             <div className="teacher-meta-card">
               <span className="muted">Progress</span>
-              <strong>{attemptRow.progressPercent ?? 0}%</strong>
+              <strong>{derivedSummary?.progressPercent ?? attemptRow.progressPercent ?? 0}%</strong>
             </div>
             <div className="teacher-meta-card">
               <span className="muted">Current step</span>
-              <strong>{currentStep?.title ?? attemptRow.currentStepId}</strong>
+              <strong>{derivedSummary?.currentStepTitle ?? currentStep?.title ?? attemptRow.currentStepId}</strong>
+            </div>
+            <div className="teacher-meta-card">
+              <span className="muted">Started</span>
+              <strong>{derivedSummary?.startedAt?.toLocaleString() ?? "Unknown"}</strong>
             </div>
             <div className="teacher-meta-card">
               <span className="muted">Last active</span>
               <strong>{attemptRow.lastActiveAt.toLocaleString()}</strong>
             </div>
             <div className="teacher-meta-card">
+              <span className="muted">Approx. duration</span>
+              <strong>{formatApproximateDuration(derivedSummary?.approximateDurationMs ?? null)}</strong>
+            </div>
+            <div className="teacher-meta-card">
               <span className="muted">Finished</span>
               <strong>{attemptRow.finishedAt ? attemptRow.finishedAt.toLocaleString() : "Not finished"}</strong>
+            </div>
+            <div className="teacher-meta-card">
+              <span className="muted">Visited steps</span>
+              <strong>
+                {derivedSummary ? `${derivedSummary.visitedStepIds.length}/${project.steps.length}` : "Unavailable"}
+              </strong>
+            </div>
+            <div className="teacher-meta-card">
+              <span className="muted">Completed steps</span>
+              <strong>
+                {derivedSummary
+                  ? `${derivedSummary.completedProgressSteps}/${derivedSummary.totalProgressSteps}`
+                  : "Unavailable"}
+              </strong>
+            </div>
+            <div className="teacher-meta-card">
+              <span className="muted">Predictions</span>
+              <strong>
+                {derivedSummary
+                  ? `${derivedSummary.predictionSummary.answeredCount}/${derivedSummary.predictionSummary.totalCount} answered`
+                  : "Unavailable"}
+              </strong>
+            </div>
+            <div className="teacher-meta-card">
+              <span className="muted">Checkpoints</span>
+              <strong>
+                {derivedSummary
+                  ? `${derivedSummary.checkpointSummary.passedCount}/${derivedSummary.checkpointSummary.totalCount} passed`
+                  : "Unavailable"}
+              </strong>
+            </div>
+            <div className="teacher-meta-card">
+              <span className="muted">Reflections</span>
+              <strong>
+                {derivedSummary
+                  ? `${derivedSummary.reflectionSummary.completedCount}/${derivedSummary.reflectionSummary.totalCount} complete`
+                  : "Unavailable"}
+              </strong>
+            </div>
+            <div className="teacher-meta-card">
+              <span className="muted">Likely friction</span>
+              <strong>{derivedSummary?.likelyFrictionPoint?.stepTitle ?? "No clear blocker"}</strong>
+              {derivedSummary?.likelyFrictionPoint ? (
+                <p className="muted teacher-panel-copy" style={{ marginTop: 8 }}>
+                  {derivedSummary.likelyFrictionPoint.summary}
+                </p>
+              ) : null}
             </div>
             <div className="teacher-meta-card">
               <span className="muted">Latest reflection</span>
@@ -155,6 +258,50 @@ export default async function TeacherAttemptDetailPage({ params }: TeacherAttemp
           </div>
         )}
       </div>
+
+      {derivedSummary ? (
+        <div className="glass-card teacher-panel" style={{ marginTop: 24 }}>
+          <strong>Step walkthrough</strong>
+          <p className="muted teacher-panel-copy">
+            Derived from the current saved attempt snapshot. This shows where the student has been, what is complete,
+            and what still looks pending on the current step.
+          </p>
+
+          <div className="teacher-list">
+            {derivedSummary.steps.map((stepSummary) => {
+              const signalPills = getStepSignalPills(stepSummary);
+              const isCurrentFrictionStep = derivedSummary.likelyFrictionPoint?.stepId === stepSummary.stepId;
+
+              return (
+                <article key={stepSummary.stepId} className="teacher-list-item">
+                  <div>
+                    <strong>
+                      Step {stepSummary.stepOrder}: {stepSummary.stepTitle}
+                    </strong>
+                    {signalPills.length > 0 ? (
+                      <div className="pill-row" style={{ marginTop: 10 }}>
+                        {signalPills.map((pill) => (
+                          <span key={pill} className="pill">
+                            {pill}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                    <p className="muted teacher-list-copy teacher-attempt-summary" style={{ marginTop: 10 }}>
+                      {stepSummary.canGoNext ? "Can move on from saved state." : "Still blocked from moving on in saved state."}
+                    </p>
+                    {isCurrentFrictionStep ? (
+                      <p className="muted teacher-list-copy teacher-attempt-summary">
+                        {derivedSummary.likelyFrictionPoint?.detail}
+                      </p>
+                    ) : null}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
 
       <div className="glass-card teacher-panel" style={{ marginTop: 24 }}>
         <strong>Reflection details</strong>

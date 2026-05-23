@@ -56,6 +56,10 @@ export default async function TeacherClassDetailPage({ params }: TeacherClassDet
                   : attemptSummary.latestProjectStatus === "completed"
                     ? `Latest: ${attemptSummary.latestProjectTitle} completed`
                     : `Latest: ${attemptSummary.latestProjectTitle} ${attemptSummary.latestProgressPercent ?? 0}%`;
+                const currentStepLabel =
+                  !attemptSummary || attemptSummary.latestProjectStatus === "completed"
+                    ? null
+                    : `Current step: ${attemptSummary.latestCurrentStepTitle ?? "Unknown step"}`;
 
                 const progressSummary = !attemptSummary
                   ? null
@@ -73,6 +77,9 @@ export default async function TeacherClassDetailPage({ params }: TeacherClassDet
                         {student.isActive ? "Active" : "Inactive"}
                       </p>
                       <p className="muted teacher-list-copy teacher-attempt-summary">{latestAttemptLabel}</p>
+                      {currentStepLabel ? (
+                        <p className="muted teacher-list-copy teacher-attempt-summary">{currentStepLabel}</p>
+                      ) : null}
                       {progressSummary ? (
                         <p className="muted teacher-list-copy teacher-attempt-summary">{progressSummary}</p>
                       ) : null}

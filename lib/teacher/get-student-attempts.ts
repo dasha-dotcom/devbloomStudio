@@ -2,7 +2,9 @@ import { and, desc, eq } from "drizzle-orm";
 
 import { getDb } from "@/lib/db";
 import { projectAttempts } from "@/lib/db/schema";
+import { normalizeProjectAttempt } from "@/lib/persistence/project-attempt-sanitizer";
 import { getProjectBySlug } from "@/lib/projects";
+import { deriveTeacherAttemptSummary } from "@/lib/teacher/derive-attempt-summary";
 
 export type TeacherStudentAttempt = {
   id: string;
@@ -13,6 +15,7 @@ export type TeacherStudentAttempt = {
   progressPercent: number | null;
   currentStepId: string;
   currentStepTitle: string;
+  startedAt: Date | null;
   lastActiveAt: Date;
   finishedAt: Date | null;
   latestReflectionExcerpt: string | null;
@@ -28,8 +31,11 @@ export async function getStudentAttempts(classId: string, studentId: string) {
 
   return rows.map((attempt) => {
     const project = getProjectBySlug(attempt.projectSlug);
-    const currentStep =
-      project?.steps.find((step) => step.id === attempt.currentStepId);
+    const normalizedAttempt = project ? normalizeProjectAttempt(project, attempt.stateJson) : null;
+    const derivedSummary =
+      project && normalizedAttempt ? deriveTeacherAttemptSummary(project, normalizedAttempt) : null;
+    const currentStepId = derivedSummary?.currentStepId ?? attempt.currentStepId;
+    const currentStep = project?.steps.find((step) => step.id === currentStepId);
 
     return {
       id: attempt.id,
@@ -37,9 +43,10 @@ export async function getStudentAttempts(classId: string, studentId: string) {
       projectTitle: project?.projectCard.title ?? attempt.projectSlug,
       contentVersion: attempt.contentVersion,
       status: attempt.status,
-      progressPercent: attempt.progressPercent ?? null,
-      currentStepId: attempt.currentStepId,
-      currentStepTitle: currentStep?.title ?? attempt.currentStepId,
+      progressPercent: derivedSummary?.progressPercent ?? attempt.progressPercent ?? null,
+      currentStepId,
+      currentStepTitle: currentStep?.title ?? currentStepId,
+      startedAt: derivedSummary?.startedAt ?? null,
       lastActiveAt: attempt.lastActiveAt,
       finishedAt: attempt.finishedAt,
       latestReflectionExcerpt: attempt.latestReflectionExcerpt ?? null,

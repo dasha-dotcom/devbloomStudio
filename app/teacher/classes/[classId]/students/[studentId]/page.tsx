@@ -70,6 +70,7 @@ export default async function TeacherStudentDetailPage({ params }: TeacherStuden
                     {attempt.currentStepTitle}
                   </p>
                   <p className="muted teacher-list-copy teacher-attempt-summary">
+                    {attempt.startedAt ? `Started ${attempt.startedAt.toLocaleString()} • ` : ""}
                     Active {attempt.lastActiveAt.toLocaleString()}
                     {attempt.finishedAt ? ` • Finished ${attempt.finishedAt.toLocaleDateString()}` : ""}
                   </p>

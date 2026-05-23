@@ -12,6 +12,7 @@ export type TeacherClassAttemptSummary = {
   latestProjectTitle: string | null;
   latestProjectStatus: "completed" | "in_progress" | null;
   latestProgressPercent: number | null;
+  latestCurrentStepTitle: string | null;
 };
 
 export async function getClassAttemptSummaries(classId: string) {
@@ -23,6 +24,7 @@ export async function getClassAttemptSummaries(classId: string) {
       projectSlug: projectAttempts.projectSlug,
       status: projectAttempts.status,
       progressPercent: projectAttempts.progressPercent,
+      currentStepId: projectAttempts.currentStepId,
       lastActiveAt: projectAttempts.lastActiveAt,
       updatedAt: projectAttempts.updatedAt,
     })
@@ -36,7 +38,9 @@ export async function getClassAttemptSummaries(classId: string) {
     const existingSummary = summaries.get(row.studentId);
 
     if (!existingSummary) {
-      const projectTitle = getProjectBySlug(row.projectSlug)?.projectCard.title ?? row.projectSlug;
+      const project = getProjectBySlug(row.projectSlug);
+      const projectTitle = project?.projectCard.title ?? row.projectSlug;
+      const currentStepTitle = project?.steps.find((step) => step.id === row.currentStepId)?.title ?? row.currentStepId;
 
       summaries.set(row.studentId, {
         studentId: row.studentId,
@@ -46,6 +50,7 @@ export async function getClassAttemptSummaries(classId: string) {
         latestProjectTitle: projectTitle,
         latestProjectStatus: row.status === "completed" ? "completed" : "in_progress",
         latestProgressPercent: row.progressPercent ?? null,
+        latestCurrentStepTitle: currentStepTitle,
       });
 
       continue;
