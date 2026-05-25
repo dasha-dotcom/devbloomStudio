@@ -5,11 +5,13 @@ import { notFound } from "next/navigation";
 
 import type { AppShellNavMode } from "@/components/app-shell";
 import { LessonPageShell } from "@/components/lesson/lesson-page-shell";
+import type { LessonVariant } from "@/lib/experiments/lesson-variant";
 import { createServerProjectAttemptStorage, type ProjectAttempt } from "@/lib/persistence/project-attempts";
 import { getProjectBySlug } from "@/lib/projects";
 
 type ProjectLessonPageProps = {
   slug: string;
+  variant: LessonVariant;
   projectsHref?: string;
   autosaveDelayMs?: number;
   navMode?: AppShellNavMode;
@@ -21,6 +23,7 @@ type ProjectLessonPageProps = {
 
 export function ProjectLessonPage({
   slug,
+  variant,
   projectsHref,
   autosaveDelayMs,
   navMode,
@@ -47,6 +50,7 @@ export function ProjectLessonPage({
   return (
     <LessonPageShell
       project={project}
+      variant={variant}
       storage={storage}
       autosaveDelayMs={autosaveDelayMs}
       projectsHref={projectsHref}

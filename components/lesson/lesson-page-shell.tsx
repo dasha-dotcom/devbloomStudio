@@ -18,6 +18,7 @@ import { ProjectBuilderPanel } from "@/components/lesson/project-builder-panel";
 import { StepPanel } from "@/components/lesson/step-panel";
 import { StepActivityPanel } from "@/components/lesson/step-activity-panel";
 import { ThemePicker } from "@/components/lesson/theme-picker";
+import type { LessonVariant } from "@/lib/experiments/lesson-variant";
 import { useProjectAttemptPersistence } from "@/hooks/use-project-attempt-persistence";
 import type { ActiveEditorError } from "@/lib/editor-errors/types";
 import {
@@ -45,6 +46,7 @@ type FinalExitState = "idle" | "saving" | "saved" | "error";
 
 type LessonPageShellProps = {
   project: LessonProjectConfig;
+  variant: LessonVariant;
   storage?: ProjectAttemptStorage;
   autosaveDelayMs?: number;
   projectsHref?: string;
@@ -60,11 +62,13 @@ const getStepEditorTabId = (step: LessonStep) => step.defaultEditorTabId ?? step
 
 export function LessonPageShell({
   project,
+  variant,
   storage,
   autosaveDelayMs,
   projectsHref = "/projects",
   navMode,
 }: LessonPageShellProps) {
+  void variant;
   const lastLessonIndex = project.steps.length - 1;
   const firstStep = project.steps[0];
   const [initialAttempt] = useState(() => createFreshProjectAttempt(project));

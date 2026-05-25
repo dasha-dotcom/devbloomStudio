@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ProjectLessonPage as ProjectLessonClientPage } from "@/components/lesson/project-lesson-page";
 import { getAllProjects, getProjectBySlug } from "@/lib/projects";
 
-type ProjectLessonPageProps = {
+type CoachProjectLessonPageProps = {
   params: Promise<{
     slug: string;
   }>;
@@ -15,7 +15,7 @@ export function generateStaticParams() {
   }));
 }
 
-export default async function ProjectLessonPage({ params }: ProjectLessonPageProps) {
+export default async function CoachProjectLessonPage({ params }: CoachProjectLessonPageProps) {
   const { slug } = await params;
   const project = getProjectBySlug(slug);
 
@@ -23,5 +23,5 @@ export default async function ProjectLessonPage({ params }: ProjectLessonPagePro
     notFound();
   }
 
-  return <ProjectLessonClientPage slug={slug} variant="control" />;
+  return <ProjectLessonClientPage slug={slug} variant="ai_coach" />;
 }
