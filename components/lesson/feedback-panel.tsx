@@ -1,8 +1,10 @@
-import { DeveloperNotebook } from "@/components/lesson/developer-notebook";
+import { ReflectionExperience } from "@/components/lesson/reflection-experience";
+import type { LessonVariant } from "@/lib/experiments/lesson-variant";
 import type { FeedbackState } from "@/lib/lesson-feedback";
 import type { LessonStep } from "@/lib/projects";
 
 type FeedbackPanelProps = {
+  variant: LessonVariant;
   step: LessonStep;
   state: FeedbackState;
   message: string;
@@ -20,6 +22,7 @@ const statusLabels: Record<FeedbackState, string> = {
 };
 
 export function FeedbackPanel({
+  variant,
   step,
   state,
   message,
@@ -36,9 +39,9 @@ export function FeedbackPanel({
   return (
     <section className={`feedback-panel feedback-${state}`}>
       {step.feedbackMode === "reflection" ? (
-        <DeveloperNotebook
-          prompt={step.reflectionPrompt ?? ""}
-          placeholder={step.reflectionPlaceholder}
+        <ReflectionExperience
+          variant={variant}
+          step={step}
           value={reflectionResponse ?? ""}
           onChange={(value) => onReflectionChange?.(value)}
           status={state}

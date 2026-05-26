@@ -68,7 +68,6 @@ export function LessonPageShell({
   projectsHref = "/projects",
   navMode,
 }: LessonPageShellProps) {
-  void variant;
   const lastLessonIndex = project.steps.length - 1;
   const firstStep = project.steps[0];
   const [initialAttempt] = useState(() => createFreshProjectAttempt(project));
@@ -1322,6 +1321,7 @@ export function LessonPageShell({
 
                 {step.feedbackMode && step.feedbackMode !== "none" ? (
                   <FeedbackPanel
+                    variant={variant}
                     step={step}
                     state={feedback.state}
                     message={feedback.message}
