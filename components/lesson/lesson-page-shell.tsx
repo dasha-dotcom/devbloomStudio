@@ -34,6 +34,7 @@ import {
   getDefaultEditorTabId,
   resolveSavedStepId,
   type ProjectAttempt,
+  type ReflectionCoachCheck,
   type ProjectAttemptStorage,
   type ProjectAttemptStatus,
 } from "@/lib/persistence/project-attempts";
@@ -70,7 +71,7 @@ export function LessonPageShell({
 }: LessonPageShellProps) {
   const lastLessonIndex = project.steps.length - 1;
   const firstStep = project.steps[0];
-  const [initialAttempt] = useState(() => createFreshProjectAttempt(project));
+  const [initialAttempt] = useState(() => createFreshProjectAttempt(project, variant));
   const [currentStep, setCurrentStep] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [builderSelections, setBuilderSelections] = useState(() => getDefaultBuilderSelections(project));
@@ -86,6 +87,7 @@ export function LessonPageShell({
   const [checkpointAnswersByStep, setCheckpointAnswersByStep] = useState<Record<string, Record<string, number>>>({});
   const [checkpointSubmittedByStep, setCheckpointSubmittedByStep] = useState<Record<string, boolean>>({});
   const [reflectionResponses, setReflectionResponses] = useState<Record<string, string>>({});
+  const [reflectionCoachChecks, setReflectionCoachChecks] = useState<ReflectionCoachCheck[]>([]);
   const [textEntryResponses, setTextEntryResponses] = useState<Record<string, string>>({});
   const [builderTouchedByStep, setBuilderTouchedByStep] = useState<Record<string, Record<string, boolean>>>({});
   const [imagePickerTouchedByStep, setImagePickerTouchedByStep] = useState<Record<string, boolean>>({});
@@ -406,6 +408,7 @@ export function LessonPageShell({
     checkpointAnswersByStep?: Record<string, Record<string, number>>;
     checkpointSubmittedByStep?: Record<string, boolean>;
     reflectionResponses?: Record<string, string>;
+    reflectionCoachChecks?: ReflectionCoachCheck[];
     textEntryResponses?: Record<string, string>;
     builderTouchedByStep?: Record<string, Record<string, boolean>>;
     imagePickerTouchedByStep?: Record<string, boolean>;
@@ -430,6 +433,7 @@ export function LessonPageShell({
       attemptId: attemptMetaRef.current.attemptId,
       projectSlug: project.slug,
       contentVersion: project.contentVersion,
+      variant,
       status,
       currentStepId: overrides.currentStepId ?? step.id,
       activeEditorTabId: overrides.activeEditorTabId ?? activeEditorTabId,
@@ -443,6 +447,7 @@ export function LessonPageShell({
       checkpointAnswersByStep: overrides.checkpointAnswersByStep ?? checkpointAnswersByStep,
       checkpointSubmittedByStep: overrides.checkpointSubmittedByStep ?? checkpointSubmittedByStep,
       reflectionResponses: overrides.reflectionResponses ?? reflectionResponses,
+      reflectionCoachChecks: overrides.reflectionCoachChecks ?? reflectionCoachChecks,
       textEntryResponses: overrides.textEntryResponses ?? textEntryResponses,
       builderTouchedByStep: overrides.builderTouchedByStep ?? builderTouchedByStep,
       imagePickerTouchedByStep: overrides.imagePickerTouchedByStep ?? imagePickerTouchedByStep,
@@ -468,12 +473,14 @@ export function LessonPageShell({
     project.contentVersion,
     project.slug,
     reflectionResponses,
+    reflectionCoachChecks,
     textEntryResponses,
     selectedImageId,
     selectedThemeId,
     step.id,
     stepStartCodeByStep,
     themePickerTouchedByStep,
+    variant,
   ]);
 
   const hydrateAttempt = useCallback((attempt: ProjectAttempt | null) => {
@@ -515,6 +522,7 @@ export function LessonPageShell({
     setCheckpointAnswersByStep(attempt.checkpointAnswersByStep);
     setCheckpointSubmittedByStep(attempt.checkpointSubmittedByStep);
     setReflectionResponses(attempt.reflectionResponses);
+    setReflectionCoachChecks(attempt.reflectionCoachChecks);
     setTextEntryResponses(attempt.textEntryResponses);
     setBuilderTouchedByStep(attempt.builderTouchedByStep);
     setImagePickerTouchedByStep(attempt.imagePickerTouchedByStep);
@@ -526,6 +534,7 @@ export function LessonPageShell({
 
   const { hasHydrated, saveState, queueSave, saveNow, clearSavedAttempt } = useProjectAttemptPersistence({
     project,
+    variant,
     storage,
     autosaveDelayMs,
     onHydrate: hydrateAttempt,
@@ -559,6 +568,7 @@ export function LessonPageShell({
     buildAttemptSnapshot,
     queueSave,
     reflectionResponses,
+    reflectionCoachChecks,
     textEntryResponses,
     selectedImageId,
     selectedThemeId,
@@ -663,6 +673,10 @@ export function LessonPageShell({
     );
   };
 
+  const appendReflectionCoachCheck = (check: ReflectionCoachCheck) => {
+    setReflectionCoachChecks((current) => [...current, check]);
+  };
+
   const restart = () => {
     const shouldClear = window.confirm("Clear your saved progress for this project and start over?");
 
@@ -670,7 +684,7 @@ export function LessonPageShell({
       return;
     }
 
-    const freshAttempt = createFreshProjectAttempt(project);
+    const freshAttempt = createFreshProjectAttempt(project, variant);
     const nextAttempt = {
       ...freshAttempt,
       attemptId: attemptMetaRef.current.attemptId,
@@ -698,6 +712,7 @@ export function LessonPageShell({
     setCheckpointAnswersByStep({});
     setCheckpointSubmittedByStep({});
     setReflectionResponses({});
+    setReflectionCoachChecks(nextAttempt.reflectionCoachChecks);
     setTextEntryResponses({});
     setBuilderTouchedByStep({});
     setImagePickerTouchedByStep({});
@@ -1335,6 +1350,7 @@ export function LessonPageShell({
                         [step.id]: value,
                       }));
                     }}
+                    onReflectionCoachCheck={appendReflectionCoachCheck}
                   />
                 ) : gateMessage ? (
                   <section className="feedback-panel feedback-notYet">

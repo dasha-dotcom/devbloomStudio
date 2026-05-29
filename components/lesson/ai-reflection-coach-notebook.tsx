@@ -3,6 +3,12 @@
 import { useMemo, useState } from "react";
 
 import type { FeedbackState } from "@/lib/lesson-feedback";
+import type { ReflectionCoachCheck } from "@/lib/persistence/project-attempt-types";
+import { evaluateReflectionForCoach } from "@/lib/reflection-coach/evaluate-reflection";
+import type {
+  ReflectionCoachEvaluation,
+  ReflectionCoachResult,
+} from "@/lib/reflection-coach/types";
 import type { LessonStep } from "@/lib/projects";
 
 type AiReflectionCoachNotebookProps = {
@@ -12,94 +18,22 @@ type AiReflectionCoachNotebookProps = {
   status: FeedbackState;
   statusMessage?: string;
   showSavedPreview?: boolean;
+  onCoachCheck?: (check: ReflectionCoachCheck) => void;
 };
 
-type ReflectionCoachFocus = "html" | "css" | "javascript" | "general";
+const getFeedbackStateForCoachResult = (result: ReflectionCoachResult): FeedbackState =>
+  result === "strong" ? "pass" : "notYet";
 
-type ReflectionCoachReview = {
-  state: FeedbackState;
-  message: string;
-  followUpQuestion?: string;
-};
-
-const followUpQuestionByFocus: Record<ReflectionCoachFocus, string> = {
-  html: "What part of the page did HTML control?",
-  css: "What style changed on the page?",
-  javascript: "What made the page react?",
-  general: "What specific part of your project changed?",
-};
-
-const getReflectionCoachFocus = (step: LessonStep): ReflectionCoachFocus => {
-  const prompt = step.reflectionPrompt?.toLowerCase() ?? "";
-  const mentionsHtml = prompt.includes("html");
-  const mentionsCss = prompt.includes("css");
-  const mentionsJavascript = prompt.includes("javascript");
-
-  if (mentionsHtml && !mentionsCss && !mentionsJavascript) {
-    return "html";
+const getReflectionCoachMessage = (evaluation: ReflectionCoachEvaluation) => {
+  if (evaluation.coachResult === "empty") {
+    return "Write your own reflection first, then ask Sprout for one quick check.";
   }
 
-  if (mentionsCss && !mentionsHtml && !mentionsJavascript) {
-    return "css";
+  if (evaluation.coachResult === "weak") {
+    return "Nice start — let's help your reflection grow with one more detail.";
   }
 
-  if (mentionsJavascript && !mentionsHtml && !mentionsCss) {
-    return "javascript";
-  }
-
-  return "general";
-};
-
-const hasWeakReflection = (value: string) => {
-  const trimmedValue = value.trim();
-
-  if (!trimmedValue) {
-    return true;
-  }
-
-  const wordCount = trimmedValue.split(/\s+/).filter(Boolean).length;
-  const nonSpaceCharacterCount = trimmedValue.replace(/\s/g, "").length;
-  const normalizedValue = trimmedValue.toLowerCase();
-  const hasConcreteDetail = /(title|intro|paragraph|list|image|page|button|emoji|background|color|card|text|theme|mood|style|class|selector|rule|event|click|html|css|javascript|js)/.test(
-    normalizedValue,
-  );
-  const hasActionWord = /(changed|added|made|updated|styled|used|clicked|switched|customized|wrote|picked|set)/.test(
-    normalizedValue,
-  );
-
-  return wordCount < 5 || nonSpaceCharacterCount < 20 || (!hasConcreteDetail && !hasActionWord);
-};
-
-const getReflectionCoachReview = (
-  value: string,
-  focus: ReflectionCoachFocus,
-): ReflectionCoachReview => {
-  if (!value.trim()) {
-    return {
-      state: "notYet",
-      message: "Write your own reflection first, then ask Sprout for one quick check.",
-    };
-  }
-
-  if (hasWeakReflection(value)) {
-    return {
-      state: "notYet",
-      message: "Nice start — let's help your reflection grow with one more detail.",
-      followUpQuestion: followUpQuestionByFocus[focus],
-    };
-  }
-
-  const positiveMessageByFocus: Record<ReflectionCoachFocus, string> = {
-    html: "Nice start — you named a real part of the page that HTML controlled.",
-    css: "Nice start — you explained a style change on the page.",
-    javascript: "Nice start — you described what made the page react.",
-    general: "Nice start — you named a specific part of your project.",
-  };
-
-  return {
-    state: "pass",
-    message: positiveMessageByFocus[focus],
-  };
+  return evaluation.positiveMessage ?? "Nice start — you named a specific part of your project.";
 };
 
 export function AiReflectionCoachNotebook({
@@ -109,12 +43,26 @@ export function AiReflectionCoachNotebook({
   status,
   statusMessage,
   showSavedPreview = false,
+  onCoachCheck,
 }: AiReflectionCoachNotebookProps) {
   const [hasAskedSprout, setHasAskedSprout] = useState(false);
-  const focus = useMemo(() => getReflectionCoachFocus(step), [step]);
-  const coachReview = hasAskedSprout ? getReflectionCoachReview(value, focus) : null;
+  const coachEvaluation = useMemo(
+    () =>
+      evaluateReflectionForCoach({
+        reflectionText: value,
+        reflectionPrompt: step.reflectionPrompt,
+      }),
+    [step.reflectionPrompt, value],
+  );
+  const coachReview = hasAskedSprout
+    ? {
+        coachResult: coachEvaluation.coachResult,
+        message: getReflectionCoachMessage(coachEvaluation),
+        followUpQuestion: coachEvaluation.followUpQuestion,
+      }
+    : null;
   const trimmedValue = value.trim();
-  const primaryState = coachReview?.state ?? status;
+  const primaryState = coachReview ? getFeedbackStateForCoachResult(coachReview.coachResult) : status;
   const primaryMessage = coachReview?.message ?? statusMessage;
   const followUpQuestion = coachReview?.followUpQuestion;
   const shouldShowSavedPreview =
@@ -155,8 +103,21 @@ export function AiReflectionCoachNotebook({
           <button
             type="button"
             className="button-ghost ai-reflection-coach-button"
-            onClick={() => setHasAskedSprout(true)}
-            disabled={trimmedValue.length === 0}
+            onClick={() => {
+              const evaluation = evaluateReflectionForCoach({
+                reflectionText: value,
+                reflectionPrompt: step.reflectionPrompt,
+              });
+
+              setHasAskedSprout(true);
+              onCoachCheck?.({
+                checkedAt: new Date().toISOString(),
+                reflectionText: value,
+                coachResult: evaluation.coachResult,
+                coachFollowUpQuestion: evaluation.followUpQuestion,
+                lessonFocus: evaluation.lessonFocus,
+              });
+            }}
           >
             {hasAskedSprout ? "Check again" : "Ask Sprout"}
           </button>

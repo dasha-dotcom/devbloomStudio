@@ -1,6 +1,7 @@
 import { ReflectionExperience } from "@/components/lesson/reflection-experience";
 import type { LessonVariant } from "@/lib/experiments/lesson-variant";
 import type { FeedbackState } from "@/lib/lesson-feedback";
+import type { ReflectionCoachCheck } from "@/lib/persistence/project-attempt-types";
 import type { LessonStep } from "@/lib/projects";
 
 type FeedbackPanelProps = {
@@ -13,6 +14,7 @@ type FeedbackPanelProps = {
   gateMessage?: string | null;
   reflectionResponse?: string;
   onReflectionChange?: (value: string) => void;
+  onReflectionCoachCheck?: (check: ReflectionCoachCheck) => void;
 };
 
 const statusLabels: Record<FeedbackState, string> = {
@@ -31,6 +33,7 @@ export function FeedbackPanel({
   gateMessage,
   reflectionResponse,
   onReflectionChange,
+  onReflectionCoachCheck,
 }: FeedbackPanelProps) {
   if (step.feedbackMode === "none") {
     return null;
@@ -47,6 +50,7 @@ export function FeedbackPanel({
           status={state}
           statusMessage={message}
           showSavedPreview={state === "pass"}
+          onCoachCheck={onReflectionCoachCheck}
         />
       ) : (
         <>

@@ -2,6 +2,7 @@ import { AiReflectionCoachNotebook } from "@/components/lesson/ai-reflection-coa
 import { DeveloperNotebook } from "@/components/lesson/developer-notebook";
 import type { LessonVariant } from "@/lib/experiments/lesson-variant";
 import type { FeedbackState } from "@/lib/lesson-feedback";
+import type { ReflectionCoachCheck } from "@/lib/persistence/project-attempt-types";
 import type { LessonStep } from "@/lib/projects";
 
 type ReflectionExperienceProps = {
@@ -12,6 +13,7 @@ type ReflectionExperienceProps = {
   status: FeedbackState;
   statusMessage?: string;
   showSavedPreview?: boolean;
+  onCoachCheck?: (check: ReflectionCoachCheck) => void;
 };
 
 export function ReflectionExperience({
@@ -22,6 +24,7 @@ export function ReflectionExperience({
   status,
   statusMessage,
   showSavedPreview = false,
+  onCoachCheck,
 }: ReflectionExperienceProps) {
   if (variant === "ai_coach") {
     return (
@@ -32,6 +35,7 @@ export function ReflectionExperience({
         status={status}
         statusMessage={statusMessage}
         showSavedPreview={showSavedPreview}
+        onCoachCheck={onCoachCheck}
       />
     );
   }
