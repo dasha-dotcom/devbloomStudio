@@ -29,6 +29,13 @@
       "when": 1778591179186,
       "tag": "0003_open_triathlon",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1780059318473,
+      "tag": "0004_magical_bishop",
+      "breakpoints": true
     }
   ]
 }

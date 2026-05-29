@@ -20,6 +20,14 @@ export function CreateClassForm() {
           <input type="text" name="name" maxLength={80} required className="teacher-input" />
         </label>
 
+        <label className="teacher-auth-field">
+          <span>Reflection mode</span>
+          <select name="defaultVariant" defaultValue="control" className="teacher-input">
+            <option value="control">Standard Reflection</option>
+            <option value="ai_coach">Sprout Reflection Coach</option>
+          </select>
+        </label>
+
         {state.error ? <p className="feedback-gate-note teacher-inline-note">{state.error}</p> : null}
         {state.success ? <p className="teacher-success-note teacher-inline-note">{state.success}</p> : null}
 

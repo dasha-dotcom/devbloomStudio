@@ -12,6 +12,7 @@ export const classes = pgTable(
       .references(() => teachers.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     joinCode: text("join_code").notNull(),
+    defaultVariant: text("default_variant").default("control").notNull(),
     isArchived: boolean("is_archived").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })

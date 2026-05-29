@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentTeacher } from "@/lib/auth/get-current-teacher";
 import { getDb } from "@/lib/db";
 import { classes, studentProfiles } from "@/lib/db/schema";
+import { normalizeLessonVariant } from "@/lib/experiments/lesson-variant";
 import { hashStudentPin, generateStudentPin, isValidStudentPin } from "@/lib/security/pins";
 import { generateJoinCode } from "@/lib/teacher/generate-join-code";
 
@@ -49,6 +50,7 @@ export async function createClassAction(_previousState: ActionState, formData: F
   const teacher = await getCurrentTeacher();
   const db = getDb();
   const className = normalizeClassName(String(formData.get("name") ?? ""));
+  const defaultVariant = normalizeLessonVariant(formData.get("defaultVariant"));
 
   if (className.length < 2) {
     return {
@@ -69,6 +71,7 @@ export async function createClassAction(_previousState: ActionState, formData: F
       teacherId: teacher.id,
       name: className,
       joinCode,
+      defaultVariant,
     });
 
     revalidatePath("/teacher");

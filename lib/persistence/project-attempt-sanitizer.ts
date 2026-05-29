@@ -1,5 +1,5 @@
 import type { BuilderSelections, LessonProjectConfig } from "@/lib/projects";
-import type { LessonVariant } from "@/lib/experiments/lesson-variant";
+import { normalizeLessonVariant, type LessonVariant } from "@/lib/experiments/lesson-variant";
 import { getDefaultBuilderSelections, getStarterCode, getStarterImageId } from "@/lib/projects";
 
 import type {
@@ -176,8 +176,6 @@ const sanitizeImageId = (project: LessonProjectConfig, latestCode: string, value
   return project.imageOptions.some((option) => option.id === value) ? value : fallback;
 };
 
-const sanitizeVariant = (value: unknown): LessonVariant => (value === "ai_coach" ? "ai_coach" : "control");
-
 const sanitizeReflectionCoachChecks = (value: unknown): ReflectionCoachCheck[] => {
   if (!Array.isArray(value)) {
     return [];
@@ -279,7 +277,7 @@ const sanitizeProjectAttemptV1 = (
     attemptId: typeof rawValue.attemptId === "string" ? rawValue.attemptId : crypto.randomUUID(),
     projectSlug: project.slug,
     contentVersion: project.contentVersion,
-    variant: sanitizeVariant(rawValue.variant),
+    variant: normalizeLessonVariant(rawValue.variant),
     status,
     currentStepId,
     activeEditorTabId: sanitizeActiveEditorTabId(project, currentStepId, rawValue.activeEditorTabId),

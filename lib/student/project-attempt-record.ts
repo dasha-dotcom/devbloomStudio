@@ -1,4 +1,5 @@
 import type { LessonProjectConfig } from "@/lib/projects";
+import type { LessonVariant } from "@/lib/experiments/lesson-variant";
 
 import { createFreshProjectAttempt, type ProjectAttempt } from "@/lib/persistence/project-attempts";
 
@@ -23,8 +24,12 @@ const toNullableDate = (value: string | null | undefined) => {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
-export function buildFreshStudentProjectAttempt(project: LessonProjectConfig, attemptId: string): ProjectAttempt {
-  const freshAttempt = createFreshProjectAttempt(project);
+export function buildFreshStudentProjectAttempt(
+  project: LessonProjectConfig,
+  attemptId: string,
+  variant: LessonVariant = "control",
+): ProjectAttempt {
+  const freshAttempt = createFreshProjectAttempt(project, variant);
 
   return {
     ...freshAttempt,
@@ -57,6 +62,7 @@ export function buildProjectAttemptRecordValues({
     studentProfileId,
     projectSlug: attempt.projectSlug,
     contentVersion: attempt.contentVersion,
+    variant: attempt.variant,
     status: attempt.status,
     progressPercent: typeof attempt.progressPercent === "number" ? attempt.progressPercent : null,
     currentStepId: attempt.currentStepId,

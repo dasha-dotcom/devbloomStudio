@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 
 import { getDb } from "@/lib/db";
 import { projectAttempts } from "@/lib/db/schema";
+import type { LessonVariant } from "@/lib/experiments/lesson-variant";
 import { getProjectBySlug } from "@/lib/projects";
 import { buildFreshStudentProjectAttempt, buildProjectAttemptRecordValues } from "@/lib/student/project-attempt-record";
 
@@ -9,6 +10,7 @@ type CreateOrResumeProjectAttemptInput = {
   studentProfileId: string;
   classId: string;
   projectSlug: string;
+  variant: LessonVariant;
 };
 
 const isUniqueViolation = (error: unknown) =>
@@ -21,6 +23,7 @@ export async function createOrResumeProjectAttempt({
   studentProfileId,
   classId,
   projectSlug,
+  variant,
 }: CreateOrResumeProjectAttemptInput) {
   const project = getProjectBySlug(projectSlug);
 
@@ -34,6 +37,7 @@ export async function createOrResumeProjectAttempt({
       eq(projectAttempts.studentProfileId, studentProfileId),
       eq(projectAttempts.projectSlug, project.slug),
       eq(projectAttempts.contentVersion, project.contentVersion),
+      eq(projectAttempts.variant, variant),
     ),
   });
 
@@ -45,7 +49,7 @@ export async function createOrResumeProjectAttempt({
   }
 
   const attemptId = crypto.randomUUID();
-  const freshAttempt = buildFreshStudentProjectAttempt(project, attemptId);
+  const freshAttempt = buildFreshStudentProjectAttempt(project, attemptId, variant);
 
   try {
     await db.insert(projectAttempts).values(
@@ -66,6 +70,7 @@ export async function createOrResumeProjectAttempt({
         eq(projectAttempts.studentProfileId, studentProfileId),
         eq(projectAttempts.projectSlug, project.slug),
         eq(projectAttempts.contentVersion, project.contentVersion),
+        eq(projectAttempts.variant, variant),
       ),
     });
 
