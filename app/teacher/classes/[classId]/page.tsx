@@ -5,6 +5,7 @@ import { CreateStudentForm } from "@/components/teacher/create-student-form";
 import { getDb } from "@/lib/db";
 import { studentProfiles } from "@/lib/db/schema";
 import { getClassAttemptSummaries } from "@/lib/teacher/get-class-attempt-summaries";
+import { getLessonVariantDisplay } from "@/lib/teacher/lesson-variant-display";
 import { requireTeacherClass } from "@/lib/teacher/require-teacher-class";
 
 type TeacherClassDetailPageProps = {
@@ -16,6 +17,7 @@ type TeacherClassDetailPageProps = {
 export default async function TeacherClassDetailPage({ params }: TeacherClassDetailPageProps) {
   const { classId } = await params;
   const { teacherClass } = await requireTeacherClass(classId);
+  const variantDisplay = getLessonVariantDisplay(teacherClass.defaultVariant);
   const db = getDb();
 
   const roster = await db.query.studentProfiles.findMany({
@@ -32,7 +34,8 @@ export default async function TeacherClassDetailPage({ params }: TeacherClassDet
           <h1 className="section-title">{teacherClass.name}</h1>
         </div>
         <p className="section-copy">
-          Join code: <strong>{teacherClass.joinCode}</strong>
+          Join code: <strong>{teacherClass.joinCode}</strong> • Reflection mode:{" "}
+          <strong>{variantDisplay.classLabel}</strong>
         </p>
       </div>
 

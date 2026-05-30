@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { getStudentAttempts } from "@/lib/teacher/get-student-attempts";
+import { getLessonVariantDisplay } from "@/lib/teacher/lesson-variant-display";
 import { requireTeacherStudent } from "@/lib/teacher/require-teacher-student";
 
 type TeacherStudentDetailPageProps = {
@@ -57,32 +58,47 @@ export default async function TeacherStudentDetailPage({ params }: TeacherStuden
               No saved attempts yet.
             </p>
           ) : (
-            attempts.map((attempt) => (
-              <Link
-                key={attempt.id}
-                href={`/teacher/classes/${classId}/students/${studentId}/attempts/${attempt.id}`}
-                className="teacher-list-item"
-              >
-                <div>
-                  <strong>{attempt.projectTitle}</strong>
-                  <p className="muted teacher-list-copy">
-                    {attempt.status === "completed" ? "Completed" : `${attempt.progressPercent ?? 0}%`} •{" "}
-                    {attempt.currentStepTitle}
-                  </p>
-                  <p className="muted teacher-list-copy teacher-attempt-summary">
-                    {attempt.startedAt ? `Started ${attempt.startedAt.toLocaleString()} • ` : ""}
-                    Active {attempt.lastActiveAt.toLocaleString()}
-                    {attempt.finishedAt ? ` • Finished ${attempt.finishedAt.toLocaleDateString()}` : ""}
-                  </p>
-                  {attempt.latestReflectionExcerpt ? (
-                    <p className="muted teacher-list-copy teacher-attempt-summary">
-                      Reflection: {attempt.latestReflectionExcerpt}
+            attempts.map((attempt) => {
+              const variantDisplay = getLessonVariantDisplay(attempt.variant);
+              const shouldShowSproutCount =
+                attempt.variant === "ai_coach" || attempt.reflectionCoachCheckCount > 0;
+
+              return (
+                <Link
+                  key={attempt.id}
+                  href={`/teacher/classes/${classId}/students/${studentId}/attempts/${attempt.id}`}
+                  className="teacher-list-item"
+                >
+                  <div>
+                    <strong>{attempt.projectTitle}</strong>
+                    <div className="pill-row" style={{ marginTop: 10 }}>
+                      <span className="pill">{variantDisplay.attemptLabel}</span>
+                      {shouldShowSproutCount ? (
+                        <span className="pill">
+                          {attempt.reflectionCoachCheckCount} Sprout check
+                          {attempt.reflectionCoachCheckCount === 1 ? "" : "s"}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="muted teacher-list-copy">
+                      {attempt.status === "completed" ? "Completed" : `${attempt.progressPercent ?? 0}%`} •{" "}
+                      {attempt.currentStepTitle}
                     </p>
-                  ) : null}
-                </div>
-                <span className="pill">Open</span>
-              </Link>
-            ))
+                    <p className="muted teacher-list-copy teacher-attempt-summary">
+                      {attempt.startedAt ? `Started ${attempt.startedAt.toLocaleString()} • ` : ""}
+                      Active {attempt.lastActiveAt.toLocaleString()}
+                      {attempt.finishedAt ? ` • Finished ${attempt.finishedAt.toLocaleDateString()}` : ""}
+                    </p>
+                    {attempt.latestReflectionExcerpt ? (
+                      <p className="muted teacher-list-copy teacher-attempt-summary">
+                        Reflection: {attempt.latestReflectionExcerpt}
+                      </p>
+                    ) : null}
+                  </div>
+                  <span className="pill">Open</span>
+                </Link>
+              );
+            })
           )}
         </div>
       </div>

@@ -4,6 +4,7 @@ import { signOutTeacher } from "@/app/auth/actions";
 import { CreateClassForm } from "@/components/teacher/create-class-form";
 import { getCurrentTeacher } from "@/lib/auth/get-current-teacher";
 import { getTeacherClasses } from "@/lib/teacher/get-teacher-classes";
+import { getLessonVariantDisplay } from "@/lib/teacher/lesson-variant-display";
 
 export default async function TeacherDashboardPage() {
   const teacher = await getCurrentTeacher();
@@ -34,22 +35,29 @@ export default async function TeacherDashboardPage() {
                 No classes yet. Create your first class to get started.
               </p>
             ) : (
-              teacherClasses.map((teacherClass) => (
-                <Link
-                  key={teacherClass.id}
-                  href={`/teacher/classes/${teacherClass.id}`}
-                  className="teacher-list-item"
-                >
-                  <div>
-                    <strong>{teacherClass.name}</strong>
-                    <p className="muted teacher-list-copy">
-                      Join code {teacherClass.joinCode} • {teacherClass.rosterCount} student
-                      {teacherClass.rosterCount === 1 ? "" : "s"}
-                    </p>
-                  </div>
-                  <span className="pill">Open</span>
-                </Link>
-              ))
+              teacherClasses.map((teacherClass) => {
+                const variantDisplay = getLessonVariantDisplay(teacherClass.defaultVariant);
+
+                return (
+                  <Link
+                    key={teacherClass.id}
+                    href={`/teacher/classes/${teacherClass.id}`}
+                    className="teacher-list-item"
+                  >
+                    <div>
+                      <strong>{teacherClass.name}</strong>
+                      <p className="muted teacher-list-copy">
+                        Join code {teacherClass.joinCode} • {teacherClass.rosterCount} student
+                        {teacherClass.rosterCount === 1 ? "" : "s"}
+                      </p>
+                      <div className="pill-row" style={{ marginTop: 10 }}>
+                        <span className="pill">{variantDisplay.classLabel}</span>
+                      </div>
+                    </div>
+                    <span className="pill">Open</span>
+                  </Link>
+                );
+              })
             )}
           </div>
         </div>

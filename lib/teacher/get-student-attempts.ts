@@ -2,6 +2,8 @@ import { and, desc, eq } from "drizzle-orm";
 
 import { getDb } from "@/lib/db";
 import { projectAttempts } from "@/lib/db/schema";
+import type { LessonVariant } from "@/lib/experiments/lesson-variant";
+import { normalizeLessonVariant } from "@/lib/experiments/lesson-variant";
 import { normalizeProjectAttempt } from "@/lib/persistence/project-attempt-sanitizer";
 import { getProjectBySlug } from "@/lib/projects";
 import { deriveTeacherAttemptSummary } from "@/lib/teacher/derive-attempt-summary";
@@ -11,6 +13,8 @@ export type TeacherStudentAttempt = {
   projectSlug: string;
   projectTitle: string;
   contentVersion: string;
+  variant: LessonVariant;
+  reflectionCoachCheckCount: number;
   status: string;
   progressPercent: number | null;
   currentStepId: string;
@@ -32,6 +36,7 @@ export async function getStudentAttempts(classId: string, studentId: string) {
   return rows.map((attempt) => {
     const project = getProjectBySlug(attempt.projectSlug);
     const normalizedAttempt = project ? normalizeProjectAttempt(project, attempt.stateJson) : null;
+    const variant = normalizeLessonVariant(attempt.variant);
     const derivedSummary =
       project && normalizedAttempt ? deriveTeacherAttemptSummary(project, normalizedAttempt) : null;
     const currentStepId = derivedSummary?.currentStepId ?? attempt.currentStepId;
@@ -42,6 +47,8 @@ export async function getStudentAttempts(classId: string, studentId: string) {
       projectSlug: attempt.projectSlug,
       projectTitle: project?.projectCard.title ?? attempt.projectSlug,
       contentVersion: attempt.contentVersion,
+      variant,
+      reflectionCoachCheckCount: normalizedAttempt?.reflectionCoachChecks.length ?? 0,
       status: attempt.status,
       progressPercent: derivedSummary?.progressPercent ?? attempt.progressPercent ?? null,
       currentStepId,
