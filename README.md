@@ -98,6 +98,7 @@ Notes:
 - `DIRECT_DATABASE_URL` is optional, but Drizzle will prefer it when running CLI commands.
 - `NEXT_PUBLIC_SITE_URL` is recommended for auth email redirects. If omitted, the app falls back to the request host.
 - `SUPABASE_SERVICE_ROLE_KEY` is only required for `npm run seed:demo`. Keep it server-side only and never expose it in client code.
+- AI Reflection Coach calls are off unless `REFLECTION_COACH_AI_ENABLED=true`. Configure `REFLECTION_COACH_API_KEY`, `REFLECTION_COACH_BASE_URL`, `REFLECTION_COACH_MODEL`, and optionally `REFLECTION_COACH_MAX_AI_CHECKS_PER_ATTEMPT` when enabling provider-backed Sprout checks.
 
 3. Apply database migrations:
 

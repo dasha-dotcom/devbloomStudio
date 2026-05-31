@@ -14,6 +14,7 @@ type FeedbackPanelProps = {
   onManualCheck?: () => void;
   gateMessage?: string | null;
   reflectionResponse?: string;
+  priorAiCheckCount?: number;
   onReflectionChange?: (value: string) => void;
   onReflectionCoachCheck?: (check: ReflectionCoachCheck) => void;
 };
@@ -34,6 +35,7 @@ export function FeedbackPanel({
   onManualCheck,
   gateMessage,
   reflectionResponse,
+  priorAiCheckCount = 0,
   onReflectionChange,
   onReflectionCoachCheck,
 }: FeedbackPanelProps) {
@@ -53,6 +55,7 @@ export function FeedbackPanel({
           status={state}
           statusMessage={message}
           showSavedPreview={state === "pass"}
+          priorAiCheckCount={priorAiCheckCount}
           onCoachCheck={onReflectionCoachCheck}
         />
       ) : (

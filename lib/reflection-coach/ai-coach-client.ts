@@ -61,7 +61,7 @@ type AiValidationResult =
     };
 
 const MAX_COACH_TEXT_LENGTH = 180;
-const MAX_REFLECTION_CHARS_FOR_AI = 1200;
+const MAX_REFLECTION_CHARS_FOR_AI = 1000;
 const MAX_PROVIDER_RESPONSE_CHARS = 4000;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -483,7 +483,7 @@ export async function evaluateReflectionWithAi(
         messages: getMessages(input),
         response_format: { type: "json_object" },
         temperature: 0.2,
-        max_tokens: 220,
+        max_tokens: 140,
       }),
     });
 

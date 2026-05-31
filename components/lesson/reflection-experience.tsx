@@ -14,6 +14,7 @@ type ReflectionExperienceProps = {
   status: FeedbackState;
   statusMessage?: string;
   showSavedPreview?: boolean;
+  priorAiCheckCount?: number;
   onCoachCheck?: (check: ReflectionCoachCheck) => void;
 };
 
@@ -26,6 +27,7 @@ export function ReflectionExperience({
   status,
   statusMessage,
   showSavedPreview = false,
+  priorAiCheckCount = 0,
   onCoachCheck,
 }: ReflectionExperienceProps) {
   if (variant === "ai_coach") {
@@ -38,6 +40,7 @@ export function ReflectionExperience({
         status={status}
         statusMessage={statusMessage}
         showSavedPreview={showSavedPreview}
+        priorAiCheckCount={priorAiCheckCount}
         onCoachCheck={onCoachCheck}
       />
     );

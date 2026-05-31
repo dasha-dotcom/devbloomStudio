@@ -180,6 +180,7 @@ export function LessonPageShell({
   const predictionAnswer = predictionAnswersByStep[step.id] ?? null;
   const activityAnswers = activityAnswersByStep[step.id] ?? {};
   const reflectionResponse = reflectionResponses[step.id] ?? "";
+  const priorAiCheckCount = reflectionCoachChecks.filter((check) => check.source === "ai").length;
   const textEntryResponse = textEntryResponses[step.id] ?? "";
   const stepStartCode = stepStartCodeByStep[step.id] ?? starterCode;
   const stepStartEditorCode = useMemo(
@@ -1345,6 +1346,7 @@ export function LessonPageShell({
                     onManualCheck={feedback.needsManualCheck ? runManualCheck : undefined}
                     gateMessage={gateMessage}
                     reflectionResponse={reflectionResponse}
+                    priorAiCheckCount={priorAiCheckCount}
                     onReflectionChange={(value) => {
                       setReflectionResponses((current) => ({
                         ...current,

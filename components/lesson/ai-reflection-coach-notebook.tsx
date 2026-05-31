@@ -27,6 +27,7 @@ type AiReflectionCoachNotebookProps = {
   status: FeedbackState;
   statusMessage?: string;
   showSavedPreview?: boolean;
+  priorAiCheckCount?: number;
   onCoachCheck?: (check: ReflectionCoachCheck) => void;
 };
 
@@ -114,11 +115,13 @@ const getCoachEvaluationFromApi = async ({
   step,
   reflectionText,
   localEvaluation,
+  priorAiCheckCount,
 }: {
   projectSlug: string;
   step: LessonStep;
   reflectionText: string;
   localEvaluation: ReflectionCoachEvaluation;
+  priorAiCheckCount: number;
 }): Promise<ReflectionCoachApiResponse | null> => {
   try {
     const response = await fetch("/api/reflection-coach", {
@@ -134,6 +137,7 @@ const getCoachEvaluationFromApi = async ({
         reflectionText,
         localEvaluation,
         variant: "ai_coach",
+        priorAiCheckCount,
       }),
     });
 
@@ -155,6 +159,7 @@ export function AiReflectionCoachNotebook({
   status,
   statusMessage,
   showSavedPreview = false,
+  priorAiCheckCount = 0,
   onCoachCheck,
 }: AiReflectionCoachNotebookProps) {
   const [hasAskedSprout, setHasAskedSprout] = useState(false);
@@ -233,6 +238,7 @@ export function AiReflectionCoachNotebook({
                         step,
                         reflectionText,
                         localEvaluation,
+                        priorAiCheckCount,
                       });
                 const displayedEvaluation = apiEvaluation ?? localFallbackEvaluation;
 

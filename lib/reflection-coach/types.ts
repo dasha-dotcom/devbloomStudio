@@ -5,9 +5,14 @@ export type ReflectionCoachFocus = "html" | "css" | "javascript" | "general";
 export type ReflectionCoachSource = "ai" | "local_fallback";
 
 export type ReflectionCoachFallbackReason =
+  | "ai_disabled"
   | "missing_config"
   | "empty_reflection"
   | "not_ai_coach_variant"
+  | "unknown_project"
+  | "reflection_too_long"
+  | "attempt_ai_limit_reached"
+  | "rate_limited"
   | "provider_http_error"
   | "missing_message_content"
   | "invalid_json"
