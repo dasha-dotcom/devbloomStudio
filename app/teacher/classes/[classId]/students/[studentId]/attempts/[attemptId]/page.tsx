@@ -106,6 +106,18 @@ const formatCheckTimestamp = (value: string) => {
   return new Date(timestamp).toLocaleString();
 };
 
+const getSproutCheckSourceLabel = (source: ReflectionCoachCheck["source"]) => {
+  if (source === "ai") {
+    return "Source: AI";
+  }
+
+  if (source === "local_fallback") {
+    return "Source: local fallback";
+  }
+
+  return null;
+};
+
 export default async function TeacherAttemptDetailPage({ params }: TeacherAttemptDetailPageProps) {
   const { classId, studentId, attemptId } = await params;
   const { teacherStudent, attemptRow } = await requireTeacherProjectAttempt(classId, studentId, attemptId);
@@ -164,6 +176,8 @@ export default async function TeacherAttemptDetailPage({ params }: TeacherAttemp
           })
           .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
       : [];
+  const latestReflectionStepId =
+    reflectionEntries.length > 0 ? reflectionEntries[reflectionEntries.length - 1].stepId : null;
   const previewDoc = normalizedAttempt
     ? project.buildPreviewDocument({
         code: normalizedAttempt.latestCode,
@@ -370,13 +384,19 @@ export default async function TeacherAttemptDetailPage({ params }: TeacherAttemp
           <p className="muted teacher-panel-copy">No full reflection responses are available for this attempt.</p>
         ) : (
           <div className="teacher-reflection-list">
-            {reflectionEntries.map((entry) => (
-              <div key={entry.stepId} className="teacher-reflection-card">
-                <span className="muted teacher-reflection-kicker">{entry.stepTitle}</span>
-                <strong>{entry.prompt}</strong>
-                <p className="teacher-reflection-response">{entry.response}</p>
-              </div>
-            ))}
+            {reflectionEntries.map((entry) => {
+              const isLatestReflection = entry.stepId === latestReflectionStepId;
+
+              return (
+                <div key={entry.stepId} className="teacher-reflection-card">
+                  <span className="muted teacher-reflection-kicker">
+                    {isLatestReflection ? `${entry.stepTitle} • Latest saved reflection` : entry.stepTitle}
+                  </span>
+                  <strong>{entry.prompt}</strong>
+                  <p className="teacher-reflection-response">{entry.response}</p>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -388,28 +408,33 @@ export default async function TeacherAttemptDetailPage({ params }: TeacherAttemp
             <p className="muted teacher-panel-copy">No Sprout checks are saved for this attempt yet.</p>
           ) : (
             <div className="teacher-reflection-list">
-              {sproutCheckHistory.map((check, index) => (
-                <div key={`${check.checkedAt}-${index}`} className="teacher-reflection-card">
-                  <span className="muted teacher-reflection-kicker">
-                    {formatCheckTimestamp(check.checkedAt)}
-                  </span>
-                  <div className="pill-row" style={{ marginTop: 10 }}>
-                    <span className="pill">Result: {check.coachResult}</span>
-                    <span className="pill">Focus: {check.lessonFocus}</span>
+              {sproutCheckHistory.map((check, index) => {
+                const sourceLabel = getSproutCheckSourceLabel(check.source);
+
+                return (
+                  <div key={`${check.checkedAt}-${index}`} className="teacher-reflection-card">
+                    <span className="muted teacher-reflection-kicker">
+                      {formatCheckTimestamp(check.checkedAt)}
+                    </span>
+                    <div className="pill-row" style={{ marginTop: 10 }}>
+                      <span className="pill">Result: {check.coachResult}</span>
+                      <span className="pill">Focus: {check.lessonFocus}</span>
+                      {sourceLabel ? <span className="pill">{sourceLabel}</span> : null}
+                    </div>
+                    <strong>Reflection when checked</strong>
+                    {check.reflectionText.trim() ? (
+                      <p className="teacher-reflection-response">{check.reflectionText}</p>
+                    ) : (
+                      <p className="teacher-reflection-response muted">Empty reflection</p>
+                    )}
+                    {check.coachFollowUpQuestion ? (
+                      <p className="muted teacher-list-copy teacher-attempt-summary">
+                        Sprout follow-up: {check.coachFollowUpQuestion}
+                      </p>
+                    ) : null}
                   </div>
-                  <strong>Reflection when checked</strong>
-                  {check.reflectionText.trim() ? (
-                    <p className="teacher-reflection-response">{check.reflectionText}</p>
-                  ) : (
-                    <p className="teacher-reflection-response muted">Empty reflection</p>
-                  )}
-                  {check.coachFollowUpQuestion ? (
-                    <p className="muted teacher-list-copy teacher-attempt-summary">
-                      Sprout follow-up: {check.coachFollowUpQuestion}
-                    </p>
-                  ) : null}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

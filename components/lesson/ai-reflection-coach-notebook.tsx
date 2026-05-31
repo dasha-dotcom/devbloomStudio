@@ -206,6 +206,10 @@ export function AiReflectionCoachNotebook({
             className="button-ghost ai-reflection-coach-button"
             disabled={isCheckingSprout}
             onClick={async () => {
+              if (isCheckingSprout) {
+                return;
+              }
+
               const reflectionText = value;
               const localEvaluation = evaluateReflectionForCoach({
                 reflectionText,
@@ -213,33 +217,42 @@ export function AiReflectionCoachNotebook({
                 reflectionPrompt: step.reflectionPrompt,
                 lessonFocus: getReflectionCoachLessonFocus(step.reflectionPrompt),
               });
-              setIsCheckingSprout(true);
-              const apiEvaluation = await getCoachEvaluationFromApi({
-                projectSlug,
-                step,
-                reflectionText,
-                localEvaluation,
-              });
-              const displayedEvaluation = apiEvaluation ?? {
+              const localFallbackEvaluation = {
                 ...localEvaluation,
                 source: "local_fallback" as const,
-              };
+              } satisfies ReflectionCoachApiResponse;
 
-              setHasAskedSprout(true);
-              setCoachReview({
-                coachResult: displayedEvaluation.coachResult,
-                message: getReflectionCoachMessage(displayedEvaluation),
-                followUpQuestion: displayedEvaluation.followUpQuestion,
-              });
-              onCoachCheck?.({
-                checkedAt: new Date().toISOString(),
-                reflectionText,
-                coachResult: displayedEvaluation.coachResult,
-                coachFollowUpQuestion: displayedEvaluation.followUpQuestion,
-                lessonFocus: displayedEvaluation.lessonFocus,
-                source: displayedEvaluation.source,
-              });
-              setIsCheckingSprout(false);
+              setIsCheckingSprout(true);
+
+              try {
+                const apiEvaluation =
+                  localEvaluation.coachResult === "empty"
+                    ? null
+                    : await getCoachEvaluationFromApi({
+                        projectSlug,
+                        step,
+                        reflectionText,
+                        localEvaluation,
+                      });
+                const displayedEvaluation = apiEvaluation ?? localFallbackEvaluation;
+
+                setHasAskedSprout(true);
+                setCoachReview({
+                  coachResult: displayedEvaluation.coachResult,
+                  message: getReflectionCoachMessage(displayedEvaluation),
+                  followUpQuestion: displayedEvaluation.followUpQuestion,
+                });
+                onCoachCheck?.({
+                  checkedAt: new Date().toISOString(),
+                  reflectionText,
+                  coachResult: displayedEvaluation.coachResult,
+                  coachFollowUpQuestion: displayedEvaluation.followUpQuestion,
+                  lessonFocus: displayedEvaluation.lessonFocus,
+                  source: displayedEvaluation.source,
+                });
+              } finally {
+                setIsCheckingSprout(false);
+              }
             }}
           >
             {isCheckingSprout ? "Checking..." : hasAskedSprout ? "Check again" : "Ask Sprout"}
