@@ -6,6 +6,7 @@ import type { ReflectionCoachCheck } from "@/lib/persistence/project-attempt-typ
 import type { LessonStep } from "@/lib/projects";
 
 type ReflectionExperienceProps = {
+  projectSlug: string;
   variant: LessonVariant;
   step: LessonStep;
   value: string;
@@ -17,6 +18,7 @@ type ReflectionExperienceProps = {
 };
 
 export function ReflectionExperience({
+  projectSlug,
   variant,
   step,
   value,
@@ -29,6 +31,7 @@ export function ReflectionExperience({
   if (variant === "ai_coach") {
     return (
       <AiReflectionCoachNotebook
+        projectSlug={projectSlug}
         step={step}
         value={value}
         onChange={onChange}

@@ -234,8 +234,9 @@ export const vibePageLessonSteps: LessonStep[] = [
     },
     feedbackMode: "reflection",
     isGate: false,
-    reflectionPrompt: "CSS knows which part of the page to style by looking at the ...",
-    reflectionPlaceholder: "You can mention selectors, class names, or a rule from this lesson.",
+    reflectionPrompt: "One style I changed with CSS was ___. CSS knew what to style because ___.",
+    reflectionPlaceholder:
+      "Example: I changed the card color. CSS knew what to style because of the .vibe-card class.",
     passMessage: "Nice reflection. You connected CSS styling to the selector idea.",
     notYetMessage: "Take a moment to describe how a CSS rule finds the part to style.",
     showEditor: false,

@@ -3,10 +3,15 @@ import type { LessonVariant } from "@/lib/experiments/lesson-variant";
 import type {
   ReflectionCoachFocus,
   ReflectionCoachResult,
+  ReflectionCoachSource,
 } from "@/lib/reflection-coach/types";
 
 export type ProjectAttemptStatus = "in_progress" | "completed";
-export type { ReflectionCoachFocus, ReflectionCoachResult } from "@/lib/reflection-coach/types";
+export type {
+  ReflectionCoachFocus,
+  ReflectionCoachResult,
+  ReflectionCoachSource,
+} from "@/lib/reflection-coach/types";
 
 export type ReflectionCoachCheck = {
   checkedAt: string;
@@ -14,6 +19,7 @@ export type ReflectionCoachCheck = {
   coachResult: ReflectionCoachResult;
   coachFollowUpQuestion?: string;
   lessonFocus: ReflectionCoachFocus;
+  source?: ReflectionCoachSource;
   studentFollowUpAnswer?: string;
   suggestedFinalReflection?: string;
   finalReflection?: string;

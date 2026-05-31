@@ -1336,6 +1336,7 @@ export function LessonPageShell({
 
                 {step.feedbackMode && step.feedbackMode !== "none" ? (
                   <FeedbackPanel
+                    projectSlug={project.slug}
                     variant={variant}
                     step={step}
                     state={feedback.state}

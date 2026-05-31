@@ -314,8 +314,9 @@ export const moodSwitchLessonSteps: LessonStep[] = [
     },
     feedbackMode: "reflection",
     isGate: false,
-    reflectionPrompt: "JavaScript changes the page because of ...",
-    reflectionPlaceholder: "You can mention listening to the click event, the mood objects, or the line that updates the page.",
+    reflectionPrompt: "JavaScript changed my page when ___. The part that changed was ___.",
+    reflectionPlaceholder:
+      "Example: JavaScript changed my page when I clicked the button. The message changed.",
     passMessage: "Nice reflection. You connected the click to the code that updates the page.",
     notYetMessage: "Take a moment to describe what causes the page to change.",
     showEditor: false,

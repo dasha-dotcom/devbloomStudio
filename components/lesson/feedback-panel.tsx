@@ -5,6 +5,7 @@ import type { ReflectionCoachCheck } from "@/lib/persistence/project-attempt-typ
 import type { LessonStep } from "@/lib/projects";
 
 type FeedbackPanelProps = {
+  projectSlug: string;
   variant: LessonVariant;
   step: LessonStep;
   state: FeedbackState;
@@ -24,6 +25,7 @@ const statusLabels: Record<FeedbackState, string> = {
 };
 
 export function FeedbackPanel({
+  projectSlug,
   variant,
   step,
   state,
@@ -43,6 +45,7 @@ export function FeedbackPanel({
     <section className={`feedback-panel feedback-${state}`}>
       {step.feedbackMode === "reflection" ? (
         <ReflectionExperience
+          projectSlug={projectSlug}
           variant={variant}
           step={step}
           value={reflectionResponse ?? ""}

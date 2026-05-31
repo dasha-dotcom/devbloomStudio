@@ -28,6 +28,8 @@ const isReflectionCoachResult = (value: unknown): value is ReflectionCoachResult
   value === "empty" || value === "weak" || value === "strong";
 const isReflectionCoachFocus = (value: unknown): value is ReflectionCoachFocus =>
   value === "html" || value === "css" || value === "javascript" || value === "general";
+const isReflectionCoachSource = (value: unknown): value is "ai" | "local_fallback" =>
+  value === "ai" || value === "local_fallback";
 const sanitizeOptionalString = (value: unknown) => (typeof value === "string" ? value : undefined);
 
 export const getDefaultEditorTabId = (project: LessonProjectConfig, stepId?: string) => {
@@ -201,6 +203,7 @@ const sanitizeReflectionCoachChecks = (value: unknown): ReflectionCoachCheck[] =
         coachResult: item.coachResult,
         coachFollowUpQuestion: sanitizeOptionalString(item.coachFollowUpQuestion),
         lessonFocus: isReflectionCoachFocus(item.lessonFocus) ? item.lessonFocus : "general",
+        source: isReflectionCoachSource(item.source) ? item.source : undefined,
         studentFollowUpAnswer: sanitizeOptionalString(item.studentFollowUpAnswer),
         suggestedFinalReflection: sanitizeOptionalString(item.suggestedFinalReflection),
         finalReflection: sanitizeOptionalString(item.finalReflection),

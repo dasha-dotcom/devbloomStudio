@@ -2,6 +2,30 @@ export type ReflectionCoachResult = "empty" | "weak" | "strong";
 
 export type ReflectionCoachFocus = "html" | "css" | "javascript" | "general";
 
+export type ReflectionCoachSource = "ai" | "local_fallback";
+
+export type ReflectionCoachFallbackReason =
+  | "missing_config"
+  | "empty_reflection"
+  | "not_ai_coach_variant"
+  | "provider_http_error"
+  | "missing_message_content"
+  | "invalid_json"
+  | "output_too_long"
+  | "invalid_coach_result"
+  | "invalid_lesson_focus"
+  | "missing_required_field"
+  | "follow_up_too_long"
+  | "positive_message_too_long"
+  | "multiple_questions"
+  | "missing_question_mark"
+  | "positive_message_contains_question"
+  | "harsh_language"
+  | "code_like_output"
+  | "rewritten_reflection_field"
+  | "status_mismatch"
+  | "unknown_validation_error";
+
 export type ReflectionCoachRecommendedFocus =
   | "specificity"
   | "causality"
@@ -18,6 +42,7 @@ export type ReflectionCoachDetectedSignals = {
 
 export type ReflectionCoachEvaluationInput = {
   reflectionText: string;
+  projectSlug?: string;
   reflectionPrompt?: string;
   lessonFocus?: ReflectionCoachFocus;
 };
@@ -29,4 +54,9 @@ export type ReflectionCoachEvaluation = {
   lessonFocus: ReflectionCoachFocus;
   followUpQuestion?: string;
   positiveMessage?: string;
+};
+
+export type ReflectionCoachApiResponse = ReflectionCoachEvaluation & {
+  source: ReflectionCoachSource;
+  fallbackReason?: ReflectionCoachFallbackReason;
 };
