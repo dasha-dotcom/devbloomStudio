@@ -33,10 +33,18 @@ export default async function TeacherClassDetailPage({ params }: TeacherClassDet
           <span className="eyebrow">Class detail</span>
           <h1 className="section-title">{teacherClass.name}</h1>
         </div>
-        <p className="section-copy">
-          Join code: <strong>{teacherClass.joinCode}</strong> • Reflection mode:{" "}
-          <strong>{variantDisplay.classLabel}</strong>
-        </p>
+        <div>
+          <p className="section-copy">
+            Join code: <strong>{teacherClass.joinCode}</strong> • Reflection mode:{" "}
+            <strong>{variantDisplay.classLabel}</strong>
+          </p>
+          <Link
+            href={`/teacher/classes/${teacherClass.id}/export-reflections.csv`}
+            className="button-ghost"
+          >
+            Export reflections CSV
+          </Link>
+        </div>
       </div>
 
       <div className="teacher-grid">
