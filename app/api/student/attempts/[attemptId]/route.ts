@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { getDb } from "@/lib/db";
 import { projectAttempts } from "@/lib/db/schema";
+import { normalizeLessonVariant } from "@/lib/experiments/lesson-variant";
 import { getProjectBySlug } from "@/lib/projects";
 import { normalizeProjectAttempt } from "@/lib/persistence/project-attempt-sanitizer";
 import type { ProjectAttempt } from "@/lib/persistence/project-attempt-types";
@@ -82,11 +83,13 @@ export async function PUT(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Invalid attempt payload." }, { status: 400 });
   }
 
+  const attemptVariant = normalizeLessonVariant(attemptRow.variant);
   const nextAttempt: ProjectAttempt = {
     ...normalizedAttempt,
     attemptId: attemptRow.id,
     projectSlug: attemptRow.projectSlug,
     contentVersion: attemptRow.contentVersion,
+    variant: attemptVariant,
   };
 
   await getDb()
@@ -116,7 +119,11 @@ export async function DELETE(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Attempt not found." }, { status: 404 });
   }
 
-  const freshAttempt = buildFreshStudentProjectAttempt(project, attemptRow.id);
+  const freshAttempt = buildFreshStudentProjectAttempt(
+    project,
+    attemptRow.id,
+    normalizeLessonVariant(attemptRow.variant),
+  );
 
   await getDb()
     .update(projectAttempts)

@@ -1,12 +1,36 @@
 import type { BuilderSelections } from "@/lib/projects";
+import type { LessonVariant } from "@/lib/experiments/lesson-variant";
+import type {
+  ReflectionCoachFocus,
+  ReflectionCoachResult,
+  ReflectionCoachSource,
+} from "@/lib/reflection-coach/types";
 
 export type ProjectAttemptStatus = "in_progress" | "completed";
+export type {
+  ReflectionCoachFocus,
+  ReflectionCoachResult,
+  ReflectionCoachSource,
+} from "@/lib/reflection-coach/types";
+
+export type ReflectionCoachCheck = {
+  checkedAt: string;
+  reflectionText: string;
+  coachResult: ReflectionCoachResult;
+  coachFollowUpQuestion?: string;
+  lessonFocus: ReflectionCoachFocus;
+  source?: ReflectionCoachSource;
+  studentFollowUpAnswer?: string;
+  suggestedFinalReflection?: string;
+  finalReflection?: string;
+};
 
 export type ProjectAttempt = {
   schemaVersion: 1;
   attemptId: string;
   projectSlug: string;
   contentVersion: string;
+  variant: LessonVariant;
   status: ProjectAttemptStatus;
   currentStepId: string;
   activeEditorTabId: string;
@@ -20,6 +44,7 @@ export type ProjectAttempt = {
   checkpointAnswersByStep: Record<string, Record<string, number>>;
   checkpointSubmittedByStep: Record<string, boolean>;
   reflectionResponses: Record<string, string>;
+  reflectionCoachChecks: ReflectionCoachCheck[];
   textEntryResponses: Record<string, string>;
   builderTouchedByStep: Record<string, Record<string, boolean>>;
   imagePickerTouchedByStep: Record<string, boolean>;

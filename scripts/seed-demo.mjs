@@ -229,6 +229,7 @@ async function ensureDemoClass(db, classes, teacher) {
           .set({
             name: DEMO_CLASS_NAME,
             joinCode: DEMO_CLASS_CODE,
+            defaultVariant: "control",
             isArchived: false,
           })
           .where(eq(classes.id, reusableClass.id))
@@ -241,6 +242,7 @@ async function ensureDemoClass(db, classes, teacher) {
             teacherId: teacher.id,
             name: DEMO_CLASS_NAME,
             joinCode: DEMO_CLASS_CODE,
+            defaultVariant: "control",
             isArchived: false,
           })
           .returning()
@@ -334,7 +336,7 @@ function buildDemoProjectAttempt(buildFreshStudentProjectAttempt, project, attem
   const startedAt = hoursAgo(config.startedHoursAgo);
   const lastActiveAt = hoursAgo(config.lastActiveHoursAgo);
   const finishedAt = config.status === "completed" ? hoursAgo(config.finishedHoursAgo) : null;
-  const attempt = buildFreshStudentProjectAttempt(project, attemptId);
+  const attempt = buildFreshStudentProjectAttempt(project, attemptId, config.variant ?? "control");
 
   attempt.status = config.status;
   attempt.progressPercent = config.progressPercent;
@@ -414,6 +416,7 @@ async function ensureDemoAttempts(
         eq(projectAttempts.studentProfileId, student.id),
         eq(projectAttempts.projectSlug, config.project.slug),
         eq(projectAttempts.contentVersion, config.project.contentVersion),
+        eq(projectAttempts.variant, config.variant ?? "control"),
       ),
     });
 

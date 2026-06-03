@@ -13,6 +13,7 @@ export async function getTeacherClasses() {
       id: classes.id,
       name: classes.name,
       joinCode: classes.joinCode,
+      defaultVariant: classes.defaultVariant,
       isArchived: classes.isArchived,
       createdAt: classes.createdAt,
       updatedAt: classes.updatedAt,

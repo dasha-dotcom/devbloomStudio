@@ -903,8 +903,10 @@ const finalRemixLessonSteps: LessonStep[] = [
     },
     feedbackMode: "reflection",
     isGate: false,
-    reflectionPrompt: "What did you customize in HTML, CSS, and JavaScript?",
-    reflectionPlaceholder: "Name one thing you changed in each layer, or describe the layers you used most.",
+    reflectionPrompt:
+      "In HTML, I customized ___. In CSS, I customized ___. In JavaScript, I customized ___.",
+    reflectionPlaceholder:
+      "Example: In HTML, I changed the title. In CSS, I changed the colors. In JavaScript, I changed the button message.",
     passMessage: "Nice reflection. You connected the project back to the three layers you used.",
     notYetMessage: "Take a moment to name what you customized across HTML, CSS, and JavaScript.",
     showEditor: false,

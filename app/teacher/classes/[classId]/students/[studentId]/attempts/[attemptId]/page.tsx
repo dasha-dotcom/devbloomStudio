@@ -1,7 +1,9 @@
 import { LivePreview } from "@/components/lesson/live-preview";
+import type { ReflectionCoachCheck } from "@/lib/persistence/project-attempt-types";
 import { getProjectBySlug } from "@/lib/projects";
 import { normalizeProjectAttempt } from "@/lib/persistence/project-attempt-sanitizer";
 import { deriveTeacherAttemptSummary, type TeacherAttemptStepSummary } from "@/lib/teacher/derive-attempt-summary";
+import { getLessonVariantDisplay } from "@/lib/teacher/lesson-variant-display";
 import { requireTeacherProjectAttempt } from "@/lib/teacher/require-teacher-project-attempt";
 
 type TeacherAttemptDetailPageProps = {
@@ -65,9 +67,61 @@ const getStepSignalPills = (step: TeacherAttemptStepSummary) => {
   return pills.filter((pill): pill is string => Boolean(pill));
 };
 
+const getTimestampMs = (value: string) => {
+  const timestamp = new Date(value).getTime();
+  return Number.isNaN(timestamp) ? null : timestamp;
+};
+
+const getChronologicalSproutChecks = (checks: ReflectionCoachCheck[]) =>
+  checks
+    .map((check, index) => ({
+      check,
+      index,
+      timestamp: getTimestampMs(check.checkedAt),
+    }))
+    .sort((a, b) => {
+      if (a.timestamp !== null && b.timestamp !== null) {
+        return a.timestamp - b.timestamp;
+      }
+
+      if (a.timestamp !== null) {
+        return -1;
+      }
+
+      if (b.timestamp !== null) {
+        return 1;
+      }
+
+      return a.index - b.index;
+    })
+    .map(({ check }) => check);
+
+const formatCheckTimestamp = (value: string) => {
+  const timestamp = getTimestampMs(value);
+
+  if (timestamp === null) {
+    return value;
+  }
+
+  return new Date(timestamp).toLocaleString();
+};
+
+const getSproutCheckSourceLabel = (source: ReflectionCoachCheck["source"]) => {
+  if (source === "ai") {
+    return "Source: AI";
+  }
+
+  if (source === "local_fallback") {
+    return "Source: local fallback";
+  }
+
+  return null;
+};
+
 export default async function TeacherAttemptDetailPage({ params }: TeacherAttemptDetailPageProps) {
   const { classId, studentId, attemptId } = await params;
   const { teacherStudent, attemptRow } = await requireTeacherProjectAttempt(classId, studentId, attemptId);
+  const variantDisplay = getLessonVariantDisplay(attemptRow.variant);
   const project = getProjectBySlug(attemptRow.projectSlug);
 
   if (!project) {
@@ -87,12 +141,19 @@ export default async function TeacherAttemptDetailPage({ params }: TeacherAttemp
             This project configuration is not available in the current app build, so only summary metadata can be
             shown.
           </p>
+          <p className="muted teacher-panel-copy">
+            Reflection mode: <strong>{variantDisplay.attemptLabel}</strong>
+          </p>
         </div>
       </section>
     );
   }
 
   const normalizedAttempt = normalizeProjectAttempt(project, attemptRow.stateJson);
+  const sproutCheckHistory = normalizedAttempt
+    ? getChronologicalSproutChecks(normalizedAttempt.reflectionCoachChecks)
+    : [];
+  const shouldShowSproutHistory = variantDisplay.variant === "ai_coach" || sproutCheckHistory.length > 0;
   const derivedSummary = normalizedAttempt ? deriveTeacherAttemptSummary(project, normalizedAttempt) : null;
   const currentStepId = normalizedAttempt?.currentStepId ?? attemptRow.currentStepId;
   const currentStep = project.steps.find((step) => step.id === currentStepId);
@@ -115,6 +176,8 @@ export default async function TeacherAttemptDetailPage({ params }: TeacherAttemp
           })
           .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
       : [];
+  const latestReflectionStepId =
+    reflectionEntries.length > 0 ? reflectionEntries[reflectionEntries.length - 1].stepId : null;
   const previewDoc = normalizedAttempt
     ? project.buildPreviewDocument({
         code: normalizedAttempt.latestCode,
@@ -151,6 +214,18 @@ export default async function TeacherAttemptDetailPage({ params }: TeacherAttemp
               <span className="muted">Status</span>
               <strong>{attemptRow.status === "completed" ? "Completed" : "In progress"}</strong>
             </div>
+            <div className="teacher-meta-card">
+              <span className="muted">Reflection mode</span>
+              <strong>{variantDisplay.attemptLabel}</strong>
+            </div>
+            {shouldShowSproutHistory ? (
+              <div className="teacher-meta-card">
+                <span className="muted">Sprout checks</span>
+                <strong>
+                  {sproutCheckHistory.length} check{sproutCheckHistory.length === 1 ? "" : "s"}
+                </strong>
+              </div>
+            ) : null}
             <div className="teacher-meta-card">
               <span className="muted">Progress</span>
               <strong>{derivedSummary?.progressPercent ?? attemptRow.progressPercent ?? 0}%</strong>
@@ -309,16 +384,61 @@ export default async function TeacherAttemptDetailPage({ params }: TeacherAttemp
           <p className="muted teacher-panel-copy">No full reflection responses are available for this attempt.</p>
         ) : (
           <div className="teacher-reflection-list">
-            {reflectionEntries.map((entry) => (
-              <div key={entry.stepId} className="teacher-reflection-card">
-                <span className="muted teacher-reflection-kicker">{entry.stepTitle}</span>
-                <strong>{entry.prompt}</strong>
-                <p className="teacher-reflection-response">{entry.response}</p>
-              </div>
-            ))}
+            {reflectionEntries.map((entry) => {
+              const isLatestReflection = entry.stepId === latestReflectionStepId;
+
+              return (
+                <div key={entry.stepId} className="teacher-reflection-card">
+                  <span className="muted teacher-reflection-kicker">
+                    {isLatestReflection ? `${entry.stepTitle} • Latest saved reflection` : entry.stepTitle}
+                  </span>
+                  <strong>{entry.prompt}</strong>
+                  <p className="teacher-reflection-response">{entry.response}</p>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
+
+      {shouldShowSproutHistory ? (
+        <div className="glass-card teacher-panel" style={{ marginTop: 24 }}>
+          <strong>Sprout check history</strong>
+          {sproutCheckHistory.length === 0 ? (
+            <p className="muted teacher-panel-copy">No Sprout checks are saved for this attempt yet.</p>
+          ) : (
+            <div className="teacher-reflection-list">
+              {sproutCheckHistory.map((check, index) => {
+                const sourceLabel = getSproutCheckSourceLabel(check.source);
+
+                return (
+                  <div key={`${check.checkedAt}-${index}`} className="teacher-reflection-card">
+                    <span className="muted teacher-reflection-kicker">
+                      {formatCheckTimestamp(check.checkedAt)}
+                    </span>
+                    <div className="pill-row" style={{ marginTop: 10 }}>
+                      <span className="pill">Result: {check.coachResult}</span>
+                      <span className="pill">Focus: {check.lessonFocus}</span>
+                      {sourceLabel ? <span className="pill">{sourceLabel}</span> : null}
+                    </div>
+                    <strong>Reflection when checked</strong>
+                    {check.reflectionText.trim() ? (
+                      <p className="teacher-reflection-response">{check.reflectionText}</p>
+                    ) : (
+                      <p className="teacher-reflection-response muted">Empty reflection</p>
+                    )}
+                    {check.coachFollowUpQuestion ? (
+                      <p className="muted teacher-list-copy teacher-attempt-summary">
+                        Sprout follow-up: {check.coachFollowUpQuestion}
+                      </p>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : null}
     </section>
   );
 }

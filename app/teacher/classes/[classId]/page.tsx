@@ -5,6 +5,7 @@ import { CreateStudentForm } from "@/components/teacher/create-student-form";
 import { getDb } from "@/lib/db";
 import { studentProfiles } from "@/lib/db/schema";
 import { getClassAttemptSummaries } from "@/lib/teacher/get-class-attempt-summaries";
+import { getLessonVariantDisplay } from "@/lib/teacher/lesson-variant-display";
 import { requireTeacherClass } from "@/lib/teacher/require-teacher-class";
 
 type TeacherClassDetailPageProps = {
@@ -16,6 +17,7 @@ type TeacherClassDetailPageProps = {
 export default async function TeacherClassDetailPage({ params }: TeacherClassDetailPageProps) {
   const { classId } = await params;
   const { teacherClass } = await requireTeacherClass(classId);
+  const variantDisplay = getLessonVariantDisplay(teacherClass.defaultVariant);
   const db = getDb();
 
   const roster = await db.query.studentProfiles.findMany({
@@ -31,9 +33,18 @@ export default async function TeacherClassDetailPage({ params }: TeacherClassDet
           <span className="eyebrow">Class detail</span>
           <h1 className="section-title">{teacherClass.name}</h1>
         </div>
-        <p className="section-copy">
-          Join code: <strong>{teacherClass.joinCode}</strong>
-        </p>
+        <div>
+          <p className="section-copy">
+            Join code: <strong>{teacherClass.joinCode}</strong> • Reflection mode:{" "}
+            <strong>{variantDisplay.classLabel}</strong>
+          </p>
+          <Link
+            href={`/teacher/classes/${teacherClass.id}/export-reflections.csv`}
+            className="button-ghost"
+          >
+            Export reflections CSV
+          </Link>
+        </div>
       </div>
 
       <div className="teacher-grid">

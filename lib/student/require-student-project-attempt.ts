@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { getDb } from "@/lib/db";
 import { projectAttempts } from "@/lib/db/schema";
+import { normalizeLessonVariant } from "@/lib/experiments/lesson-variant";
 import { getProjectBySlug } from "@/lib/projects";
 import { normalizeProjectAttempt } from "@/lib/persistence/project-attempt-sanitizer";
 import { buildFreshStudentProjectAttempt, buildProjectAttemptRecordValues } from "@/lib/student/project-attempt-record";
@@ -30,10 +31,11 @@ export async function requireStudentProjectAttempt(attemptId: string) {
     redirect("/student/projects");
   }
 
+  const attemptVariant = normalizeLessonVariant(attemptRow.variant);
   let attempt = normalizeProjectAttempt(project, attemptRow.stateJson);
 
   if (!attempt) {
-    attempt = buildFreshStudentProjectAttempt(project, attemptRow.id);
+    attempt = buildFreshStudentProjectAttempt(project, attemptRow.id, attemptVariant);
 
     await db
       .update(projectAttempts)
@@ -46,6 +48,11 @@ export async function requireStudentProjectAttempt(attemptId: string) {
         }),
       )
       .where(eq(projectAttempts.id, attemptRow.id));
+  } else if (attempt.variant !== attemptVariant) {
+    attempt = {
+      ...attempt,
+      variant: attemptVariant,
+    };
   }
 
   return {

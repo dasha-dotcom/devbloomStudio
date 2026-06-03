@@ -1,7 +1,15 @@
 import type { BuilderSelections, LessonProjectConfig } from "@/lib/projects";
+import { normalizeLessonVariant, type LessonVariant } from "@/lib/experiments/lesson-variant";
 import { getDefaultBuilderSelections, getStarterCode, getStarterImageId } from "@/lib/projects";
 
-import type { ProjectAttempt } from "@/lib/persistence/project-attempt-types";
+import type {
+  ProjectAttempt,
+  ReflectionCoachCheck,
+} from "@/lib/persistence/project-attempt-types";
+import type {
+  ReflectionCoachFocus,
+  ReflectionCoachResult,
+} from "@/lib/reflection-coach/types";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -16,6 +24,13 @@ const isBooleanRecord = (value: unknown): value is Record<string, boolean> =>
   isRecord(value) && Object.values(value).every((item) => typeof item === "boolean");
 
 const getDefaultStepId = (project: LessonProjectConfig) => project.steps[0]?.id ?? "default";
+const isReflectionCoachResult = (value: unknown): value is ReflectionCoachResult =>
+  value === "empty" || value === "weak" || value === "strong";
+const isReflectionCoachFocus = (value: unknown): value is ReflectionCoachFocus =>
+  value === "html" || value === "css" || value === "javascript" || value === "general";
+const isReflectionCoachSource = (value: unknown): value is "ai" | "local_fallback" =>
+  value === "ai" || value === "local_fallback";
+const sanitizeOptionalString = (value: unknown) => (typeof value === "string" ? value : undefined);
 
 export const getDefaultEditorTabId = (project: LessonProjectConfig, stepId?: string) => {
   const step = project.steps.find((item) => item.id === stepId) ?? project.steps[0];
@@ -163,7 +178,44 @@ const sanitizeImageId = (project: LessonProjectConfig, latestCode: string, value
   return project.imageOptions.some((option) => option.id === value) ? value : fallback;
 };
 
-export const createFreshProjectAttempt = (project: LessonProjectConfig): ProjectAttempt => {
+const sanitizeReflectionCoachChecks = (value: unknown): ReflectionCoachCheck[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item) => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    if (
+      typeof item.checkedAt !== "string" ||
+      typeof item.reflectionText !== "string" ||
+      !isReflectionCoachResult(item.coachResult)
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        checkedAt: item.checkedAt,
+        reflectionText: item.reflectionText,
+        coachResult: item.coachResult,
+        coachFollowUpQuestion: sanitizeOptionalString(item.coachFollowUpQuestion),
+        lessonFocus: isReflectionCoachFocus(item.lessonFocus) ? item.lessonFocus : "general",
+        source: isReflectionCoachSource(item.source) ? item.source : undefined,
+        studentFollowUpAnswer: sanitizeOptionalString(item.studentFollowUpAnswer),
+        suggestedFinalReflection: sanitizeOptionalString(item.suggestedFinalReflection),
+        finalReflection: sanitizeOptionalString(item.finalReflection),
+      },
+    ];
+  });
+};
+
+export const createFreshProjectAttempt = (
+  project: LessonProjectConfig,
+  variant: LessonVariant = "control",
+): ProjectAttempt => {
   const builderSelections = getDefaultBuilderSelections(project);
   const firstStep = project.steps[0];
   const latestCode = getStarterCode(project, firstStep, builderSelections);
@@ -174,6 +226,7 @@ export const createFreshProjectAttempt = (project: LessonProjectConfig): Project
     attemptId: crypto.randomUUID(),
     projectSlug: project.slug,
     contentVersion: project.contentVersion,
+    variant,
     status: "in_progress",
     currentStepId: firstStep.id,
     activeEditorTabId: getDefaultEditorTabId(project, firstStep.id),
@@ -187,6 +240,7 @@ export const createFreshProjectAttempt = (project: LessonProjectConfig): Project
     checkpointAnswersByStep: {},
     checkpointSubmittedByStep: {},
     reflectionResponses: {},
+    reflectionCoachChecks: [],
     textEntryResponses: {},
     builderTouchedByStep: {},
     imagePickerTouchedByStep: {},
@@ -226,6 +280,7 @@ const sanitizeProjectAttemptV1 = (
     attemptId: typeof rawValue.attemptId === "string" ? rawValue.attemptId : crypto.randomUUID(),
     projectSlug: project.slug,
     contentVersion: project.contentVersion,
+    variant: normalizeLessonVariant(rawValue.variant),
     status,
     currentStepId,
     activeEditorTabId: sanitizeActiveEditorTabId(project, currentStepId, rawValue.activeEditorTabId),
@@ -247,6 +302,7 @@ const sanitizeProjectAttemptV1 = (
     ),
     checkpointSubmittedByStep: sanitizeFlatBooleanByStep(project, rawValue.checkpointSubmittedByStep),
     reflectionResponses: sanitizeFlatStringByStep(project, rawValue.reflectionResponses),
+    reflectionCoachChecks: sanitizeReflectionCoachChecks(rawValue.reflectionCoachChecks),
     textEntryResponses: sanitizeFlatStringByStep(project, rawValue.textEntryResponses),
     builderTouchedByStep: sanitizeNestedEntries(
       project,

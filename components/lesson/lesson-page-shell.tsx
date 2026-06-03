@@ -18,6 +18,7 @@ import { ProjectBuilderPanel } from "@/components/lesson/project-builder-panel";
 import { StepPanel } from "@/components/lesson/step-panel";
 import { StepActivityPanel } from "@/components/lesson/step-activity-panel";
 import { ThemePicker } from "@/components/lesson/theme-picker";
+import type { LessonVariant } from "@/lib/experiments/lesson-variant";
 import { useProjectAttemptPersistence } from "@/hooks/use-project-attempt-persistence";
 import type { ActiveEditorError } from "@/lib/editor-errors/types";
 import {
@@ -27,24 +28,41 @@ import {
   type LessonProjectConfig,
   type LessonStep,
 } from "@/lib/projects";
-import { evaluateStepFeedback, hasSubstantiveReflection, useStepFeedback } from "@/lib/lesson-feedback";
+import {
+  evaluateStepFeedback,
+  hasSubstantiveReflection,
+  type FeedbackState,
+  useStepFeedback,
+} from "@/lib/lesson-feedback";
 import {
   createFreshProjectAttempt,
   getDefaultEditorTabId,
   resolveSavedStepId,
   type ProjectAttempt,
+  type ReflectionCoachCheck,
   type ProjectAttemptStorage,
   type ProjectAttemptStatus,
 } from "@/lib/persistence/project-attempts";
+import {
+  evaluateReflectionForCoach,
+  getReflectionCoachLessonFocus,
+} from "@/lib/reflection-coach/evaluate-reflection";
 
 const DEFAULT_EDITOR_WIDTH = 64;
 const MIN_PANE_WIDTH = 320;
 
 type PaneMode = "both" | "editor-only" | "preview-only";
 type FinalExitState = "idle" | "saving" | "saved" | "error";
+type ReflectionFinishGate = {
+  isActive: boolean;
+  canFinish: boolean;
+  message: string | null;
+  state: FeedbackState | null;
+};
 
 type LessonPageShellProps = {
   project: LessonProjectConfig;
+  variant: LessonVariant;
   storage?: ProjectAttemptStorage;
   autosaveDelayMs?: number;
   projectsHref?: string;
@@ -58,8 +76,16 @@ const hasAnyCodeChange = (currentCode: string, previousCode: string) =>
 
 const getStepEditorTabId = (step: LessonStep) => step.defaultEditorTabId ?? step.editorTabs?.[0]?.id ?? "default";
 
+const inactiveReflectionFinishGate: ReflectionFinishGate = {
+  isActive: false,
+  canFinish: true,
+  message: null,
+  state: null,
+};
+
 export function LessonPageShell({
   project,
+  variant,
   storage,
   autosaveDelayMs,
   projectsHref = "/projects",
@@ -67,7 +93,7 @@ export function LessonPageShell({
 }: LessonPageShellProps) {
   const lastLessonIndex = project.steps.length - 1;
   const firstStep = project.steps[0];
-  const [initialAttempt] = useState(() => createFreshProjectAttempt(project));
+  const [initialAttempt] = useState(() => createFreshProjectAttempt(project, variant));
   const [currentStep, setCurrentStep] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [builderSelections, setBuilderSelections] = useState(() => getDefaultBuilderSelections(project));
@@ -83,6 +109,7 @@ export function LessonPageShell({
   const [checkpointAnswersByStep, setCheckpointAnswersByStep] = useState<Record<string, Record<string, number>>>({});
   const [checkpointSubmittedByStep, setCheckpointSubmittedByStep] = useState<Record<string, boolean>>({});
   const [reflectionResponses, setReflectionResponses] = useState<Record<string, string>>({});
+  const [reflectionCoachChecks, setReflectionCoachChecks] = useState<ReflectionCoachCheck[]>([]);
   const [textEntryResponses, setTextEntryResponses] = useState<Record<string, string>>({});
   const [builderTouchedByStep, setBuilderTouchedByStep] = useState<Record<string, Record<string, boolean>>>({});
   const [imagePickerTouchedByStep, setImagePickerTouchedByStep] = useState<Record<string, boolean>>({});
@@ -175,6 +202,7 @@ export function LessonPageShell({
   const predictionAnswer = predictionAnswersByStep[step.id] ?? null;
   const activityAnswers = activityAnswersByStep[step.id] ?? {};
   const reflectionResponse = reflectionResponses[step.id] ?? "";
+  const priorAiCheckCount = reflectionCoachChecks.filter((check) => check.source === "ai").length;
   const textEntryResponse = textEntryResponses[step.id] ?? "";
   const stepStartCode = stepStartCodeByStep[step.id] ?? starterCode;
   const stepStartEditorCode = useMemo(
@@ -223,6 +251,71 @@ export function LessonPageShell({
     checkpointSubmitted: Boolean(checkpointSubmittedByStep[step.id]),
     reflectionResponse,
   });
+  const reflectionFinishGate = useMemo<ReflectionFinishGate>(() => {
+    const isFinalReflectionStep =
+      variant === "ai_coach" &&
+      currentStep === lastLessonIndex &&
+      step.feedbackMode === "reflection";
+
+    if (!isFinalReflectionStep) {
+      return inactiveReflectionFinishGate;
+    }
+
+    const evaluation = evaluateReflectionForCoach({
+      reflectionText: reflectionResponse,
+      projectSlug: project.slug,
+      reflectionPrompt: step.reflectionPrompt,
+      lessonFocus: getReflectionCoachLessonFocus(step.reflectionPrompt),
+    });
+    const latestSproutCheck = reflectionCoachChecks.at(-1);
+    const hasSproutCheckForCurrentReflection = Boolean(
+      latestSproutCheck &&
+        normalizeForCompare(latestSproutCheck.reflectionText) === normalizeForCompare(reflectionResponse),
+    );
+
+    if (evaluation.coachResult === "empty") {
+      return {
+        isActive: true,
+        canFinish: false,
+        message: "Write one sentence about what you changed before finishing.",
+        state: "notYet",
+      };
+    }
+
+    if (evaluation.coachResult === "weak") {
+      if (!hasSproutCheckForCurrentReflection) {
+        return {
+          isActive: true,
+          canFinish: false,
+          message: "Sprout can help you add one more detail before you finish.",
+          state: "notYet",
+        };
+      }
+
+      return {
+        isActive: true,
+        canFinish: true,
+        message: "You can finish now, or improve your reflection using Sprout's question.",
+        state: "close",
+      };
+    }
+
+    return {
+      isActive: true,
+      canFinish: true,
+      message: "Nice reflection — you can finish when you're ready.",
+      state: "pass",
+    };
+  }, [
+    currentStep,
+    lastLessonIndex,
+    project.slug,
+    reflectionCoachChecks,
+    reflectionResponse,
+    step.feedbackMode,
+    step.reflectionPrompt,
+    variant,
+  ]);
   const completedStepIds = useMemo(
     () =>
       project.steps
@@ -403,6 +496,7 @@ export function LessonPageShell({
     checkpointAnswersByStep?: Record<string, Record<string, number>>;
     checkpointSubmittedByStep?: Record<string, boolean>;
     reflectionResponses?: Record<string, string>;
+    reflectionCoachChecks?: ReflectionCoachCheck[];
     textEntryResponses?: Record<string, string>;
     builderTouchedByStep?: Record<string, Record<string, boolean>>;
     imagePickerTouchedByStep?: Record<string, boolean>;
@@ -427,6 +521,7 @@ export function LessonPageShell({
       attemptId: attemptMetaRef.current.attemptId,
       projectSlug: project.slug,
       contentVersion: project.contentVersion,
+      variant,
       status,
       currentStepId: overrides.currentStepId ?? step.id,
       activeEditorTabId: overrides.activeEditorTabId ?? activeEditorTabId,
@@ -440,6 +535,7 @@ export function LessonPageShell({
       checkpointAnswersByStep: overrides.checkpointAnswersByStep ?? checkpointAnswersByStep,
       checkpointSubmittedByStep: overrides.checkpointSubmittedByStep ?? checkpointSubmittedByStep,
       reflectionResponses: overrides.reflectionResponses ?? reflectionResponses,
+      reflectionCoachChecks: overrides.reflectionCoachChecks ?? reflectionCoachChecks,
       textEntryResponses: overrides.textEntryResponses ?? textEntryResponses,
       builderTouchedByStep: overrides.builderTouchedByStep ?? builderTouchedByStep,
       imagePickerTouchedByStep: overrides.imagePickerTouchedByStep ?? imagePickerTouchedByStep,
@@ -465,12 +561,14 @@ export function LessonPageShell({
     project.contentVersion,
     project.slug,
     reflectionResponses,
+    reflectionCoachChecks,
     textEntryResponses,
     selectedImageId,
     selectedThemeId,
     step.id,
     stepStartCodeByStep,
     themePickerTouchedByStep,
+    variant,
   ]);
 
   const hydrateAttempt = useCallback((attempt: ProjectAttempt | null) => {
@@ -512,6 +610,7 @@ export function LessonPageShell({
     setCheckpointAnswersByStep(attempt.checkpointAnswersByStep);
     setCheckpointSubmittedByStep(attempt.checkpointSubmittedByStep);
     setReflectionResponses(attempt.reflectionResponses);
+    setReflectionCoachChecks(attempt.reflectionCoachChecks);
     setTextEntryResponses(attempt.textEntryResponses);
     setBuilderTouchedByStep(attempt.builderTouchedByStep);
     setImagePickerTouchedByStep(attempt.imagePickerTouchedByStep);
@@ -523,6 +622,7 @@ export function LessonPageShell({
 
   const { hasHydrated, saveState, queueSave, saveNow, clearSavedAttempt } = useProjectAttemptPersistence({
     project,
+    variant,
     storage,
     autosaveDelayMs,
     onHydrate: hydrateAttempt,
@@ -556,6 +656,7 @@ export function LessonPageShell({
     buildAttemptSnapshot,
     queueSave,
     reflectionResponses,
+    reflectionCoachChecks,
     textEntryResponses,
     selectedImageId,
     selectedThemeId,
@@ -581,6 +682,11 @@ export function LessonPageShell({
   };
 
   const goNext = () => {
+    if (currentStep === lastLessonIndex && reflectionFinishGate.isActive && !reflectionFinishGate.canFinish) {
+      setGateMessage(reflectionFinishGate.message);
+      return;
+    }
+
     if (step.isGate && !feedback.canGoNext) {
       setGateMessage("This step needs one more check before you move on.");
       return;
@@ -660,6 +766,11 @@ export function LessonPageShell({
     );
   };
 
+  const appendReflectionCoachCheck = (check: ReflectionCoachCheck) => {
+    setGateMessage(null);
+    setReflectionCoachChecks((current) => [...current, check]);
+  };
+
   const restart = () => {
     const shouldClear = window.confirm("Clear your saved progress for this project and start over?");
 
@@ -667,7 +778,7 @@ export function LessonPageShell({
       return;
     }
 
-    const freshAttempt = createFreshProjectAttempt(project);
+    const freshAttempt = createFreshProjectAttempt(project, variant);
     const nextAttempt = {
       ...freshAttempt,
       attemptId: attemptMetaRef.current.attemptId,
@@ -695,6 +806,7 @@ export function LessonPageShell({
     setCheckpointAnswersByStep({});
     setCheckpointSubmittedByStep({});
     setReflectionResponses({});
+    setReflectionCoachChecks(nextAttempt.reflectionCoachChecks);
     setTextEntryResponses({});
     setBuilderTouchedByStep({});
     setImagePickerTouchedByStep({});
@@ -1318,19 +1430,26 @@ export function LessonPageShell({
 
                 {step.feedbackMode && step.feedbackMode !== "none" ? (
                   <FeedbackPanel
+                    projectSlug={project.slug}
+                    variant={variant}
                     step={step}
                     state={feedback.state}
                     message={feedback.message}
                     isPending={feedback.isPending}
                     onManualCheck={feedback.needsManualCheck ? runManualCheck : undefined}
-                    gateMessage={gateMessage}
+                    gateMessage={gateMessage === reflectionFinishGate.message ? null : gateMessage}
                     reflectionResponse={reflectionResponse}
+                    reflectionGateMessage={reflectionFinishGate.message}
+                    reflectionGateState={reflectionFinishGate.state}
+                    priorAiCheckCount={priorAiCheckCount}
                     onReflectionChange={(value) => {
+                      setGateMessage(null);
                       setReflectionResponses((current) => ({
                         ...current,
                         [step.id]: value,
                       }));
                     }}
+                    onReflectionCoachCheck={appendReflectionCoachCheck}
                   />
                 ) : gateMessage ? (
                   <section className="feedback-panel feedback-notYet">

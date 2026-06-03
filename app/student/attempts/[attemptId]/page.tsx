@@ -14,6 +14,7 @@ export default async function StudentAttemptPage({ params }: StudentAttemptPageP
   return (
     <ProjectLessonPage
       slug={project.slug}
+      variant={attempt.variant}
       projectsHref="/student/projects"
       autosaveDelayMs={2000}
       navMode="student"

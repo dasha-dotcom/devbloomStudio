@@ -1,4 +1,5 @@
 import type { LessonProjectConfig } from "@/lib/projects";
+import type { LessonVariant } from "@/lib/experiments/lesson-variant";
 
 import { normalizeProjectAttempt } from "@/lib/persistence/project-attempt-sanitizer";
 import type { ProjectAttemptStorage } from "@/lib/persistence/project-attempt-storage";
@@ -16,7 +17,8 @@ export function createServerProjectAttemptStorage({
   let cachedAttempt = initialAttempt;
 
   return {
-    async loadAttempt(project: LessonProjectConfig) {
+    async loadAttempt(project: LessonProjectConfig, _variant: LessonVariant) {
+      void _variant;
       return normalizeProjectAttempt(project, cachedAttempt);
     },
 
@@ -36,7 +38,10 @@ export function createServerProjectAttemptStorage({
       cachedAttempt = attempt;
     },
 
-    async clearAttempt() {
+    async clearAttempt(_projectSlug: string, _contentVersion: string, _variant: LessonVariant) {
+      void _projectSlug;
+      void _contentVersion;
+      void _variant;
       const response = await fetch(`/api/student/attempts/${attemptId}`, {
         method: "DELETE",
       });

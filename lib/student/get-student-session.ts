@@ -24,6 +24,7 @@ export async function getStudentSession(sessionToken: string) {
       classId: classes.id,
       className: classes.name,
       classJoinCode: classes.joinCode,
+      classDefaultVariant: classes.defaultVariant,
       classIsArchived: classes.isArchived,
     })
     .from(studentSessions)

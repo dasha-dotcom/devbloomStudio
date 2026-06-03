@@ -1,8 +1,12 @@
-import { DeveloperNotebook } from "@/components/lesson/developer-notebook";
+import { ReflectionExperience } from "@/components/lesson/reflection-experience";
+import type { LessonVariant } from "@/lib/experiments/lesson-variant";
 import type { FeedbackState } from "@/lib/lesson-feedback";
+import type { ReflectionCoachCheck } from "@/lib/persistence/project-attempt-types";
 import type { LessonStep } from "@/lib/projects";
 
 type FeedbackPanelProps = {
+  projectSlug: string;
+  variant: LessonVariant;
   step: LessonStep;
   state: FeedbackState;
   message: string;
@@ -10,7 +14,11 @@ type FeedbackPanelProps = {
   onManualCheck?: () => void;
   gateMessage?: string | null;
   reflectionResponse?: string;
+  reflectionGateMessage?: string | null;
+  reflectionGateState?: FeedbackState | null;
+  priorAiCheckCount?: number;
   onReflectionChange?: (value: string) => void;
+  onReflectionCoachCheck?: (check: ReflectionCoachCheck) => void;
 };
 
 const statusLabels: Record<FeedbackState, string> = {
@@ -20,6 +28,8 @@ const statusLabels: Record<FeedbackState, string> = {
 };
 
 export function FeedbackPanel({
+  projectSlug,
+  variant,
   step,
   state,
   message,
@@ -27,7 +37,11 @@ export function FeedbackPanel({
   onManualCheck,
   gateMessage,
   reflectionResponse,
+  reflectionGateMessage,
+  reflectionGateState,
+  priorAiCheckCount = 0,
   onReflectionChange,
+  onReflectionCoachCheck,
 }: FeedbackPanelProps) {
   if (step.feedbackMode === "none") {
     return null;
@@ -36,14 +50,19 @@ export function FeedbackPanel({
   return (
     <section className={`feedback-panel feedback-${state}`}>
       {step.feedbackMode === "reflection" ? (
-        <DeveloperNotebook
-          prompt={step.reflectionPrompt ?? ""}
-          placeholder={step.reflectionPlaceholder}
+        <ReflectionExperience
+          projectSlug={projectSlug}
+          variant={variant}
+          step={step}
           value={reflectionResponse ?? ""}
           onChange={(value) => onReflectionChange?.(value)}
           status={state}
           statusMessage={message}
           showSavedPreview={state === "pass"}
+          reflectionGateMessage={reflectionGateMessage}
+          reflectionGateState={reflectionGateState}
+          priorAiCheckCount={priorAiCheckCount}
+          onCoachCheck={onReflectionCoachCheck}
         />
       ) : (
         <>

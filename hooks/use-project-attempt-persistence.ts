@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { LessonVariant } from "@/lib/experiments/lesson-variant";
 import {
   localStorageProjectAttemptStorage,
   type ProjectAttemptStorage,
@@ -13,6 +14,7 @@ export type AttemptSaveState = "saving" | "saved" | "error";
 
 type UseProjectAttemptPersistenceOptions = {
   project: LessonProjectConfig;
+  variant: LessonVariant;
   storage?: ProjectAttemptStorage;
   autosaveDelayMs?: number;
   onHydrate: (attempt: ProjectAttempt | null) => void;
@@ -28,6 +30,7 @@ type UseProjectAttemptPersistenceResult = {
 
 export function useProjectAttemptPersistence({
   project,
+  variant,
   storage = localStorageProjectAttemptStorage,
   autosaveDelayMs = 700,
   onHydrate,
@@ -59,7 +62,7 @@ export function useProjectAttemptPersistence({
 
     void (async () => {
       try {
-        const savedAttempt = await storage.loadAttempt(project);
+        const savedAttempt = await storage.loadAttempt(project, variant);
 
         if (isCancelled || !isMountedRef.current || loadRequestIdRef.current !== requestId) {
           return;
@@ -97,7 +100,7 @@ export function useProjectAttemptPersistence({
         window.clearTimeout(timeoutRef.current);
       }
     };
-  }, [onHydrate, project, storage]);
+  }, [onHydrate, project, storage, variant]);
 
   const persistAttempt = useCallback(async (attempt: ProjectAttempt) => {
     try {
@@ -162,7 +165,7 @@ export function useProjectAttemptPersistence({
 
     void (async () => {
       try {
-        await storage.clearAttempt(project.slug, project.contentVersion);
+        await storage.clearAttempt(project.slug, project.contentVersion, variant);
 
         if (!isMountedRef.current) {
           return;
@@ -181,7 +184,7 @@ export function useProjectAttemptPersistence({
         }
       }
     })();
-  }, [project.contentVersion, project.slug, storage]);
+  }, [project.contentVersion, project.slug, storage, variant]);
 
   return {
     hasHydrated,

@@ -16,6 +16,7 @@ export const projectAttempts = pgTable(
       .references(() => studentProfiles.id, { onDelete: "cascade" }),
     projectSlug: text("project_slug").notNull(),
     contentVersion: text("content_version").notNull(),
+    variant: text("variant").default("control").notNull(),
     status: text("status").notNull(),
     progressPercent: integer("progress_percent"),
     currentStepId: text("current_step_id").notNull(),
@@ -30,10 +31,11 @@ export const projectAttempts = pgTable(
       .$onUpdate(() => sql`now()`),
   },
   (table) => ({
-    studentProjectVersionUniqueIdx: uniqueIndex("project_attempts_student_project_version_unique_idx").on(
+    studentProjectVersionVariantUniqueIdx: uniqueIndex("project_attempts_student_project_version_variant_unique_idx").on(
       table.studentProfileId,
       table.projectSlug,
       table.contentVersion,
+      table.variant,
     ),
     classIdIdx: index("project_attempts_class_id_idx").on(table.classId),
     studentProfileIdIdx: index("project_attempts_student_profile_id_idx").on(table.studentProfileId),
