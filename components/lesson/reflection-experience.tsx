@@ -14,6 +14,8 @@ type ReflectionExperienceProps = {
   status: FeedbackState;
   statusMessage?: string;
   showSavedPreview?: boolean;
+  reflectionGateMessage?: string | null;
+  reflectionGateState?: FeedbackState | null;
   priorAiCheckCount?: number;
   onCoachCheck?: (check: ReflectionCoachCheck) => void;
 };
@@ -27,6 +29,8 @@ export function ReflectionExperience({
   status,
   statusMessage,
   showSavedPreview = false,
+  reflectionGateMessage,
+  reflectionGateState,
   priorAiCheckCount = 0,
   onCoachCheck,
 }: ReflectionExperienceProps) {
@@ -40,6 +44,8 @@ export function ReflectionExperience({
         status={status}
         statusMessage={statusMessage}
         showSavedPreview={showSavedPreview}
+        reflectionGateMessage={reflectionGateMessage}
+        reflectionGateState={reflectionGateState}
         priorAiCheckCount={priorAiCheckCount}
         onCoachCheck={onCoachCheck}
       />

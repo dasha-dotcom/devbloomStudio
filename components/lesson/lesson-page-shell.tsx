@@ -28,7 +28,12 @@ import {
   type LessonProjectConfig,
   type LessonStep,
 } from "@/lib/projects";
-import { evaluateStepFeedback, hasSubstantiveReflection, useStepFeedback } from "@/lib/lesson-feedback";
+import {
+  evaluateStepFeedback,
+  hasSubstantiveReflection,
+  type FeedbackState,
+  useStepFeedback,
+} from "@/lib/lesson-feedback";
 import {
   createFreshProjectAttempt,
   getDefaultEditorTabId,
@@ -38,12 +43,22 @@ import {
   type ProjectAttemptStorage,
   type ProjectAttemptStatus,
 } from "@/lib/persistence/project-attempts";
+import {
+  evaluateReflectionForCoach,
+  getReflectionCoachLessonFocus,
+} from "@/lib/reflection-coach/evaluate-reflection";
 
 const DEFAULT_EDITOR_WIDTH = 64;
 const MIN_PANE_WIDTH = 320;
 
 type PaneMode = "both" | "editor-only" | "preview-only";
 type FinalExitState = "idle" | "saving" | "saved" | "error";
+type ReflectionFinishGate = {
+  isActive: boolean;
+  canFinish: boolean;
+  message: string | null;
+  state: FeedbackState | null;
+};
 
 type LessonPageShellProps = {
   project: LessonProjectConfig;
@@ -60,6 +75,13 @@ const hasAnyCodeChange = (currentCode: string, previousCode: string) =>
   normalizeForCompare(currentCode) !== normalizeForCompare(previousCode);
 
 const getStepEditorTabId = (step: LessonStep) => step.defaultEditorTabId ?? step.editorTabs?.[0]?.id ?? "default";
+
+const inactiveReflectionFinishGate: ReflectionFinishGate = {
+  isActive: false,
+  canFinish: true,
+  message: null,
+  state: null,
+};
 
 export function LessonPageShell({
   project,
@@ -229,6 +251,71 @@ export function LessonPageShell({
     checkpointSubmitted: Boolean(checkpointSubmittedByStep[step.id]),
     reflectionResponse,
   });
+  const reflectionFinishGate = useMemo<ReflectionFinishGate>(() => {
+    const isFinalReflectionStep =
+      variant === "ai_coach" &&
+      currentStep === lastLessonIndex &&
+      step.feedbackMode === "reflection";
+
+    if (!isFinalReflectionStep) {
+      return inactiveReflectionFinishGate;
+    }
+
+    const evaluation = evaluateReflectionForCoach({
+      reflectionText: reflectionResponse,
+      projectSlug: project.slug,
+      reflectionPrompt: step.reflectionPrompt,
+      lessonFocus: getReflectionCoachLessonFocus(step.reflectionPrompt),
+    });
+    const latestSproutCheck = reflectionCoachChecks.at(-1);
+    const hasSproutCheckForCurrentReflection = Boolean(
+      latestSproutCheck &&
+        normalizeForCompare(latestSproutCheck.reflectionText) === normalizeForCompare(reflectionResponse),
+    );
+
+    if (evaluation.coachResult === "empty") {
+      return {
+        isActive: true,
+        canFinish: false,
+        message: "Write one sentence about what you changed before finishing.",
+        state: "notYet",
+      };
+    }
+
+    if (evaluation.coachResult === "weak") {
+      if (!hasSproutCheckForCurrentReflection) {
+        return {
+          isActive: true,
+          canFinish: false,
+          message: "Sprout can help you add one more detail before you finish.",
+          state: "notYet",
+        };
+      }
+
+      return {
+        isActive: true,
+        canFinish: true,
+        message: "You can finish now, or improve your reflection using Sprout's question.",
+        state: "close",
+      };
+    }
+
+    return {
+      isActive: true,
+      canFinish: true,
+      message: "Nice reflection — you can finish when you're ready.",
+      state: "pass",
+    };
+  }, [
+    currentStep,
+    lastLessonIndex,
+    project.slug,
+    reflectionCoachChecks,
+    reflectionResponse,
+    step.feedbackMode,
+    step.reflectionPrompt,
+    variant,
+  ]);
   const completedStepIds = useMemo(
     () =>
       project.steps
@@ -595,6 +682,11 @@ export function LessonPageShell({
   };
 
   const goNext = () => {
+    if (currentStep === lastLessonIndex && reflectionFinishGate.isActive && !reflectionFinishGate.canFinish) {
+      setGateMessage(reflectionFinishGate.message);
+      return;
+    }
+
     if (step.isGate && !feedback.canGoNext) {
       setGateMessage("This step needs one more check before you move on.");
       return;
@@ -675,6 +767,7 @@ export function LessonPageShell({
   };
 
   const appendReflectionCoachCheck = (check: ReflectionCoachCheck) => {
+    setGateMessage(null);
     setReflectionCoachChecks((current) => [...current, check]);
   };
 
@@ -1344,10 +1437,13 @@ export function LessonPageShell({
                     message={feedback.message}
                     isPending={feedback.isPending}
                     onManualCheck={feedback.needsManualCheck ? runManualCheck : undefined}
-                    gateMessage={gateMessage}
+                    gateMessage={gateMessage === reflectionFinishGate.message ? null : gateMessage}
                     reflectionResponse={reflectionResponse}
+                    reflectionGateMessage={reflectionFinishGate.message}
+                    reflectionGateState={reflectionFinishGate.state}
                     priorAiCheckCount={priorAiCheckCount}
                     onReflectionChange={(value) => {
+                      setGateMessage(null);
                       setReflectionResponses((current) => ({
                         ...current,
                         [step.id]: value,

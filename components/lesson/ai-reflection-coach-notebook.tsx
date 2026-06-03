@@ -27,6 +27,8 @@ type AiReflectionCoachNotebookProps = {
   status: FeedbackState;
   statusMessage?: string;
   showSavedPreview?: boolean;
+  reflectionGateMessage?: string | null;
+  reflectionGateState?: FeedbackState | null;
   priorAiCheckCount?: number;
   onCoachCheck?: (check: ReflectionCoachCheck) => void;
 };
@@ -159,6 +161,8 @@ export function AiReflectionCoachNotebook({
   status,
   statusMessage,
   showSavedPreview = false,
+  reflectionGateMessage,
+  reflectionGateState,
   priorAiCheckCount = 0,
   onCoachCheck,
 }: AiReflectionCoachNotebookProps) {
@@ -168,11 +172,13 @@ export function AiReflectionCoachNotebook({
   const trimmedValue = value.trim();
   const primaryState = coachReview ? getFeedbackStateForCoachResult(coachReview.coachResult) : status;
   const primaryMessage = coachReview?.message ?? statusMessage;
+  const displayState = reflectionGateState ?? primaryState;
+  const displayMessage = reflectionGateMessage ?? primaryMessage;
   const sproutPositiveMessage = coachReview?.coachResult === "strong" ? coachReview.message : null;
-  const inlineStatusMessage = sproutPositiveMessage ? null : primaryMessage;
+  const inlineStatusMessage = sproutPositiveMessage ? null : displayMessage;
   const followUpQuestion = coachReview?.followUpQuestion;
   const shouldShowSavedPreview =
-    status === "pass" && showSavedPreview && trimmedValue.length > 0 && !followUpQuestion;
+    displayState === "pass" && showSavedPreview && trimmedValue.length > 0 && !followUpQuestion;
 
   return (
     <div className="developer-notebook ai-reflection-coach">
@@ -201,7 +207,7 @@ export function AiReflectionCoachNotebook({
           rows={4}
         />
         {inlineStatusMessage ? (
-          <p className={`prediction-feedback developer-notebook-status status-${primaryState}`}>
+          <p className={`prediction-feedback developer-notebook-status status-${displayState}`}>
             {inlineStatusMessage}
           </p>
         ) : null}
