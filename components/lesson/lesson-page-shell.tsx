@@ -282,13 +282,13 @@ export function LessonPageShell({
       };
     }
 
-    if (evaluation.coachResult === "weak") {
+    if (evaluation.coachResult === "weak" || evaluation.coachResult === "almost_there") {
       if (!hasSproutCheckForCurrentReflection) {
         return {
           isActive: true,
           canFinish: false,
           message: "Sprout can help you add one more detail before you finish.",
-          state: "notYet",
+          state: evaluation.coachResult === "almost_there" ? "close" : "notYet",
         };
       }
 

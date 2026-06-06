@@ -40,7 +40,7 @@ type CoachReview = {
 };
 
 const getFeedbackStateForCoachResult = (result: ReflectionCoachResult): FeedbackState =>
-  result === "strong" ? "pass" : "notYet";
+  result === "strong" ? "pass" : result === "almost_there" ? "close" : "notYet";
 
 const getReflectionCoachMessage = (evaluation: ReflectionCoachEvaluation) => {
   if (evaluation.coachResult === "empty") {
@@ -51,6 +51,10 @@ const getReflectionCoachMessage = (evaluation: ReflectionCoachEvaluation) => {
     return "Nice start — let's help your reflection grow with one more detail.";
   }
 
+  if (evaluation.coachResult === "almost_there") {
+    return "Nice start — add one more detail so Sprout can understand your thinking.";
+  }
+
   return evaluation.positiveMessage ?? "Nice start — you named a specific part of your project.";
 };
 
@@ -58,7 +62,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 const isReflectionCoachResult = (value: unknown): value is ReflectionCoachResult =>
-  value === "empty" || value === "weak" || value === "strong";
+  value === "empty" || value === "weak" || value === "almost_there" || value === "strong";
 
 const isReflectionCoachFocus = (value: unknown): value is ReflectionCoachFocus =>
   value === "html" || value === "css" || value === "javascript" || value === "general";

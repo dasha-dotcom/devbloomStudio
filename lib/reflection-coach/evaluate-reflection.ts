@@ -154,6 +154,20 @@ const getFollowUpQuestion = ({
 
 const hasPattern = (normalizedValue: string, pattern: RegExp) => pattern.test(normalizedValue);
 
+const hasCssTargetingSignal = (normalizedValue: string) =>
+  hasPattern(
+    normalizedValue,
+    /\b(selector|class|element|tag|id|target|targeted)\b|\.[a-z0-9_-]+|#[a-z0-9_-]+/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\b(because|used|using|select|selected|rule|find|found|knew)\b.{0,80}\b(body|main|h1|h2|p|li|ul|heading|title|card|hero title|vibe card|mood note|hero text|vibe list)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\b(body|main|h1|h2|p|li|ul|hero-title|vibe-card|mood-note|hero-text|vibe-list)\s+rule\b/,
+  );
+
 const getMiniSiteMissingCategoryQuestion = (missingCategories: Array<"HTML" | "CSS" | "JavaScript">) => {
   if (missingCategories.length > 1) {
     return "Can you name one thing you changed in HTML, CSS, and JavaScript?";
@@ -162,13 +176,23 @@ const getMiniSiteMissingCategoryQuestion = (missingCategories: Array<"HTML" | "C
   return `What did you customize with ${missingCategories[0]}?`;
 };
 
+const hasMiniSiteHtmlDetail = (normalizedValue: string) =>
+  hasPattern(normalizedValue, /\b(heading|title|paragraph|list|image|text|content|intro|h1|p|li)\b/);
+
+const hasMiniSiteCssDetail = (normalizedValue: string) =>
+  hasPattern(normalizedValue, /\b(css|style|styles|color|colors|background|font|spacing|border|theme|card)\b/);
+
+const hasMiniSiteJavaScriptDetail = (normalizedValue: string) =>
+  hasPattern(
+    normalizedValue,
+    /\b(button|click|clicked|message|mood|interaction|javascript|js|react|reacted)\b/,
+  );
+
 const getProjectSpecificEvaluation = ({
   projectSlug,
-  reflectionPrompt,
   normalizedValue,
 }: {
   projectSlug?: string;
-  reflectionPrompt?: string;
   normalizedValue: string;
 }): Pick<
   ReflectionCoachEvaluation,
@@ -185,32 +209,41 @@ const getProjectSpecificEvaluation = ({
     );
     const hasVisibleResult = hasPattern(
       normalizedValue,
-      /\b(show|shows|showed|say|says|said|display|displays|appears|appeared|page|visitor|see|added)\b/,
+      /\b(show|shows|showed|say|says|said|display|displays|appears|appeared|visitor|see)\b/,
     );
 
-    if (!hasHtmlChange) {
+    if (hasHtmlChange && hasVisibleResult) {
       return {
-        coachResult: "weak",
-        recommendedFocus: "specificity",
+        coachResult: "strong",
+        recommendedFocus: "ownership",
         lessonFocus: "html",
-        followUpQuestion: "What HTML part did you change, like a heading, paragraph, or list item?",
+        positiveMessage: "Nice work — you named an HTML change and what it did on the page.",
       };
     }
 
-    if (!hasVisibleResult) {
+    if (hasHtmlChange) {
       return {
-        coachResult: "weak",
+        coachResult: "almost_there",
         recommendedFocus: "causality",
         lessonFocus: "html",
         followUpQuestion: "What did that change add or show on your page?",
       };
     }
 
+    if (hasVisibleResult) {
+      return {
+        coachResult: "almost_there",
+        recommendedFocus: "specificity",
+        lessonFocus: "html",
+        followUpQuestion: "What HTML part did you change, like a heading, paragraph, or list item?",
+      };
+    }
+
     return {
-      coachResult: "strong",
-      recommendedFocus: "ownership",
+      coachResult: "weak",
+      recommendedFocus: "specificity",
       lessonFocus: "html",
-      positiveMessage: "Nice work — you named an HTML change and what it did on the page.",
+      followUpQuestion: "What HTML part did you change, like a heading, paragraph, or list item?",
     };
   }
 
@@ -219,34 +252,44 @@ const getProjectSpecificEvaluation = ({
       normalizedValue,
       /\b(changed|added|customized|updated|made|styled|picked|set)\b.*\b(css|style|color|background|font|text|spacing|card|border|size|theme|mood)\b/,
     );
-    const hasCssTargeting = hasPattern(
+    const hasCssTargeting = hasCssTargetingSignal(normalizedValue);
+    const hasVisibleDesignResult = hasPattern(
       normalizedValue,
-      /\b(selector|class|element|tag|id|target|targeted)\b|\.[a-z0-9_-]+|#[a-z0-9_-]+/,
+      /\b(page|look|looks|looked|feel|feels|felt|mood|calm|calmer|bright|brighter|design|different|visitor|see)\b/,
     );
 
-    if (!hasStyleChange) {
+    if (hasStyleChange && (hasCssTargeting || hasVisibleDesignResult)) {
       return {
-        coachResult: "weak",
+        coachResult: "strong",
+        recommendedFocus: "ownership",
+        lessonFocus: "css",
+        positiveMessage: "Nice work — you connected a CSS style change to how the page looked.",
+      };
+    }
+
+    if (hasStyleChange) {
+      return {
+        coachResult: "almost_there",
+        recommendedFocus: "concept_connection",
+        lessonFocus: "css",
+        followUpQuestion: "What selector, class, or page result helped Sprout understand that CSS change?",
+      };
+    }
+
+    if (hasCssTargeting) {
+      return {
+        coachResult: "almost_there",
         recommendedFocus: "specificity",
         lessonFocus: "css",
         followUpQuestion: "What style did you change, like a color, text, spacing, or card style?",
       };
     }
 
-    if (!hasCssTargeting) {
-      return {
-        coachResult: "weak",
-        recommendedFocus: "concept_connection",
-        lessonFocus: "css",
-        followUpQuestion: "What selector, class, or element helped CSS find that part of the page?",
-      };
-    }
-
     return {
-      coachResult: "strong",
-      recommendedFocus: "ownership",
+      coachResult: "weak",
+      recommendedFocus: "specificity",
       lessonFocus: "css",
-      positiveMessage: "Nice work — you connected a CSS style change to how CSS found the page part.",
+      followUpQuestion: "What style did you change, like a color, text, spacing, or card style?",
     };
   }
 
@@ -260,46 +303,52 @@ const getProjectSpecificEvaluation = ({
       /\b(message|text|mood|color|background|class|part|switch|show|shows|reacted)\b/,
     );
 
-    if (!hasEvent) {
+    if (hasEvent && hasPageResult) {
       return {
-        coachResult: "weak",
-        recommendedFocus: "causality",
+        coachResult: "strong",
+        recommendedFocus: "ownership",
         lessonFocus: "javascript",
-        followUpQuestion: "What action made the JavaScript run?",
+        positiveMessage: "Nice work — you connected the action to the page change.",
       };
     }
 
-    if (!hasPageResult) {
+    if (hasEvent) {
       return {
-        coachResult: "weak",
+        coachResult: "almost_there",
         recommendedFocus: "specificity",
         lessonFocus: "javascript",
         followUpQuestion: "What changed on the page after that action?",
       };
     }
 
+    if (hasPageResult) {
+      return {
+        coachResult: "almost_there",
+        recommendedFocus: "causality",
+        lessonFocus: "javascript",
+        followUpQuestion: "What action made the JavaScript run?",
+      };
+    }
+
     return {
-      coachResult: "strong",
-      recommendedFocus: "ownership",
+      coachResult: "weak",
+      recommendedFocus: "causality",
       lessonFocus: "javascript",
-      positiveMessage: "Nice work — you connected the action to the page change.",
+      followUpQuestion: "What action made the JavaScript run?",
     };
   }
 
   if (projectSlug === "build-your-own-mini-site") {
-    const hasHtml = hasPattern(normalizedValue, /\b(html|heading|title|paragraph|list|image|text|content)\b/);
-    const hasCss = hasPattern(normalizedValue, /\b(css|style|color|background|font|spacing|border|theme|card)\b/);
-    const hasJavaScript = hasPattern(
-      normalizedValue,
-      /\b(javascript|js|button|click|clicked|message|mood|interaction|react|reacted)\b/,
-    );
+    const hasHtml = hasMiniSiteHtmlDetail(normalizedValue);
+    const hasCss = hasMiniSiteCssDetail(normalizedValue);
+    const hasJavaScript = hasMiniSiteJavaScriptDetail(normalizedValue);
     const missingCategories = [
       hasHtml ? null : "HTML",
       hasCss ? null : "CSS",
       hasJavaScript ? null : "JavaScript",
     ].filter((category): category is "HTML" | "CSS" | "JavaScript" => Boolean(category));
 
-    if (missingCategories.length > 0) {
+    if (missingCategories.length === 3) {
       return {
         coachResult: "weak",
         recommendedFocus: "concept_connection",
@@ -308,12 +357,12 @@ const getProjectSpecificEvaluation = ({
       };
     }
 
-    if (reflectionPrompt?.toLowerCase().includes("proud") && !hasPattern(normalizedValue, /\b(because|why|proud|chose|wanted|so that)\b/)) {
+    if (missingCategories.length > 0) {
       return {
-        coachResult: "weak",
-        recommendedFocus: "ownership",
+        coachResult: "almost_there",
+        recommendedFocus: "concept_connection",
         lessonFocus: "general",
-        followUpQuestion: "Which change are you most proud of, and why?",
+        followUpQuestion: getMiniSiteMissingCategoryQuestion(missingCategories),
       };
     }
 
@@ -343,7 +392,6 @@ export function evaluateReflectionForCoach({
   const recommendedFocus = getRecommendedFocus(detectedSignals);
   const projectSpecificEvaluation = getProjectSpecificEvaluation({
     projectSlug,
-    reflectionPrompt,
     normalizedValue,
   });
 

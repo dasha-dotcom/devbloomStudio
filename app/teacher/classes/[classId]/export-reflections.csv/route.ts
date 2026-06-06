@@ -52,7 +52,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 const isReflectionCoachResult = (value: unknown): value is ReflectionCoachResult =>
-  value === "empty" || value === "weak" || value === "strong";
+  value === "empty" || value === "weak" || value === "almost_there" || value === "strong";
 
 const isReflectionCoachSource = (value: unknown): value is ReflectionCoachSource =>
   value === "ai" || value === "local_fallback";

@@ -68,7 +68,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 const isReflectionCoachResult = (value: unknown): value is ReflectionCoachResult =>
-  value === "empty" || value === "weak" || value === "strong";
+  value === "empty" || value === "weak" || value === "almost_there" || value === "strong";
 
 const isReflectionCoachFocus = (value: unknown): value is ReflectionCoachFocus =>
   value === "html" || value === "css" || value === "javascript" || value === "general";
@@ -88,6 +88,25 @@ const isDetectedSignals = (value: unknown): value is ReflectionCoachDetectedSign
   typeof value.hasActionOrChange === "boolean" &&
   typeof value.hasConceptConnection === "boolean" &&
   typeof value.hasReasonOrChoice === "boolean";
+
+const hasMatchingDetectedSignals = (
+  value: ReflectionCoachDetectedSignals,
+  fallback: ReflectionCoachDetectedSignals,
+) =>
+  value.hasSpecificEdit === fallback.hasSpecificEdit &&
+  value.hasPageDetail === fallback.hasPageDetail &&
+  value.hasActionOrChange === fallback.hasActionOrChange &&
+  value.hasConceptConnection === fallback.hasConceptConnection &&
+  value.hasReasonOrChoice === fallback.hasReasonOrChoice;
+
+const warnStatusMismatchInDevelopment = (
+  mismatch: string,
+  details: Record<string, unknown>,
+) => {
+  if (process.env.NODE_ENV !== "production") {
+    console.warn("Reflection coach AI status mismatch:", mismatch, details);
+  }
+};
 
 const harshLanguagePattern = /\b(incorrect|insufficient)\b/i;
 const codeLikeOutputPattern =
@@ -161,7 +180,7 @@ const getProjectPromptTarget = (projectSlug: string) => {
       project: "Vibe Page",
       strongWhen: [
         "Student names one concrete CSS style change.",
-        "Student explains how CSS knew what to style using a selector, class, element, or similar targeting idea.",
+        "Student explains how CSS knew what to style using a selector, class, element, or similar targeting idea, or names the visible design result.",
       ],
       weakFollowUpPriority: [
         "If no style change is named, ask: What style did you change, like a color, text, spacing, or card style?",
@@ -192,17 +211,15 @@ const getProjectPromptTarget = (projectSlug: string) => {
     return {
       project: "Build Your Own Mini Site",
       strongWhen: [
-        "Student names at least one HTML customization.",
-        "Student names at least one CSS customization.",
-        "Student names at least one JavaScript customization.",
-        "If the prompt asks what they are proud of and why, student gives a reason or choice.",
+        "Student names at least one specific HTML customization detail.",
+        "Student names at least one specific CSS customization detail.",
+        "Student names at least one specific JavaScript customization detail.",
       ],
       weakFollowUpPriority: [
         "If HTML is missing, ask: What did you customize with HTML?",
         "If CSS is missing, ask: What did you customize with CSS?",
         "If JavaScript is missing, ask: What did you customize with JavaScript?",
         "If multiple categories are missing, ask: Can you name one thing you changed in HTML, CSS, and JavaScript?",
-        "If all three are present but the proud/why part is missing, ask: Which change are you most proud of, and why?",
       ],
       strongPositiveMessage:
         "Mention that they covered what they customized in HTML, CSS, and JavaScript.",
@@ -236,36 +253,54 @@ const getMessages = ({
   {
     role: "system",
     content:
-      "You are Sprout, a warm reflection coach for students ages 9-12. You are not a chatbot, coding tutor, grader, or code generator. Judge the student reflection against the exact reflection prompt and project target. Return only one JSON object. Do not write or rewrite the student's reflection. Do not provide code. Do not ask more than one question. Avoid harsh words like incorrect or insufficient.",
+      "You are Sprout, a warm reflection coach for students ages 9-12. You are not a chatbot, coding tutor, grader, or code generator. A local evaluator has already judged the reflection. Do not re-grade it. Return only one JSON object. Do not write or rewrite the student's reflection. Do not provide code. Do not ask more than one question. Avoid harsh words like incorrect or insufficient.",
   },
   {
     role: "user",
     content: JSON.stringify({
-      task: "Evaluate one student reflection and return only bounded JSON.",
+      task: "Write one bounded Sprout response using the authoritative local evaluation.",
       outputShape: {
-        coachResult: "empty | weak | strong",
+        coachResult: "Copy exactly from authoritativeLocalEvaluation.coachResult.",
         detectedSignals: {
-          hasSpecificEdit: "boolean",
-          hasPageDetail: "boolean",
-          hasActionOrChange: "boolean",
-          hasConceptConnection: "boolean",
-          hasReasonOrChoice: "boolean",
+          hasSpecificEdit: "Copy exactly from authoritativeLocalEvaluation.detectedSignals.hasSpecificEdit.",
+          hasPageDetail: "Copy exactly from authoritativeLocalEvaluation.detectedSignals.hasPageDetail.",
+          hasActionOrChange: "Copy exactly from authoritativeLocalEvaluation.detectedSignals.hasActionOrChange.",
+          hasConceptConnection: "Copy exactly from authoritativeLocalEvaluation.detectedSignals.hasConceptConnection.",
+          hasReasonOrChoice: "Copy exactly from authoritativeLocalEvaluation.detectedSignals.hasReasonOrChoice.",
         },
-        recommendedFocus: "specificity | causality | concept_connection | ownership",
-        lessonFocus: "html | css | javascript | general",
+        recommendedFocus: "Copy exactly from authoritativeLocalEvaluation.recommendedFocus.",
+        lessonFocus: "Copy exactly from authoritativeLocalEvaluation.lessonFocus.",
         followUpQuestion:
-          "Only if coachResult is weak. Mention one detail from the reflection, then ask one short question under 180 characters.",
-        positiveMessage: "Only if coachResult is strong. One short sentence under 140 characters.",
+          "Only if coachResult is weak or almost_there. Vary the wording, but ask only about authoritativeLocalEvaluation.followUpQuestion.",
+        positiveMessage:
+          "Only if coachResult is strong. Omit this field completely for weak, almost_there, and empty.",
       },
       rules: [
-        "If the reflection is empty, set coachResult to empty and do not invent details.",
-        "If the reflection is weak, mention one detail the student wrote, then ask exactly one short follow-up question about the recommendedFocus.",
-        "If the reflection is strong, give one short positive message and no follow-up question.",
+        "The authoritativeLocalEvaluation is final. Do not change coachResult, detectedSignals, recommendedFocus, or lessonFocus.",
+        "If coachResult is weak or almost_there, write exactly one short follow-up question about the same missing idea as authoritativeLocalEvaluation.followUpQuestion.",
+        "If coachResult is weak or almost_there, you may mention one detail the student wrote, but do not ask about a different missing idea.",
+        "If coachResult is weak or almost_there, do not include positiveMessage.",
+        "If coachResult is strong, give one short positive message and no follow-up question.",
+        "If coachResult is empty, do not invent details.",
         "Never write a replacement reflection for the student.",
         "Never include code or coding instructions.",
-        "A reflection can be specific but still weak if it misses the main concept in the project target.",
-        "Use localEvaluation as helpful context, but the projectPromptTarget is the main checklist.",
+        "Do not tell the student to include something that the authoritative local evaluation already says is present.",
       ],
+      authoritativeLocalEvaluation: localEvaluation,
+      responseTask:
+        localEvaluation.coachResult === "weak" || localEvaluation.coachResult === "almost_there"
+          ? {
+              kind: "ask_follow_up",
+              targetQuestion: localEvaluation.followUpQuestion ?? "",
+            }
+          : localEvaluation.coachResult === "strong"
+            ? {
+                kind: "positive_message",
+                targetMessage: localEvaluation.positiveMessage ?? "",
+              }
+            : {
+                kind: "empty_reflection",
+              },
       projectSlug,
       projectTitle,
       lessonTitle: lessonTitle ?? "",
@@ -278,7 +313,6 @@ const getMessages = ({
         javascript: "interaction/reaction/click behavior",
         general: "project change/result",
       }[lessonFocus],
-      localEvaluation,
       studentReflection: reflectionText.slice(0, MAX_REFLECTION_CHARS_FOR_AI),
     }),
   },
@@ -355,16 +389,44 @@ const normalizeAiEvaluation = (
   }
 
   const coachResult = isReflectionCoachResult(rawValue.coachResult) ? rawValue.coachResult : null;
-  const recommendedFocus = isReflectionCoachRecommendedFocus(rawValue.recommendedFocus)
-    ? rawValue.recommendedFocus
-    : null;
-  const lessonFocus = isReflectionCoachFocus(rawValue.lessonFocus) ? rawValue.lessonFocus : null;
 
   if (!coachResult) {
     return { evaluation: null, fallbackReason: "invalid_coach_result" };
   }
 
-  if (!recommendedFocus) {
+  if (!reflectionText.trim() && coachResult !== "empty") {
+    warnStatusMismatchInDevelopment("empty reflection returned non-empty result", {
+      aiCoachResult: coachResult,
+      expectedCoachResult: "empty",
+    });
+    return { evaluation: null, fallbackReason: "status_mismatch" };
+  }
+
+  if (reflectionText.trim() && coachResult === "empty") {
+    warnStatusMismatchInDevelopment("non-empty reflection returned empty result", {
+      aiCoachResult: coachResult,
+      localCoachResult: fallback.coachResult,
+    });
+    return { evaluation: null, fallbackReason: "status_mismatch" };
+  }
+
+  if (coachResult !== fallback.coachResult) {
+    warnStatusMismatchInDevelopment("coachResult changed", {
+      aiCoachResult: coachResult,
+      localCoachResult: fallback.coachResult,
+    });
+    return { evaluation: null, fallbackReason: "status_mismatch" };
+  }
+
+  const detectedSignals = isDetectedSignals(rawValue.detectedSignals)
+    ? rawValue.detectedSignals
+    : null;
+  const recommendedFocus = isReflectionCoachRecommendedFocus(rawValue.recommendedFocus)
+    ? rawValue.recommendedFocus
+    : null;
+  const lessonFocus = isReflectionCoachFocus(rawValue.lessonFocus) ? rawValue.lessonFocus : null;
+
+  if (!detectedSignals || !recommendedFocus) {
     return { evaluation: null, fallbackReason: "missing_required_field" };
   }
 
@@ -372,34 +434,44 @@ const normalizeAiEvaluation = (
     return { evaluation: null, fallbackReason: "invalid_lesson_focus" };
   }
 
-  if (!reflectionText.trim() && coachResult !== "empty") {
+  if (
+    !hasMatchingDetectedSignals(detectedSignals, fallback.detectedSignals) ||
+    recommendedFocus !== fallback.recommendedFocus ||
+    lessonFocus !== fallback.lessonFocus
+  ) {
+    warnStatusMismatchInDevelopment("authoritative fields changed", {
+      aiDetectedSignals: detectedSignals,
+      localDetectedSignals: fallback.detectedSignals,
+      aiRecommendedFocus: recommendedFocus,
+      localRecommendedFocus: fallback.recommendedFocus,
+      aiLessonFocus: lessonFocus,
+      localLessonFocus: fallback.lessonFocus,
+    });
     return { evaluation: null, fallbackReason: "status_mismatch" };
   }
 
-  if (reflectionText.trim() && coachResult === "empty") {
-    return { evaluation: null, fallbackReason: "status_mismatch" };
-  }
-
-  const detectedSignals = isDetectedSignals(rawValue.detectedSignals)
-    ? rawValue.detectedSignals
-    : fallback.detectedSignals;
+  const localEvaluationBase = {
+    coachResult: fallback.coachResult,
+    detectedSignals: fallback.detectedSignals,
+    recommendedFocus: fallback.recommendedFocus,
+    lessonFocus: fallback.lessonFocus,
+  };
 
   if (coachResult === "empty") {
     if (rawValue.followUpQuestion !== undefined || rawValue.positiveMessage !== undefined) {
+      warnStatusMismatchInDevelopment("empty result included coach message", {
+        hasFollowUpQuestion: rawValue.followUpQuestion !== undefined,
+        hasPositiveMessage: rawValue.positiveMessage !== undefined,
+      });
       return { evaluation: null, fallbackReason: "status_mismatch" };
     }
 
     return {
-      evaluation: {
-        coachResult,
-        detectedSignals,
-        recommendedFocus,
-        lessonFocus,
-      },
+      evaluation: localEvaluationBase,
     };
   }
 
-  if (coachResult === "weak") {
+  if (coachResult === "weak" || coachResult === "almost_there") {
     const rawFollowUpQuestion = rawValue.followUpQuestion;
     const unsafeReason = getUnsafeCoachTextReason(rawFollowUpQuestion, "follow_up_too_long");
 
@@ -419,10 +491,7 @@ const normalizeAiEvaluation = (
 
     return {
       evaluation: {
-        coachResult,
-        detectedSignals,
-        recommendedFocus,
-        lessonFocus,
+        ...localEvaluationBase,
         followUpQuestion,
       },
     };
@@ -436,6 +505,10 @@ const normalizeAiEvaluation = (
   }
 
   if (rawValue.followUpQuestion !== undefined) {
+    warnStatusMismatchInDevelopment("strong result included follow-up question", {
+      coachResult,
+      hasFollowUpQuestion: true,
+    });
     return { evaluation: null, fallbackReason: "status_mismatch" };
   }
 
@@ -447,10 +520,7 @@ const normalizeAiEvaluation = (
 
   return {
     evaluation: {
-      coachResult,
-      detectedSignals,
-      recommendedFocus,
-      lessonFocus,
+      ...localEvaluationBase,
       positiveMessage,
     },
   };

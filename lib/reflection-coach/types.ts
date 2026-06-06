@@ -1,4 +1,4 @@
-export type ReflectionCoachResult = "empty" | "weak" | "strong";
+export type ReflectionCoachResult = "empty" | "weak" | "almost_there" | "strong";
 
 export type ReflectionCoachFocus = "html" | "css" | "javascript" | "general";
 

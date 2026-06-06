@@ -25,7 +25,7 @@ const isBooleanRecord = (value: unknown): value is Record<string, boolean> =>
 
 const getDefaultStepId = (project: LessonProjectConfig) => project.steps[0]?.id ?? "default";
 const isReflectionCoachResult = (value: unknown): value is ReflectionCoachResult =>
-  value === "empty" || value === "weak" || value === "strong";
+  value === "empty" || value === "weak" || value === "almost_there" || value === "strong";
 const isReflectionCoachFocus = (value: unknown): value is ReflectionCoachFocus =>
   value === "html" || value === "css" || value === "javascript" || value === "general";
 const isReflectionCoachSource = (value: unknown): value is "ai" | "local_fallback" =>
