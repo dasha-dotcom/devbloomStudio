@@ -81,18 +81,27 @@ export const getReflectionCoachLessonFocus = (
 };
 
 const getDetectedSignals = (normalizedValue: string): ReflectionCoachDetectedSignals => ({
-  hasSpecificEdit: /(changed|added|updated|customized|picked|set|wrote|made).*(title|intro|paragraph|list|image|button|background|color|card|text|theme|mood|style|heading)/.test(
-    normalizedValue,
-  ),
-  hasPageDetail: /(title|intro|paragraph|list|image|page|button|emoji|background|color|card|text|theme|mood|style|heading|tag|selector|rule|event|click)/.test(
-    normalizedValue,
-  ),
-  hasActionOrChange: /(changed|added|made|updated|styled|used|clicked|switched|customized|wrote|picked|set|controlled|react|reacted)/.test(
-    normalizedValue,
-  ),
-  hasConceptConnection: /(html|css|javascript|js|tag|selector|rule|class|style|button|click|event)/.test(
-    normalizedValue,
-  ),
+  hasSpecificEdit:
+    hasHtmlContentChangeSignal(normalizedValue) ||
+    hasCssStyleChangeSignal(normalizedValue) ||
+    hasJavaScriptActionSignal(normalizedValue) ||
+    hasJavaScriptPageResultSignal(normalizedValue),
+  hasPageDetail:
+    hasVisiblePageResultSignal(normalizedValue) ||
+    hasCssVisibleDesignResultSignal(normalizedValue) ||
+    hasJavaScriptPageResultSignal(normalizedValue),
+  hasActionOrChange:
+    hasHtmlContentChangeSignal(normalizedValue) ||
+    hasCssStyleChangeSignal(normalizedValue) ||
+    hasCssTargetingSignal(normalizedValue) ||
+    hasJavaScriptActionSignal(normalizedValue) ||
+    hasJavaScriptPageResultSignal(normalizedValue),
+  hasConceptConnection:
+    hasHtmlContentChangeSignal(normalizedValue) ||
+    hasCssStyleChangeSignal(normalizedValue) ||
+    hasCssTargetingSignal(normalizedValue) ||
+    hasJavaScriptActionSignal(normalizedValue) ||
+    hasJavaScriptPageResultSignal(normalizedValue),
   hasReasonOrChoice: /(because|wanted|chose|choose|feel|feels|so that|to make|i like|i wanted)/.test(
     normalizedValue,
   ),
@@ -154,6 +163,102 @@ const getFollowUpQuestion = ({
 
 const hasPattern = (normalizedValue: string, pattern: RegExp) => pattern.test(normalizedValue);
 
+const hasHtmlContentChangeSignal = (normalizedValue: string) =>
+  hasPattern(
+    normalizedValue,
+    /\b(changed|added|customized|updated|wrote|made|edited|put|typed|set)\b.{0,80}\b(heading|title|big words|words|text|writing|paragraph|list|item|image|picture|photo|link|topic|name|favorite|about me|content|intro|h1|p|li)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\b(changed|made|updated|edited|set|wrote)\b.{0,50}\b(page|it)\b.{0,40}\b(say|says|show|shows|about)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\b(changed|updated|edited)\b.{0,40}\b(what it says|what the page says|the writing)\b/,
+  );
+
+const hasVisiblePageResultSignal = (normalizedValue: string) =>
+  hasPattern(
+    normalizedValue,
+    /\b(now|after|then)\b.{0,50}\b(page|it|you)\b.{0,50}\b(show|shows|showed|say|says|said|display|displayed|appeared|has|see|about)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\b(page|it|you)\b.{0,50}\b(show|shows|showed|say|says|said|display|displayed|appeared|has|see)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\b(the\s+)?(big words|heading|title|page|my page)\b.{0,30}\b(say|says|show|shows)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\bnow\b.{0,30}\b(it|the page|my page)\b.{0,30}\b(say|says|show|shows)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\b(to say|to show|made my page show|made the page show|made my page about|made the page about|changed on the page|page changed to|displayed|appeared)\b/,
+  );
+
+const hasCssStyleChangeSignal = (normalizedValue: string) =>
+  hasPattern(
+    normalizedValue,
+    /\b(changed|added|customized|updated|made|styled|picked|set|chose)\b.{0,80}\b(css|style|styles|color|colors|background|font|size|spacing|margin|padding|border|rounded|round|corners|card|layout|design|look|looks|big|bigger|pink|purple|blue|green|red|orange|yellow|black|white|calm|calmer|happy|happier|cute|cuter|cool|cooler|pretty|prettier)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\bmade\b.{0,30}\b(it|the page|my page|card|background)\b.{0,40}\b(pink|purple|blue|green|red|orange|yellow|black|white|calm|calmer|happy|happier|cute|cuter|cool|cooler|pretty|prettier)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\bmade\b.{0,30}\b(words|text|letters|heading)\b.{0,30}\b(big|bigger)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\bmade\b.{0,30}\b(card|box)\b.{0,30}\b(round|rounded)\b/,
+  ) ||
+  hasPattern(normalizedValue, /\brounded\b.{0,30}\b(corner|corners)\b/) ||
+  hasPattern(normalizedValue, /\bstyled\b.{0,40}\b(card|page|background|text|heading|button)\b/);
+
+const hasCssVisibleDesignResultSignal = (normalizedValue: string) =>
+  hasPattern(
+    normalizedValue,
+    /\b(look|looks|looked|feel|feels|felt)\b.{0,50}\b(calm|calmer|happy|happier|cute|cuter|cool|cooler|pretty|prettier|different|better|bright|brighter)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\b(words|text|letters|heading)\b.{0,20}\b(are|is|look|looks)\b.{0,20}\b(big|bigger)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\b(card|box|corners)\b.{0,20}\b(are|is|look|looks)\b.{0,20}\b(round|rounded)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\b(made|changed)\b.{0,50}\b(page|it|design)\b.{0,50}\b(look|looks|looked|feel|feels|felt|design)\b/,
+  );
+
+const hasImpliedCssVisibleResultSignal = (normalizedValue: string) =>
+  hasPattern(
+    normalizedValue,
+    /\b(changed|added|updated|made|set|picked|chose)\b.{0,50}\b(background color|background|border|rounded|round|corners|layout|font size|text size|spacing|margin|padding)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\bmade\b.{0,30}\b(it|the page|my page|card|background)\b.{0,40}\b(pink|purple|blue|green|red|orange|yellow|black|white|calm|calmer|happy|happier|cute|cuter|cool|cooler|pretty|prettier)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\bmade\b.{0,30}\b(words|text|letters|heading)\b.{0,30}\b(big|bigger)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\bmade\b.{0,30}\b(card|box)\b.{0,30}\b(round|rounded)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\brounded\b.{0,30}\b(corner|corners)\b/,
+  );
+
 const hasCssTargetingSignal = (normalizedValue: string) =>
   hasPattern(
     normalizedValue,
@@ -168,25 +273,59 @@ const hasCssTargetingSignal = (normalizedValue: string) =>
     /\b(body|main|h1|h2|p|li|ul|hero-title|vibe-card|mood-note|hero-text|vibe-list)\s+rule\b/,
   );
 
-const getMiniSiteMissingCategoryQuestion = (missingCategories: Array<"HTML" | "CSS" | "JavaScript">) => {
-  if (missingCategories.length > 1) {
-    return "Can you name one thing you changed in HTML, CSS, and JavaScript?";
-  }
-
-  return `What did you customize with ${missingCategories[0]}?`;
-};
-
-const hasMiniSiteHtmlDetail = (normalizedValue: string) =>
-  hasPattern(normalizedValue, /\b(heading|title|paragraph|list|image|text|content|intro|h1|p|li)\b/);
-
-const hasMiniSiteCssDetail = (normalizedValue: string) =>
-  hasPattern(normalizedValue, /\b(css|style|styles|color|colors|background|font|spacing|border|theme|card)\b/);
-
-const hasMiniSiteJavaScriptDetail = (normalizedValue: string) =>
+const hasJavaScriptActionSignal = (normalizedValue: string) =>
   hasPattern(
     normalizedValue,
-    /\b(button|click|clicked|message|mood|interaction|javascript|js|react|reacted)\b/,
+    /\b(when|after)\b.{0,40}\b(click|clicked|press|pressed|tap|tapped|button|user clicks|event|ran|started)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\b(i|we|user|visitor)\b.{0,20}\b(click|clicked|press|pressed|tap|tapped)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\b(button)\b.{0,40}\b(made|makes|changed|changes|show|shows|ran|started|is clicked|gets clicked)\b/,
+  ) ||
+  hasPattern(normalizedValue, /\b(event|ran|started|interactive)\b/);
+
+const hasJavaScriptPageResultSignal = (normalizedValue: string) =>
+  hasPattern(
+    normalizedValue,
+    /\b(message|text|words|button message|mood|page|part)\b.{0,50}\b(changed|changes|showed|shows|appeared|appears|switched|switches)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\b(changed|changes|showed|shows|said|says|displayed|appeared|hid|hide|hides)\b.{0,50}\b(message|text|words|mood|page|part|surprise|something different|new message)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\b(said something different|showed a new message|shows a new message|new mood show|new mood shows|surprise appeared|surprise appears|showed something|hid something|shows a new mood)\b/,
   );
+
+const getMiniSiteCategorySignals = (normalizedValue: string) => ({
+  hasHtml: hasHtmlContentChangeSignal(normalizedValue),
+  hasCss: hasCssStyleChangeSignal(normalizedValue),
+  hasJavaScript:
+    hasJavaScriptActionSignal(normalizedValue) || hasJavaScriptPageResultSignal(normalizedValue),
+});
+
+const getMiniSiteMissingCategoryQuestion = (missingCategories: Array<"HTML" | "CSS" | "JavaScript">) => {
+  const labelByCategory: Record<"HTML" | "CSS" | "JavaScript", string> = {
+    HTML: "HTML/content",
+    CSS: "CSS/style",
+    JavaScript: "JavaScript/button or interactive",
+  };
+
+  if (missingCategories.length === 1) {
+    return `What did you customize with ${labelByCategory[missingCategories[0]]}?`;
+  }
+
+  if (missingCategories.length === 2) {
+    return `Can you also name a ${labelByCategory[missingCategories[0]]} customization and a ${labelByCategory[missingCategories[1]]} customization?`;
+  }
+
+  return "Can you name one specific thing you changed in HTML/content, CSS/style, or JavaScript/button behavior?";
+};
 
 const getProjectSpecificEvaluation = ({
   projectSlug,
@@ -203,14 +342,8 @@ const getProjectSpecificEvaluation = ({
   }
 
   if (projectSlug === "all-about-me") {
-    const hasHtmlChange = hasPattern(
-      normalizedValue,
-      /\b(changed|added|customized|updated|wrote|made|edited)\b.*\b(html|heading|title|paragraph|list|item|text|image|content|intro|h1|p|li)\b/,
-    );
-    const hasVisibleResult = hasPattern(
-      normalizedValue,
-      /\b(show|shows|showed|say|says|said|display|displays|appears|appeared|visitor|see)\b/,
-    );
+    const hasHtmlChange = hasHtmlContentChangeSignal(normalizedValue);
+    const hasVisibleResult = hasVisiblePageResultSignal(normalizedValue);
 
     if (hasHtmlChange && hasVisibleResult) {
       return {
@@ -248,17 +381,12 @@ const getProjectSpecificEvaluation = ({
   }
 
   if (projectSlug === "vibe-page") {
-    const hasStyleChange = hasPattern(
-      normalizedValue,
-      /\b(changed|added|customized|updated|made|styled|picked|set)\b.*\b(css|style|color|background|font|text|spacing|card|border|size|theme|mood)\b/,
-    );
+    const hasStyleChange = hasCssStyleChangeSignal(normalizedValue);
     const hasCssTargeting = hasCssTargetingSignal(normalizedValue);
-    const hasVisibleDesignResult = hasPattern(
-      normalizedValue,
-      /\b(page|look|looks|looked|feel|feels|felt|mood|calm|calmer|bright|brighter|design|different|visitor|see)\b/,
-    );
+    const hasVisibleDesignResult = hasCssVisibleDesignResultSignal(normalizedValue);
+    const hasImpliedVisibleResult = hasImpliedCssVisibleResultSignal(normalizedValue);
 
-    if (hasStyleChange && (hasCssTargeting || hasVisibleDesignResult)) {
+    if (hasStyleChange && (hasCssTargeting || hasVisibleDesignResult || hasImpliedVisibleResult)) {
       return {
         coachResult: "strong",
         recommendedFocus: "ownership",
@@ -272,7 +400,7 @@ const getProjectSpecificEvaluation = ({
         coachResult: "almost_there",
         recommendedFocus: "concept_connection",
         lessonFocus: "css",
-        followUpQuestion: "What selector, class, or page result helped Sprout understand that CSS change?",
+        followUpQuestion: "What part of the page changed, or how did that style change the design?",
       };
     }
 
@@ -285,6 +413,15 @@ const getProjectSpecificEvaluation = ({
       };
     }
 
+    if (hasVisibleDesignResult) {
+      return {
+        coachResult: "almost_there",
+        recommendedFocus: "specificity",
+        lessonFocus: "css",
+        followUpQuestion: "What style did you change to make that part look different?",
+      };
+    }
+
     return {
       coachResult: "weak",
       recommendedFocus: "specificity",
@@ -294,14 +431,8 @@ const getProjectSpecificEvaluation = ({
   }
 
   if (projectSlug === "mood-switch") {
-    const hasEvent = hasPattern(
-      normalizedValue,
-      /\b(click|clicked|press|pressed|tap|tapped|button|event|action|when i|when the user)\b/,
-    );
-    const hasPageResult = hasPattern(
-      normalizedValue,
-      /\b(message|text|mood|color|background|class|part|switch|show|shows|reacted)\b/,
-    );
+    const hasEvent = hasJavaScriptActionSignal(normalizedValue);
+    const hasPageResult = hasJavaScriptPageResultSignal(normalizedValue);
 
     if (hasEvent && hasPageResult) {
       return {
@@ -339,9 +470,7 @@ const getProjectSpecificEvaluation = ({
   }
 
   if (projectSlug === "build-your-own-mini-site") {
-    const hasHtml = hasMiniSiteHtmlDetail(normalizedValue);
-    const hasCss = hasMiniSiteCssDetail(normalizedValue);
-    const hasJavaScript = hasMiniSiteJavaScriptDetail(normalizedValue);
+    const { hasHtml, hasCss, hasJavaScript } = getMiniSiteCategorySignals(normalizedValue);
     const missingCategories = [
       hasHtml ? null : "HTML",
       hasCss ? null : "CSS",
