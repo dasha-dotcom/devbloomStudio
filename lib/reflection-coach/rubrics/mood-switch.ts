@@ -8,10 +8,20 @@ import type {
 } from "./index";
 
 export const evaluateMoodSwitchReflection = ({
+  detectedSignals,
   normalizedValue,
 }: ReflectionCoachRubricInput): ReflectionCoachRubricEvaluation => {
   const hasEvent = hasJavaScriptActionSignal(normalizedValue);
   const hasPageResult = hasJavaScriptPageResultSignal(normalizedValue);
+
+  if (detectedSignals.hasCopiedExample) {
+    return {
+      coachResult: "weak",
+      recommendedFocus: "make_it_yours",
+      lessonFocus: "javascript",
+      followUpQuestion: "That sounds close to the example. What message or mood did your button show?",
+    };
+  }
 
   if (hasEvent && hasPageResult) {
     return {

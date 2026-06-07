@@ -8,10 +8,20 @@ import type {
 } from "./index";
 
 export const evaluateAllAboutMeReflection = ({
+  detectedSignals,
   normalizedValue,
 }: ReflectionCoachRubricInput): ReflectionCoachRubricEvaluation => {
   const hasHtmlChange = hasHtmlContentChangeSignal(normalizedValue);
   const hasVisibleResult = hasVisiblePageResultSignal(normalizedValue);
+
+  if (detectedSignals.hasCopiedExample) {
+    return {
+      coachResult: "weak",
+      recommendedFocus: "make_it_yours",
+      lessonFocus: "html",
+      followUpQuestion: "That sounds close to the example. Can you make it about your own page?",
+    };
+  }
 
   if (hasHtmlChange && hasVisibleResult) {
     return {

@@ -2,10 +2,14 @@ import { evaluateAllAboutMeReflection } from "./all-about-me";
 import { evaluateBuildYourOwnMiniSiteReflection } from "./build-your-own-mini-site";
 import { evaluateMoodSwitchReflection } from "./mood-switch";
 import { evaluateVibePageReflection } from "./vibe-page";
-import type { ReflectionCoachEvaluation } from "../types";
+import type {
+  ReflectionCoachDetectedSignals,
+  ReflectionCoachEvaluation,
+} from "../types";
 
 export type ReflectionCoachRubricInput = {
   normalizedValue: string;
+  detectedSignals: ReflectionCoachDetectedSignals;
 };
 
 export type ReflectionCoachRubricEvaluation = Pick<

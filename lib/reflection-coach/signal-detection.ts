@@ -5,6 +5,97 @@ import type {
 
 const hasPattern = (normalizedValue: string, pattern: RegExp) => pattern.test(normalizedValue);
 
+const normalizeCopiedExampleText = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/\bexample\s*:/g, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const includesCopiedPhrase = (normalizedCopiedValue: string, phrase: string) =>
+  normalizedCopiedValue.includes(normalizeCopiedExampleText(phrase));
+
+const namedColorPattern =
+  /\b(purple|green|pink|blue|red|orange|yellow|black|white|teal|turquoise|cyan|magenta|brown|gray|grey|gold|silver|neon|rainbow)\b/;
+
+const hasVibePagePersonalization = (normalizedCopiedValue: string) =>
+  namedColorPattern.test(normalizedCopiedValue) ||
+  /\b(card color|color|colors|background)\s+to\s+[a-z0-9]/.test(normalizedCopiedValue);
+
+const hasMoodSwitchPersonalization = (normalizedCopiedValue: string) =>
+  /\b(message|mood|words|text)\s+changed\s+to\s+[a-z0-9]/.test(normalizedCopiedValue);
+
+const hasMiniSitePersonalization = (normalizedCopiedValue: string) =>
+  namedColorPattern.test(normalizedCopiedValue) ||
+  /\b(title|colors|color|button message)\s+to\s+[a-z0-9]/.test(normalizedCopiedValue) ||
+  /\bchanged the (title|colors|color|button message)\s+to\s+[a-z0-9]/.test(
+    normalizedCopiedValue,
+  );
+
+export const hasCopiedExampleSignal = (normalizedValue: string, projectSlug?: string) => {
+  if (!projectSlug) {
+    return false;
+  }
+
+  const normalizedCopiedValue = normalizeCopiedExampleText(normalizedValue);
+
+  if (projectSlug === "all-about-me") {
+    const hasGenericTopicResult =
+      includesCopiedPhrase(normalizedCopiedValue, "made my page show my topic") ||
+      includesCopiedPhrase(normalizedCopiedValue, "my page show my topic") ||
+      includesCopiedPhrase(normalizedCopiedValue, "my page shows my topic");
+
+    return hasGenericTopicResult;
+  }
+
+  if (projectSlug === "vibe-page") {
+    const hasCardColorExample = includesCopiedPhrase(normalizedCopiedValue, "I changed the card color");
+    const hasVibeCardTargetingExample = includesCopiedPhrase(
+      normalizedCopiedValue,
+      "CSS knew what to style because of the .vibe-card class",
+    );
+
+    return (
+      hasCardColorExample &&
+      hasVibeCardTargetingExample &&
+      !hasVibePagePersonalization(normalizedCopiedValue)
+    );
+  }
+
+  if (projectSlug === "mood-switch") {
+    const hasFullPlaceholderSetup = includesCopiedPhrase(
+      normalizedCopiedValue,
+      "JavaScript changed my page when I clicked the button",
+    );
+    const hasGenericMessageResult = includesCopiedPhrase(normalizedCopiedValue, "The message changed");
+
+    return (
+      hasFullPlaceholderSetup &&
+      hasGenericMessageResult &&
+      !hasMoodSwitchPersonalization(normalizedCopiedValue)
+    );
+  }
+
+  if (projectSlug === "build-your-own-mini-site") {
+    const hasHtmlExample = includesCopiedPhrase(normalizedCopiedValue, "In HTML, I changed the title");
+    const hasCssExample = includesCopiedPhrase(normalizedCopiedValue, "In CSS, I changed the colors");
+    const hasJavaScriptExample = includesCopiedPhrase(
+      normalizedCopiedValue,
+      "In JavaScript, I changed the button message",
+    );
+
+    return (
+      hasHtmlExample &&
+      hasCssExample &&
+      hasJavaScriptExample &&
+      !hasMiniSitePersonalization(normalizedCopiedValue)
+    );
+  }
+
+  return false;
+};
+
 export const hasHtmlContentChangeSignal = (normalizedValue: string) =>
   hasPattern(
     normalizedValue,
@@ -144,7 +235,10 @@ export const hasJavaScriptPageResultSignal = (normalizedValue: string) =>
     /\b(said something different|showed a new message|shows a new message|new mood show|new mood shows|surprise appeared|surprise appears|showed something|hid something|shows a new mood)\b/,
   );
 
-export const getDetectedSignals = (normalizedValue: string): ReflectionCoachDetectedSignals => ({
+export const getDetectedSignals = (
+  normalizedValue: string,
+  projectSlug?: string,
+): ReflectionCoachDetectedSignals => ({
   hasSpecificEdit:
     hasHtmlContentChangeSignal(normalizedValue) ||
     hasCssStyleChangeSignal(normalizedValue) ||
@@ -169,11 +263,16 @@ export const getDetectedSignals = (normalizedValue: string): ReflectionCoachDete
   hasReasonOrChoice: /(because|wanted|chose|choose|feel|feels|so that|to make|i like|i wanted)/.test(
     normalizedValue,
   ),
+  hasCopiedExample: hasCopiedExampleSignal(normalizedValue, projectSlug),
 });
 
 export const getRecommendedFocus = (
   signals: ReflectionCoachDetectedSignals,
 ): ReflectionCoachRecommendedFocus => {
+  if (signals.hasCopiedExample) {
+    return "make_it_yours";
+  }
+
   if (!signals.hasSpecificEdit && !signals.hasPageDetail) {
     return "specificity";
   }

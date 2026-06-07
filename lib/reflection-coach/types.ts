@@ -35,7 +35,8 @@ export type ReflectionCoachRecommendedFocus =
   | "specificity"
   | "causality"
   | "concept_connection"
-  | "ownership";
+  | "ownership"
+  | "make_it_yours";
 
 export type ReflectionCoachDetectedSignals = {
   hasSpecificEdit: boolean;
@@ -43,6 +44,7 @@ export type ReflectionCoachDetectedSignals = {
   hasActionOrChange: boolean;
   hasConceptConnection: boolean;
   hasReasonOrChoice: boolean;
+  hasCopiedExample: boolean;
 };
 
 export type ReflectionCoachEvaluationInput = {

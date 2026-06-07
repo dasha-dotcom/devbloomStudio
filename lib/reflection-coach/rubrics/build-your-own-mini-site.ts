@@ -35,6 +35,7 @@ const getMiniSiteMissingCategoryQuestion = (missingCategories: Array<"HTML" | "C
 };
 
 export const evaluateBuildYourOwnMiniSiteReflection = ({
+  detectedSignals,
   normalizedValue,
 }: ReflectionCoachRubricInput): ReflectionCoachRubricEvaluation => {
   const { hasHtml, hasCss, hasJavaScript } = getMiniSiteCategorySignals(normalizedValue);
@@ -43,6 +44,16 @@ export const evaluateBuildYourOwnMiniSiteReflection = ({
     hasCss ? null : "CSS",
     hasJavaScript ? null : "JavaScript",
   ].filter((category): category is "HTML" | "CSS" | "JavaScript" => Boolean(category));
+
+  if (detectedSignals.hasCopiedExample) {
+    return {
+      coachResult: "weak",
+      recommendedFocus: "make_it_yours",
+      lessonFocus: "general",
+      followUpQuestion:
+        "That sounds close to the example. Can you add your own title, color, or button message?",
+    };
+  }
 
   if (missingCategories.length === 3) {
     return {

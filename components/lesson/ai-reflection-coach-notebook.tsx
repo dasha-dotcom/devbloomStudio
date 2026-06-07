@@ -73,18 +73,34 @@ const isReflectionCoachRecommendedFocus = (
   value === "specificity" ||
   value === "causality" ||
   value === "concept_connection" ||
-  value === "ownership";
+  value === "ownership" ||
+  value === "make_it_yours";
 
 const isReflectionCoachSource = (value: unknown): value is ReflectionCoachSource =>
   value === "ai" || value === "local_fallback";
 
-const isDetectedSignals = (value: unknown): value is ReflectionCoachDetectedSignals =>
-  isRecord(value) &&
-  typeof value.hasSpecificEdit === "boolean" &&
-  typeof value.hasPageDetail === "boolean" &&
-  typeof value.hasActionOrChange === "boolean" &&
-  typeof value.hasConceptConnection === "boolean" &&
-  typeof value.hasReasonOrChoice === "boolean";
+const normalizeDetectedSignals = (value: unknown): ReflectionCoachDetectedSignals | null => {
+  if (
+    !isRecord(value) ||
+    typeof value.hasSpecificEdit !== "boolean" ||
+    typeof value.hasPageDetail !== "boolean" ||
+    typeof value.hasActionOrChange !== "boolean" ||
+    typeof value.hasConceptConnection !== "boolean" ||
+    typeof value.hasReasonOrChoice !== "boolean"
+  ) {
+    return null;
+  }
+
+  return {
+    hasSpecificEdit: value.hasSpecificEdit,
+    hasPageDetail: value.hasPageDetail,
+    hasActionOrChange: value.hasActionOrChange,
+    hasConceptConnection: value.hasConceptConnection,
+    hasReasonOrChoice: value.hasReasonOrChoice,
+    hasCopiedExample:
+      typeof value.hasCopiedExample === "boolean" ? value.hasCopiedExample : false,
+  };
+};
 
 const normalizeCoachApiResponse = (
   value: unknown,
@@ -93,11 +109,13 @@ const normalizeCoachApiResponse = (
     return null;
   }
 
+  const detectedSignals = normalizeDetectedSignals(value.detectedSignals);
+
   if (
     !isReflectionCoachResult(value.coachResult) ||
     !isReflectionCoachRecommendedFocus(value.recommendedFocus) ||
     !isReflectionCoachFocus(value.lessonFocus) ||
-    !isDetectedSignals(value.detectedSignals) ||
+    !detectedSignals ||
     !isReflectionCoachSource(value.source)
   ) {
     return null;
@@ -105,7 +123,7 @@ const normalizeCoachApiResponse = (
 
   return {
     coachResult: value.coachResult,
-    detectedSignals: value.detectedSignals,
+    detectedSignals,
     recommendedFocus: value.recommendedFocus,
     lessonFocus: value.lessonFocus,
     followUpQuestion:

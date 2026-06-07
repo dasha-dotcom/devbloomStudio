@@ -79,15 +79,31 @@ const isReflectionCoachRecommendedFocus = (
   value === "specificity" ||
   value === "causality" ||
   value === "concept_connection" ||
-  value === "ownership";
+  value === "ownership" ||
+  value === "make_it_yours";
 
-const isDetectedSignals = (value: unknown): value is ReflectionCoachDetectedSignals =>
-  isRecord(value) &&
-  typeof value.hasSpecificEdit === "boolean" &&
-  typeof value.hasPageDetail === "boolean" &&
-  typeof value.hasActionOrChange === "boolean" &&
-  typeof value.hasConceptConnection === "boolean" &&
-  typeof value.hasReasonOrChoice === "boolean";
+const normalizeDetectedSignals = (value: unknown): ReflectionCoachDetectedSignals | null => {
+  if (
+    !isRecord(value) ||
+    typeof value.hasSpecificEdit !== "boolean" ||
+    typeof value.hasPageDetail !== "boolean" ||
+    typeof value.hasActionOrChange !== "boolean" ||
+    typeof value.hasConceptConnection !== "boolean" ||
+    typeof value.hasReasonOrChoice !== "boolean"
+  ) {
+    return null;
+  }
+
+  return {
+    hasSpecificEdit: value.hasSpecificEdit,
+    hasPageDetail: value.hasPageDetail,
+    hasActionOrChange: value.hasActionOrChange,
+    hasConceptConnection: value.hasConceptConnection,
+    hasReasonOrChoice: value.hasReasonOrChoice,
+    hasCopiedExample:
+      typeof value.hasCopiedExample === "boolean" ? value.hasCopiedExample : false,
+  };
+};
 
 const hasMatchingDetectedSignals = (
   value: ReflectionCoachDetectedSignals,
@@ -97,7 +113,8 @@ const hasMatchingDetectedSignals = (
   value.hasPageDetail === fallback.hasPageDetail &&
   value.hasActionOrChange === fallback.hasActionOrChange &&
   value.hasConceptConnection === fallback.hasConceptConnection &&
-  value.hasReasonOrChoice === fallback.hasReasonOrChoice;
+  value.hasReasonOrChoice === fallback.hasReasonOrChoice &&
+  value.hasCopiedExample === fallback.hasCopiedExample;
 
 const warnStatusMismatchInDevelopment = (
   mismatch: string,
@@ -267,6 +284,7 @@ const getMessages = ({
           hasActionOrChange: "Copy exactly from authoritativeLocalEvaluation.detectedSignals.hasActionOrChange.",
           hasConceptConnection: "Copy exactly from authoritativeLocalEvaluation.detectedSignals.hasConceptConnection.",
           hasReasonOrChoice: "Copy exactly from authoritativeLocalEvaluation.detectedSignals.hasReasonOrChoice.",
+          hasCopiedExample: "Copy exactly from authoritativeLocalEvaluation.detectedSignals.hasCopiedExample.",
         },
         recommendedFocus: "Copy exactly from authoritativeLocalEvaluation.recommendedFocus.",
         lessonFocus: "Copy exactly from authoritativeLocalEvaluation.lessonFocus.",
@@ -418,9 +436,7 @@ const normalizeAiEvaluation = (
     return { evaluation: null, fallbackReason: "status_mismatch" };
   }
 
-  const detectedSignals = isDetectedSignals(rawValue.detectedSignals)
-    ? rawValue.detectedSignals
-    : null;
+  const detectedSignals = normalizeDetectedSignals(rawValue.detectedSignals);
   const recommendedFocus = isReflectionCoachRecommendedFocus(rawValue.recommendedFocus)
     ? rawValue.recommendedFocus
     : null;

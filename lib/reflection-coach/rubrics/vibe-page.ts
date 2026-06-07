@@ -10,12 +10,22 @@ import type {
 } from "./index";
 
 export const evaluateVibePageReflection = ({
+  detectedSignals,
   normalizedValue,
 }: ReflectionCoachRubricInput): ReflectionCoachRubricEvaluation => {
   const hasStyleChange = hasCssStyleChangeSignal(normalizedValue);
   const hasCssTargeting = hasCssTargetingSignal(normalizedValue);
   const hasVisibleDesignResult = hasCssVisibleDesignResultSignal(normalizedValue);
   const hasImpliedVisibleResult = hasImpliedCssVisibleResultSignal(normalizedValue);
+
+  if (detectedSignals.hasCopiedExample) {
+    return {
+      coachResult: "weak",
+      recommendedFocus: "make_it_yours",
+      lessonFocus: "css",
+      followUpQuestion: "That sounds close to the example. Can you describe your own style change?",
+    };
+  }
 
   if (hasStyleChange && (hasCssTargeting || hasVisibleDesignResult || hasImpliedVisibleResult)) {
     return {

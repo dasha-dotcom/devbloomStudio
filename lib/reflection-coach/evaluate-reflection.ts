@@ -59,6 +59,12 @@ const followUpQuestionsByRecommendedFocus: Record<
     javascript: ["Why did you choose that interaction?", "What did you want the page to do for your visitor?"],
     general: ["Why did you choose that change?", "What goal did you have for that part of your project?"],
   },
+  make_it_yours: {
+    html: ["That sounds close to the example. Can you make it about your own page?"],
+    css: ["That sounds close to the example. Can you describe your own style change?"],
+    javascript: ["That sounds close to the example. What message or mood did your button show?"],
+    general: ["That sounds close to the example. Can you add details from your own project?"],
+  },
 };
 
 export const getReflectionCoachLessonFocus = (
@@ -131,10 +137,10 @@ export function evaluateReflectionForCoach({
   const normalizedValue = trimmedValue.toLowerCase();
   const wordCount = trimmedValue.split(/\s+/).filter(Boolean).length;
   const nonSpaceCharacterCount = trimmedValue.replace(/\s/g, "").length;
-  const detectedSignals = getDetectedSignals(normalizedValue);
+  const detectedSignals = getDetectedSignals(normalizedValue, projectSlug);
   const recommendedFocus = getRecommendedFocus(detectedSignals);
   const rubric = getReflectionRubric(projectSlug);
-  const projectSpecificEvaluation = rubric?.({ normalizedValue }) ?? null;
+  const projectSpecificEvaluation = rubric?.({ detectedSignals, normalizedValue }) ?? null;
 
   if (!trimmedValue) {
     return {
@@ -154,6 +160,20 @@ export function evaluateReflectionForCoach({
 
   const hasCoreDetail = detectedSignals.hasActionOrChange && detectedSignals.hasPageDetail;
   const isVeryShort = wordCount < 5 || nonSpaceCharacterCount < 20;
+
+  if (detectedSignals.hasCopiedExample) {
+    return {
+      coachResult: "weak",
+      detectedSignals,
+      recommendedFocus: "make_it_yours",
+      lessonFocus: focus,
+      followUpQuestion: getFollowUpQuestion({
+        normalizedValue,
+        recommendedFocus: "make_it_yours",
+        lessonFocus: focus,
+      }),
+    };
+  }
 
   if (isVeryShort || !hasCoreDetail) {
     return {
