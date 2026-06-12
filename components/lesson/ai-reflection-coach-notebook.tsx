@@ -9,6 +9,7 @@ import {
   getReflectionCoachLessonFocus,
 } from "@/lib/reflection-coach/evaluate-reflection";
 import { applyLocalMisconceptionOverlay } from "@/lib/reflection-coach/misconception-detection";
+import { deriveReflectionCoachTeacherInsight } from "@/lib/reflection-coach/teacher-insights";
 import type {
   ReflectionCoachAiAnalysis,
   ReflectionCoachApiResponse,
@@ -426,6 +427,7 @@ export function AiReflectionCoachNotebook({
                   message: getReflectionCoachMessage(displayedEvaluation),
                   followUpQuestion: displayedEvaluation.followUpQuestion,
                 });
+                const teacherInsight = deriveReflectionCoachTeacherInsight(displayedEvaluation);
                 onCoachCheck?.({
                   checkedAt: new Date().toISOString(),
                   reflectionText,
@@ -433,6 +435,12 @@ export function AiReflectionCoachNotebook({
                   coachFollowUpQuestion: displayedEvaluation.followUpQuestion,
                   lessonFocus: displayedEvaluation.lessonFocus,
                   source: displayedEvaluation.source,
+                  detectedSignals: displayedEvaluation.detectedSignals,
+                  recommendedFocus: displayedEvaluation.recommendedFocus,
+                  ...(displayedEvaluation.analysis
+                    ? { analysis: displayedEvaluation.analysis }
+                    : {}),
+                  ...(teacherInsight ? { teacherInsight } : {}),
                 });
               } finally {
                 setIsCheckingSprout(false);

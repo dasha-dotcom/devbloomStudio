@@ -9,7 +9,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --import tsx --test lib/reflection-coach/*.test.mjs",
+    "test": "node --import tsx --test lib/reflection-coach/*.test.mjs lib/persistence/*.test.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "seed:demo": "node --experimental-strip-types scripts/seed-demo.mjs",

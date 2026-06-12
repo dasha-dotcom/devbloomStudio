@@ -1243,6 +1243,18 @@ select {
   white-space: pre-wrap;
 }
 
+.teacher-reflection-insight {
+  margin-top: 4px;
+  padding: 10px 12px;
+  border-left: 3px solid rgba(77, 125, 96, 0.45);
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.teacher-reflection-insight strong {
+  display: block;
+  font-size: 0.88rem;
+}
+
 .checklist-item.done .check-bubble,
 .checklist-item.active .check-bubble {
   background: linear-gradient(135deg, var(--coral), var(--gold));

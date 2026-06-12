@@ -19,17 +19,70 @@ const includesCopiedPhrase = (normalizedCopiedValue: string, phrase: string) =>
 const namedColorPattern =
   /\b(purple|green|pink|blue|red|orange|yellow|black|white|teal|turquoise|cyan|magenta|brown|gray|grey|gold|silver|neon|rainbow)\b/;
 
+const hasSpecificResultPhrase = (normalizedCopiedValue: string) =>
+  /\b(show|shows|showed|showing|say|says|said|saying|about|to)\s+(?!my topic\b|the topic\b|topic\b|thing\b|things\b|stuff\b|something\b|project\b|page\b|better\b|cool\b|good\b|nice\b)[a-z0-9]/.test(
+    normalizedCopiedValue,
+  );
+
+const hasAllAboutMePromptScaffold = (normalizedCopiedValue: string) =>
+  /\bone thing i changed in (the )?html was\b/.test(normalizedCopiedValue) &&
+  /\bit changed my page by\b/.test(normalizedCopiedValue);
+
+const hasAllAboutMePersonalization = (normalizedCopiedValue: string) =>
+  hasSpecificResultPhrase(normalizedCopiedValue);
+
 const hasVibePagePersonalization = (normalizedCopiedValue: string) =>
   namedColorPattern.test(normalizedCopiedValue) ||
   /\b(card color|color|colors|background)\s+to\s+[a-z0-9]/.test(normalizedCopiedValue);
 
+const hasVibePagePromptScaffold = (normalizedCopiedValue: string) =>
+  /\bone style i changed with css was\b/.test(normalizedCopiedValue) &&
+  /\bcss knew what to style because\b/.test(normalizedCopiedValue);
+
+const hasVagueVibePagePromptAnswers = (normalizedCopiedValue: string) =>
+  /\bone style i changed with css was (the )?(card color|color|colors|background|font|size|style|styles|border|card)\b/.test(
+    normalizedCopiedValue,
+  ) &&
+  /\bcss knew what to style because (of )?(the )?(vibe card class|card class|class|selector|card|element)\b/.test(
+    normalizedCopiedValue,
+  );
+
 const hasMoodSwitchPersonalization = (normalizedCopiedValue: string) =>
-  /\b(message|mood|words|text)\s+changed\s+to\s+[a-z0-9]/.test(normalizedCopiedValue);
+  /\b(message|mood|words|text)\s+changed\s+to\s+[a-z0-9]/.test(normalizedCopiedValue) ||
+  /\b(message|mood|words|text)\b.{0,20}\bto\s+[a-z0-9]/.test(normalizedCopiedValue);
+
+const hasMoodSwitchPromptScaffold = (normalizedCopiedValue: string) =>
+  /\bjavascript changed my page when\b/.test(normalizedCopiedValue) &&
+  /\bthe part that changed was\b/.test(normalizedCopiedValue);
+
+const hasVagueMoodSwitchPromptAnswers = (normalizedCopiedValue: string) =>
+  /\bjavascript changed my page when (i )?(clicked|pressed|tapped)? ?(the )?button\b/.test(
+    normalizedCopiedValue,
+  ) &&
+  /\bthe part that changed was (the )?(message|mood|words|text)\b/.test(
+    normalizedCopiedValue,
+  );
 
 const hasMiniSitePersonalization = (normalizedCopiedValue: string) =>
   namedColorPattern.test(normalizedCopiedValue) ||
   /\b(title|colors|color|button message)\s+to\s+[a-z0-9]/.test(normalizedCopiedValue) ||
   /\bchanged the (title|colors|color|button message)\s+to\s+[a-z0-9]/.test(
+    normalizedCopiedValue,
+  );
+
+const hasMiniSitePromptScaffold = (normalizedCopiedValue: string) =>
+  /\bin html i customized\b/.test(normalizedCopiedValue) &&
+  /\bin css i customized\b/.test(normalizedCopiedValue) &&
+  /\bin javascript i customized\b/.test(normalizedCopiedValue);
+
+const hasVagueMiniSitePromptAnswers = (normalizedCopiedValue: string) =>
+  /\bin html i customized (the )?(title|heading|words|text|image|link|list|html)\b/.test(
+    normalizedCopiedValue,
+  ) &&
+  /\bin css i customized (the )?(color|colors|background|font|size|style|styles|css)\b/.test(
+    normalizedCopiedValue,
+  ) &&
+  /\bin javascript i customized (the )?(button message|button|message|javascript|js)\b/.test(
     normalizedCopiedValue,
   );
 
@@ -45,8 +98,11 @@ export const hasCopiedExampleSignal = (normalizedValue: string, projectSlug?: st
       includesCopiedPhrase(normalizedCopiedValue, "made my page show my topic") ||
       includesCopiedPhrase(normalizedCopiedValue, "my page show my topic") ||
       includesCopiedPhrase(normalizedCopiedValue, "my page shows my topic");
+    const hasVaguePromptCopy =
+      hasAllAboutMePromptScaffold(normalizedCopiedValue) &&
+      !hasAllAboutMePersonalization(normalizedCopiedValue);
 
-    return hasGenericTopicResult;
+    return hasGenericTopicResult || hasVaguePromptCopy;
   }
 
   if (projectSlug === "vibe-page") {
@@ -57,8 +113,9 @@ export const hasCopiedExampleSignal = (normalizedValue: string, projectSlug?: st
     );
 
     return (
-      hasCardColorExample &&
-      hasVibeCardTargetingExample &&
+      ((hasCardColorExample && hasVibeCardTargetingExample) ||
+        (hasVibePagePromptScaffold(normalizedCopiedValue) &&
+          hasVagueVibePagePromptAnswers(normalizedCopiedValue))) &&
       !hasVibePagePersonalization(normalizedCopiedValue)
     );
   }
@@ -71,8 +128,9 @@ export const hasCopiedExampleSignal = (normalizedValue: string, projectSlug?: st
     const hasGenericMessageResult = includesCopiedPhrase(normalizedCopiedValue, "The message changed");
 
     return (
-      hasFullPlaceholderSetup &&
-      hasGenericMessageResult &&
+      ((hasFullPlaceholderSetup && hasGenericMessageResult) ||
+        (hasMoodSwitchPromptScaffold(normalizedCopiedValue) &&
+          hasVagueMoodSwitchPromptAnswers(normalizedCopiedValue))) &&
       !hasMoodSwitchPersonalization(normalizedCopiedValue)
     );
   }
@@ -86,9 +144,9 @@ export const hasCopiedExampleSignal = (normalizedValue: string, projectSlug?: st
     );
 
     return (
-      hasHtmlExample &&
-      hasCssExample &&
-      hasJavaScriptExample &&
+      ((hasHtmlExample && hasCssExample && hasJavaScriptExample) ||
+        (hasMiniSitePromptScaffold(normalizedCopiedValue) &&
+          hasVagueMiniSitePromptAnswers(normalizedCopiedValue))) &&
       !hasMiniSitePersonalization(normalizedCopiedValue)
     );
   }

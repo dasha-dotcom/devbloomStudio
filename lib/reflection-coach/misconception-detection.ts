@@ -14,7 +14,9 @@ type MisconceptionDetectionInput = {
 };
 
 const htmlCssStyleWordPattern =
-  /\b(background color|background|color|colors|theme|font|size|border|spacing|layout|rounded|round|margin|padding|style|styles|pink|purple|green|blue|red|yellow|orange|black|white|gray|grey|brown|big|bigger|small|smaller)\b/;
+  /\b(background color|background|color|colors|theme|font|size|border|spacing|layout|rounded|round|margin|padding|style|styles|pink|purple|green|blue|red|yellow|orange|black|white|gray|grey|brown)\b/;
+const htmlCssSizeStyleChangePattern =
+  /\b(made|makes|changed|changes|customized|customizes|updated|updates|set|sets|edited|edits)\b.{0,60}\b(words|word|text|letters|letter|title|heading|h1|h2|h3|font|paragraph|paragraphs)\b.{0,30}\b(big|bigger|small|smaller)\b|\b(changed|changes|customized|customizes|updated|updates|set|sets|edited|edits)\b.{0,50}\b(font size|text size|letter size|heading size|title size)\b/;
 const customizationActionPattern =
   /\b(changed|changes|made|makes|customized|customizes|updated|updates|set|sets|picked|picks|chose|chooses|edited|edits|wrote|put|puts|added|adds)\b/;
 const javascriptAttributionPattern =
@@ -42,7 +44,8 @@ const hasDeterministicHtmlCssConfusion = (input: MisconceptionDetectionInput) =>
   const hasHtmlLessonStyleChange =
     input.lessonFocus === "html" &&
     customizationActionPattern.test(normalizedReflection) &&
-    htmlCssStyleWordPattern.test(normalizedReflection);
+    (htmlCssStyleWordPattern.test(normalizedReflection) ||
+      htmlCssSizeStyleChangePattern.test(normalizedReflection));
   const clauses = normalizedReflection.split(
     /\s*(?:[.;]|\band\b|\bbut\b|,\s*(?=(?:with\s+|in\s+)?(?:html|css|javascript|js)\b))\s*/,
   );
@@ -51,7 +54,8 @@ const hasDeterministicHtmlCssConfusion = (input: MisconceptionDetectionInput) =>
     (clause) =>
       (/\b(with html|html)\b/.test(clause) &&
         customizationActionPattern.test(clause) &&
-        htmlCssStyleWordPattern.test(clause)) ||
+        (htmlCssStyleWordPattern.test(clause) ||
+          htmlCssSizeStyleChangePattern.test(clause))) ||
       (input.lessonFocus === "html" &&
         /\bcss\b/.test(clause) &&
         customizationActionPattern.test(clause) &&

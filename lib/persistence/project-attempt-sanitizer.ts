@@ -7,9 +7,16 @@ import type {
   ReflectionCoachCheck,
 } from "@/lib/persistence/project-attempt-types";
 import type {
+  ReflectionCoachDetectedSignals,
   ReflectionCoachFocus,
+  ReflectionCoachRecommendedFocus,
   ReflectionCoachResult,
 } from "@/lib/reflection-coach/types";
+import {
+  deriveReflectionCoachTeacherInsight,
+  sanitizeReflectionCoachAiAnalysis,
+  sanitizeReflectionCoachTeacherInsight,
+} from "@/lib/reflection-coach/teacher-insights";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -30,7 +37,40 @@ const isReflectionCoachFocus = (value: unknown): value is ReflectionCoachFocus =
   value === "html" || value === "css" || value === "javascript" || value === "general";
 const isReflectionCoachSource = (value: unknown): value is "ai" | "local_fallback" =>
   value === "ai" || value === "local_fallback";
+const isReflectionCoachRecommendedFocus = (
+  value: unknown,
+): value is ReflectionCoachRecommendedFocus =>
+  value === "specificity" ||
+  value === "causality" ||
+  value === "concept_connection" ||
+  value === "ownership" ||
+  value === "make_it_yours";
 const sanitizeOptionalString = (value: unknown) => (typeof value === "string" ? value : undefined);
+
+const sanitizeReflectionCoachDetectedSignals = (
+  value: unknown,
+): ReflectionCoachDetectedSignals | undefined => {
+  if (
+    !isRecord(value) ||
+    typeof value.hasSpecificEdit !== "boolean" ||
+    typeof value.hasPageDetail !== "boolean" ||
+    typeof value.hasActionOrChange !== "boolean" ||
+    typeof value.hasConceptConnection !== "boolean" ||
+    typeof value.hasReasonOrChoice !== "boolean"
+  ) {
+    return undefined;
+  }
+
+  return {
+    hasSpecificEdit: value.hasSpecificEdit,
+    hasPageDetail: value.hasPageDetail,
+    hasActionOrChange: value.hasActionOrChange,
+    hasConceptConnection: value.hasConceptConnection,
+    hasReasonOrChoice: value.hasReasonOrChoice,
+    hasCopiedExample:
+      typeof value.hasCopiedExample === "boolean" ? value.hasCopiedExample : false,
+  };
+};
 
 export const getDefaultEditorTabId = (project: LessonProjectConfig, stepId?: string) => {
   const step = project.steps.find((item) => item.id === stepId) ?? project.steps[0];
@@ -196,6 +236,27 @@ const sanitizeReflectionCoachChecks = (value: unknown): ReflectionCoachCheck[] =
       return [];
     }
 
+    const analysis = sanitizeReflectionCoachAiAnalysis(item.analysis);
+    const detectedSignals = sanitizeReflectionCoachDetectedSignals(item.detectedSignals);
+    const recommendedFocus = isReflectionCoachRecommendedFocus(item.recommendedFocus)
+      ? item.recommendedFocus
+      : undefined;
+    const sanitizedTeacherInsight = sanitizeReflectionCoachTeacherInsight(item.teacherInsight);
+    const shouldDeriveTeacherInsight =
+      sanitizedTeacherInsight !== undefined ||
+      item.analysis !== undefined ||
+      detectedSignals?.hasCopiedExample ||
+      recommendedFocus === "make_it_yours";
+    const teacherInsight = shouldDeriveTeacherInsight
+      ? deriveReflectionCoachTeacherInsight({
+          coachResult: item.coachResult,
+          detectedSignals,
+          recommendedFocus,
+          analysis,
+          teacherInsight: sanitizedTeacherInsight,
+        })
+      : undefined;
+
     return [
       {
         checkedAt: item.checkedAt,
@@ -204,6 +265,10 @@ const sanitizeReflectionCoachChecks = (value: unknown): ReflectionCoachCheck[] =
         coachFollowUpQuestion: sanitizeOptionalString(item.coachFollowUpQuestion),
         lessonFocus: isReflectionCoachFocus(item.lessonFocus) ? item.lessonFocus : "general",
         source: isReflectionCoachSource(item.source) ? item.source : undefined,
+        ...(detectedSignals ? { detectedSignals } : {}),
+        ...(recommendedFocus ? { recommendedFocus } : {}),
+        ...(analysis ? { analysis } : {}),
+        ...(teacherInsight ? { teacherInsight } : {}),
         studentFollowUpAnswer: sanitizeOptionalString(item.studentFollowUpAnswer),
         suggestedFinalReflection: sanitizeOptionalString(item.suggestedFinalReflection),
         finalReflection: sanitizeOptionalString(item.finalReflection),

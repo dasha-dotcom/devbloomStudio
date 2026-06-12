@@ -1,7 +1,10 @@
 import type { BuilderSelections } from "@/lib/projects";
 import type { LessonVariant } from "@/lib/experiments/lesson-variant";
 import type {
+  ReflectionCoachAiAnalysis,
+  ReflectionCoachDetectedSignals,
   ReflectionCoachFocus,
+  ReflectionCoachRecommendedFocus,
   ReflectionCoachResult,
   ReflectionCoachSource,
 } from "@/lib/reflection-coach/types";
@@ -20,6 +23,10 @@ export type ReflectionCoachCheck = {
   coachFollowUpQuestion?: string;
   lessonFocus: ReflectionCoachFocus;
   source?: ReflectionCoachSource;
+  detectedSignals?: ReflectionCoachDetectedSignals;
+  recommendedFocus?: ReflectionCoachRecommendedFocus;
+  analysis?: ReflectionCoachAiAnalysis;
+  teacherInsight?: string;
   studentFollowUpAnswer?: string;
   suggestedFinalReflection?: string;
   finalReflection?: string;

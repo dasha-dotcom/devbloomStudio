@@ -6,7 +6,17 @@ import { normalizeLessonVariant } from "@/lib/experiments/lesson-variant";
 import { normalizeProjectAttempt } from "@/lib/persistence/project-attempt-sanitizer";
 import type { ProjectAttempt, ReflectionCoachCheck } from "@/lib/persistence/project-attempt-types";
 import { getProjectBySlug, type LessonProjectConfig } from "@/lib/projects";
-import type { ReflectionCoachResult, ReflectionCoachSource } from "@/lib/reflection-coach/types";
+import {
+  deriveReflectionCoachTeacherInsight,
+  sanitizeReflectionCoachAiAnalysis,
+  sanitizeReflectionCoachTeacherInsight,
+} from "@/lib/reflection-coach/teacher-insights";
+import type {
+  ReflectionCoachDetectedSignals,
+  ReflectionCoachRecommendedFocus,
+  ReflectionCoachResult,
+  ReflectionCoachSource,
+} from "@/lib/reflection-coach/types";
 import { requireTeacherClass } from "@/lib/teacher/require-teacher-class";
 
 type RouteContext = {
@@ -33,6 +43,11 @@ const CSV_COLUMNS = [
   "first_sprout_reflection_text",
   "last_sprout_reflection_text",
   "sprout_sources",
+  "reflection_teacher_insight",
+  "reflection_misconception_risk",
+  "reflection_copied_example_risk",
+  "reflection_specificity",
+  "reflection_personalization",
   "created_at",
   "updated_at",
 ] as const;
@@ -57,7 +72,41 @@ const isReflectionCoachResult = (value: unknown): value is ReflectionCoachResult
 const isReflectionCoachSource = (value: unknown): value is ReflectionCoachSource =>
   value === "ai" || value === "local_fallback";
 
+const isReflectionCoachRecommendedFocus = (
+  value: unknown,
+): value is ReflectionCoachRecommendedFocus =>
+  value === "specificity" ||
+  value === "causality" ||
+  value === "concept_connection" ||
+  value === "ownership" ||
+  value === "make_it_yours";
+
 const sanitizeOptionalString = (value: unknown) => (typeof value === "string" ? value : undefined);
+
+const sanitizeReflectionCoachDetectedSignals = (
+  value: unknown,
+): ReflectionCoachDetectedSignals | undefined => {
+  if (
+    !isRecord(value) ||
+    typeof value.hasSpecificEdit !== "boolean" ||
+    typeof value.hasPageDetail !== "boolean" ||
+    typeof value.hasActionOrChange !== "boolean" ||
+    typeof value.hasConceptConnection !== "boolean" ||
+    typeof value.hasReasonOrChoice !== "boolean"
+  ) {
+    return undefined;
+  }
+
+  return {
+    hasSpecificEdit: value.hasSpecificEdit,
+    hasPageDetail: value.hasPageDetail,
+    hasActionOrChange: value.hasActionOrChange,
+    hasConceptConnection: value.hasConceptConnection,
+    hasReasonOrChoice: value.hasReasonOrChoice,
+    hasCopiedExample:
+      typeof value.hasCopiedExample === "boolean" ? value.hasCopiedExample : false,
+  };
+};
 
 const getFallbackSproutChecks = (stateJson: unknown): ReflectionCoachCheck[] => {
   if (!isRecord(stateJson) || !Array.isArray(stateJson.reflectionCoachChecks)) {
@@ -74,6 +123,19 @@ const getFallbackSproutChecks = (stateJson: unknown): ReflectionCoachCheck[] => 
       return [];
     }
 
+    const analysis = sanitizeReflectionCoachAiAnalysis(item.analysis);
+    const detectedSignals = sanitizeReflectionCoachDetectedSignals(item.detectedSignals);
+    const recommendedFocus = isReflectionCoachRecommendedFocus(item.recommendedFocus)
+      ? item.recommendedFocus
+      : undefined;
+    const teacherInsight = deriveReflectionCoachTeacherInsight({
+      coachResult: item.coachResult,
+      detectedSignals,
+      recommendedFocus,
+      analysis,
+      teacherInsight: sanitizeReflectionCoachTeacherInsight(item.teacherInsight),
+    });
+
     return [
       {
         checkedAt: item.checkedAt,
@@ -88,6 +150,10 @@ const getFallbackSproutChecks = (stateJson: unknown): ReflectionCoachCheck[] => 
             ? item.lessonFocus
             : "general",
         source: isReflectionCoachSource(item.source) ? item.source : undefined,
+        ...(detectedSignals ? { detectedSignals } : {}),
+        ...(recommendedFocus ? { recommendedFocus } : {}),
+        ...(analysis ? { analysis } : {}),
+        ...(teacherInsight ? { teacherInsight } : {}),
       },
     ];
   });
@@ -231,6 +297,11 @@ export async function GET(_request: Request, context: RouteContext) {
       firstSproutCheck?.reflectionText ?? "",
       latestSproutCheck?.reflectionText ?? "",
       getSproutSourceSummary(sproutChecks),
+      latestSproutCheck ? deriveReflectionCoachTeacherInsight(latestSproutCheck) : "",
+      latestSproutCheck?.analysis?.misconceptionRisk ?? "",
+      latestSproutCheck?.analysis?.copiedExampleRisk ?? "",
+      latestSproutCheck?.analysis?.specificity ?? "",
+      latestSproutCheck?.analysis?.personalization ?? "",
       row.createdAt,
       row.updatedAt,
     ];

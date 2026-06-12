@@ -2,6 +2,7 @@ import { LivePreview } from "@/components/lesson/live-preview";
 import type { ReflectionCoachCheck } from "@/lib/persistence/project-attempt-types";
 import { getProjectBySlug } from "@/lib/projects";
 import { normalizeProjectAttempt } from "@/lib/persistence/project-attempt-sanitizer";
+import { deriveReflectionCoachTeacherInsight } from "@/lib/reflection-coach/teacher-insights";
 import { deriveTeacherAttemptSummary, type TeacherAttemptStepSummary } from "@/lib/teacher/derive-attempt-summary";
 import { getLessonVariantDisplay } from "@/lib/teacher/lesson-variant-display";
 import { requireTeacherProjectAttempt } from "@/lib/teacher/require-teacher-project-attempt";
@@ -410,6 +411,7 @@ export default async function TeacherAttemptDetailPage({ params }: TeacherAttemp
             <div className="teacher-reflection-list">
               {sproutCheckHistory.map((check, index) => {
                 const sourceLabel = getSproutCheckSourceLabel(check.source);
+                const teacherInsight = deriveReflectionCoachTeacherInsight(check);
 
                 return (
                   <div key={`${check.checkedAt}-${index}`} className="teacher-reflection-card">
@@ -431,6 +433,14 @@ export default async function TeacherAttemptDetailPage({ params }: TeacherAttemp
                       <p className="muted teacher-list-copy teacher-attempt-summary">
                         Sprout follow-up: {check.coachFollowUpQuestion}
                       </p>
+                    ) : null}
+                    {teacherInsight ? (
+                      <div className="teacher-reflection-insight">
+                        <strong>Reflection insight</strong>
+                        <p className="muted teacher-list-copy teacher-attempt-summary">
+                          {teacherInsight}
+                        </p>
+                      </div>
                     ) : null}
                   </div>
                 );
