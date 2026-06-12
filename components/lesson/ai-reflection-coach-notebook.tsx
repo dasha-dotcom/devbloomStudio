@@ -8,7 +8,9 @@ import {
   evaluateReflectionForCoach,
   getReflectionCoachLessonFocus,
 } from "@/lib/reflection-coach/evaluate-reflection";
+import { applyLocalMisconceptionOverlay } from "@/lib/reflection-coach/misconception-detection";
 import type {
+  ReflectionCoachAiAnalysis,
   ReflectionCoachApiResponse,
   ReflectionCoachDetectedSignals,
   ReflectionCoachEvaluation,
@@ -79,6 +81,140 @@ const isReflectionCoachRecommendedFocus = (
 const isReflectionCoachSource = (value: unknown): value is ReflectionCoachSource =>
   value === "ai" || value === "local_fallback";
 
+const MAX_TEACHER_INSIGHT_LENGTH = 240;
+const MAX_ANALYSIS_TEXT_LENGTH = 180;
+const MAX_ANALYSIS_ARRAY_ITEMS = 4;
+const MAX_ANALYSIS_ARRAY_ITEM_LENGTH = 80;
+
+const unsafeStructuredTextPattern =
+  /```|`[^`]+`|\*\*|__|^#{1,6}\s|\[[^\]]+\]\([^)]+\)|^\s*[-*]\s+|^\s*[[{]|["'][a-z0-9_-]+["']\s*:|\b(stack trace|traceback|error:|at\s+\S+\s+\(.+:\d+:\d+\))\b/i;
+const unsafePlainTextPattern =
+  /\b(incorrect|insufficient|wrong|bad|failed|failure|lazy|cheated|copied|chain of thought|hidden reasoning|step-by-step reasoning|thought process|internal reasoning)\b/i;
+
+const isSafeOptionalText = (value: string, maxLength: number) =>
+  value.length <= maxLength &&
+  !value.includes("\n") &&
+  !unsafeStructuredTextPattern.test(value) &&
+  !unsafePlainTextPattern.test(value);
+
+const isAiSpecificity = (
+  value: unknown,
+): value is ReflectionCoachAiAnalysis["specificity"] =>
+  value === "empty" ||
+  value === "generic" ||
+  value === "somewhat_specific" ||
+  value === "specific";
+
+const isAiPersonalization = (
+  value: unknown,
+): value is ReflectionCoachAiAnalysis["personalization"] =>
+  value === "none" ||
+  value === "generic_example" ||
+  value === "some_personal_detail" ||
+  value === "clearly_personalized";
+
+const isAiMisconceptionRisk = (
+  value: unknown,
+): value is ReflectionCoachAiAnalysis["misconceptionRisk"] =>
+  value === "none" ||
+  value === "html_css_confusion" ||
+  value === "html_js_confusion" ||
+  value === "css_js_confusion" ||
+  value === "event_result_confusion" ||
+  value === "other";
+
+const isAiCopiedExampleRisk = (
+  value: unknown,
+): value is ReflectionCoachAiAnalysis["copiedExampleRisk"] =>
+  value === "none" || value === "possible" || value === "likely";
+
+const normalizeOptionalAnalysisText = (
+  value: unknown,
+  maxLength = MAX_ANALYSIS_TEXT_LENGTH,
+): string | null | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return undefined;
+  }
+
+  return isSafeOptionalText(trimmed, maxLength) ? trimmed : null;
+};
+
+const normalizeOptionalAnalysisStringArray = (value: unknown): string[] | null | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!Array.isArray(value) || value.length > MAX_ANALYSIS_ARRAY_ITEMS) {
+    return null;
+  }
+
+  const normalizedItems: string[] = [];
+
+  for (const item of value) {
+    const normalizedItem = normalizeOptionalAnalysisText(item, MAX_ANALYSIS_ARRAY_ITEM_LENGTH);
+
+    if (normalizedItem === null) {
+      return null;
+    }
+
+    if (normalizedItem) {
+      normalizedItems.push(normalizedItem);
+    }
+  }
+
+  return normalizedItems;
+};
+
+const normalizeAiAnalysis = (value: unknown): ReflectionCoachAiAnalysis | null | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (
+    !isRecord(value) ||
+    !isAiSpecificity(value.specificity) ||
+    !isAiPersonalization(value.personalization) ||
+    !isAiMisconceptionRisk(value.misconceptionRisk) ||
+    !isAiCopiedExampleRisk(value.copiedExampleRisk)
+  ) {
+    return null;
+  }
+
+  const misconceptionNote = normalizeOptionalAnalysisText(value.misconceptionNote);
+  const inferredStudentUnderstanding = normalizeOptionalAnalysisStringArray(
+    value.inferredStudentUnderstanding,
+  );
+  const missingConcepts = normalizeOptionalAnalysisStringArray(value.missingConcepts);
+
+  if (
+    misconceptionNote === null ||
+    inferredStudentUnderstanding === null ||
+    missingConcepts === null
+  ) {
+    return null;
+  }
+
+  return {
+    specificity: value.specificity,
+    personalization: value.personalization,
+    misconceptionRisk: value.misconceptionRisk,
+    ...(misconceptionNote ? { misconceptionNote } : {}),
+    ...(inferredStudentUnderstanding ? { inferredStudentUnderstanding } : {}),
+    ...(missingConcepts ? { missingConcepts } : {}),
+    copiedExampleRisk: value.copiedExampleRisk,
+  };
+};
+
 const normalizeDetectedSignals = (value: unknown): ReflectionCoachDetectedSignals | null => {
   if (
     !isRecord(value) ||
@@ -102,7 +238,7 @@ const normalizeDetectedSignals = (value: unknown): ReflectionCoachDetectedSignal
   };
 };
 
-const normalizeCoachApiResponse = (
+export const normalizeCoachApiResponse = (
   value: unknown,
 ): ReflectionCoachApiResponse | null => {
   if (!isRecord(value)) {
@@ -110,12 +246,19 @@ const normalizeCoachApiResponse = (
   }
 
   const detectedSignals = normalizeDetectedSignals(value.detectedSignals);
+  const analysis = normalizeAiAnalysis(value.analysis);
+  const teacherInsight = normalizeOptionalAnalysisText(
+    value.teacherInsight,
+    MAX_TEACHER_INSIGHT_LENGTH,
+  );
 
   if (
     !isReflectionCoachResult(value.coachResult) ||
     !isReflectionCoachRecommendedFocus(value.recommendedFocus) ||
     !isReflectionCoachFocus(value.lessonFocus) ||
     !detectedSignals ||
+    analysis === null ||
+    teacherInsight === null ||
     !isReflectionCoachSource(value.source)
   ) {
     return null;
@@ -130,6 +273,8 @@ const normalizeCoachApiResponse = (
       typeof value.followUpQuestion === "string" ? value.followUpQuestion : undefined,
     positiveMessage:
       typeof value.positiveMessage === "string" ? value.positiveMessage : undefined,
+    ...(analysis ? { analysis } : {}),
+    ...(teacherInsight ? { teacherInsight } : {}),
     source: value.source,
   } satisfies ReflectionCoachApiResponse;
 };
@@ -157,6 +302,7 @@ const getCoachEvaluationFromApi = async ({
         projectSlug,
         lessonTitle: step.title,
         reflectionPrompt: step.reflectionPrompt,
+        reflectionPlaceholder: step.reflectionPlaceholder,
         lessonFocus: localEvaluation.lessonFocus,
         reflectionText,
         localEvaluation,
@@ -251,7 +397,11 @@ export function AiReflectionCoachNotebook({
                 lessonFocus: getReflectionCoachLessonFocus(step.reflectionPrompt),
               });
               const localFallbackEvaluation = {
-                ...localEvaluation,
+                ...applyLocalMisconceptionOverlay({
+                  evaluation: localEvaluation,
+                  reflectionText,
+                  projectSlug,
+                }),
                 source: "local_fallback" as const,
               } satisfies ReflectionCoachApiResponse;
 

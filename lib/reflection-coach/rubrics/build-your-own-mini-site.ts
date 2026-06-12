@@ -9,11 +9,18 @@ import type {
   ReflectionCoachRubricInput,
 } from "./index";
 
+const hasMiniSiteButtonMessageCustomization = (normalizedValue: string) =>
+  /\b(button message|button text|button words|button label)\b.{0,40}\bto\b/.test(
+    normalizedValue,
+  );
+
 const getMiniSiteCategorySignals = (normalizedValue: string) => ({
   hasHtml: hasHtmlContentChangeSignal(normalizedValue),
   hasCss: hasCssStyleChangeSignal(normalizedValue),
   hasJavaScript:
-    hasJavaScriptActionSignal(normalizedValue) || hasJavaScriptPageResultSignal(normalizedValue),
+    hasJavaScriptActionSignal(normalizedValue) ||
+    hasJavaScriptPageResultSignal(normalizedValue) ||
+    hasMiniSiteButtonMessageCustomization(normalizedValue),
 });
 
 const getMiniSiteMissingCategoryQuestion = (missingCategories: Array<"HTML" | "CSS" | "JavaScript">) => {

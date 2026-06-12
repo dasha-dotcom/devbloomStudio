@@ -7,8 +7,10 @@ import {
   evaluateReflectionWithAi,
   hasReflectionCoachAiConfig,
 } from "@/lib/reflection-coach/ai-coach-client";
+import { applyLocalMisconceptionOverlay } from "@/lib/reflection-coach/misconception-detection";
 import type {
   ReflectionCoachApiResponse,
+  ReflectionCoachFallbackDebugDetail,
   ReflectionCoachFallbackReason,
   ReflectionCoachFocus,
 } from "@/lib/reflection-coach/types";
@@ -17,6 +19,7 @@ type ReflectionCoachRequestBody = {
   projectSlug?: unknown;
   lessonTitle?: unknown;
   reflectionPrompt?: unknown;
+  reflectionPlaceholder?: unknown;
   lessonFocus?: unknown;
   reflectionText?: unknown;
   localEvaluation?: unknown;
@@ -27,6 +30,7 @@ type ReflectionCoachRequestBody = {
 const MAX_REFLECTION_TEXT_LENGTH = 1000;
 const MAX_LESSON_TITLE_LENGTH = 160;
 const MAX_REFLECTION_PROMPT_LENGTH = 400;
+const MAX_REFLECTION_PLACEHOLDER_LENGTH = 400;
 const DEFAULT_MAX_AI_CHECKS_PER_ATTEMPT = 3;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_HOUR_WINDOW_MS = 60 * 60 * 1000;
@@ -150,21 +154,29 @@ const getFallbackResponse = (
   body: ReflectionCoachRequestBody,
   lessonFocus: ReflectionCoachFocus,
   fallbackReason?: ReflectionCoachFallbackReason,
-): ReflectionCoachApiResponse => ({
-  ...evaluateReflectionForCoach({
-    reflectionText: getSafeReflectionText(body.reflectionText),
-    projectSlug: typeof body.projectSlug === "string" ? body.projectSlug : undefined,
+  fallbackDebugDetail?: ReflectionCoachFallbackDebugDetail,
+): ReflectionCoachApiResponse => {
+  const reflectionText = getSafeReflectionText(body.reflectionText);
+  const projectSlug = typeof body.projectSlug === "string" ? body.projectSlug : undefined;
+  const localEvaluation = evaluateReflectionForCoach({
+    reflectionText,
+    projectSlug,
     reflectionPrompt: getSafeOptionalString(body.reflectionPrompt, MAX_REFLECTION_PROMPT_LENGTH),
     lessonFocus,
-  }),
-  source: "local_fallback",
-  ...(process.env.NODE_ENV !== "production" && fallbackReason ? { fallbackReason } : {}),
-});
+  });
 
-const warnFallbackReasonInDevelopment = (fallbackReason: ReflectionCoachFallbackReason) => {
-  if (process.env.NODE_ENV !== "production") {
-    console.warn("Reflection coach AI fallback:", fallbackReason);
-  }
+  return {
+    ...applyLocalMisconceptionOverlay({
+      evaluation: localEvaluation,
+      reflectionText,
+      projectSlug,
+    }),
+    source: "local_fallback",
+    ...(process.env.NODE_ENV !== "production" && fallbackReason ? { fallbackReason } : {}),
+    ...(process.env.NODE_ENV !== "production" && fallbackDebugDetail
+      ? { fallbackDebugDetail }
+      : {}),
+  };
 };
 
 export async function POST(request: Request) {
@@ -226,7 +238,6 @@ export async function POST(request: Request) {
   }
 
   if (!hasReflectionCoachAiConfig()) {
-    warnFallbackReasonInDevelopment("missing_config");
     return NextResponse.json(
       getFallbackResponse({ ...body, reflectionText }, lessonFocus, "missing_config"),
     );
@@ -255,15 +266,23 @@ export async function POST(request: Request) {
     projectTitle: project.projectCard.title,
     lessonTitle: getSafeOptionalString(body.lessonTitle, MAX_LESSON_TITLE_LENGTH),
     reflectionPrompt: getSafeOptionalString(body.reflectionPrompt, MAX_REFLECTION_PROMPT_LENGTH),
+    reflectionPlaceholder: getSafeOptionalString(
+      body.reflectionPlaceholder,
+      MAX_REFLECTION_PLACEHOLDER_LENGTH,
+    ),
     lessonFocus,
     reflectionText,
     localEvaluation,
   });
 
   if (!aiResult.evaluation) {
-    warnFallbackReasonInDevelopment(aiResult.fallbackReason);
     return NextResponse.json(
-      getFallbackResponse({ ...body, reflectionText }, lessonFocus, aiResult.fallbackReason),
+      getFallbackResponse(
+        { ...body, reflectionText },
+        lessonFocus,
+        aiResult.fallbackReason,
+        aiResult.fallbackDebugDetail,
+      ),
     );
   }
 

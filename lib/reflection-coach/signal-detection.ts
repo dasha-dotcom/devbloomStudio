@@ -99,7 +99,11 @@ export const hasCopiedExampleSignal = (normalizedValue: string, projectSlug?: st
 export const hasHtmlContentChangeSignal = (normalizedValue: string) =>
   hasPattern(
     normalizedValue,
-    /\b(changed|added|customized|updated|wrote|made|edited|put|typed|set)\b.{0,80}\b(heading|title|big words|words|text|writing|paragraph|list|item|image|picture|photo|link|topic|name|favorite|about me|content|intro|h1|p|li)\b/,
+    /\b(changed|added|customized|updated|wrote|made|edited|put|typed|set)\b.{0,80}\b(heading|title|big words|words|text|writing|paragraph|list|item|image|picture|photo|link|topic|name|favorite|about me|content|intro|h1|h2|h3|p|li)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\b(changed|added|customized|updated|wrote|made|edited|put|typed|set)\b.{0,80}\b(heading tag|title text|heading text|paragraph text|p tag|image tag|link tag)\b/,
   ) ||
   hasPattern(
     normalizedValue,
@@ -113,6 +117,14 @@ export const hasHtmlContentChangeSignal = (normalizedValue: string) =>
 export const hasVisiblePageResultSignal = (normalizedValue: string) =>
   hasPattern(
     normalizedValue,
+    /\b(my page|the page|page|it)\b.{0,30}\b(started saying|started to say|says|say|said|show|shows|showed)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
+    /\bnow\b.{0,30}\b(it|the page|my page)\b.{0,30}\b(say|says|saying|show|shows)\b/,
+  ) ||
+  hasPattern(
+    normalizedValue,
     /\b(now|after|then)\b.{0,50}\b(page|it|you)\b.{0,50}\b(show|shows|showed|say|says|said|display|displayed|appeared|has|see|about)\b/,
   ) ||
   hasPattern(
@@ -122,10 +134,6 @@ export const hasVisiblePageResultSignal = (normalizedValue: string) =>
   hasPattern(
     normalizedValue,
     /\b(the\s+)?(big words|heading|title|page|my page)\b.{0,30}\b(say|says|show|shows)\b/,
-  ) ||
-  hasPattern(
-    normalizedValue,
-    /\bnow\b.{0,30}\b(it|the page|my page)\b.{0,30}\b(say|says|show|shows)\b/,
   ) ||
   hasPattern(
     normalizedValue,

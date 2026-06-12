@@ -25,11 +25,20 @@ export type ReflectionCoachFallbackReason =
   | "multiple_questions"
   | "missing_question_mark"
   | "positive_message_contains_question"
+  | "invalid_analysis"
+  | "teacher_insight_too_long"
   | "harsh_language"
   | "code_like_output"
   | "rewritten_reflection_field"
   | "status_mismatch"
   | "unknown_validation_error";
+
+export type ReflectionCoachFallbackDebugDetail =
+  | "coachResult"
+  | "detectedSignals"
+  | "recommendedFocus"
+  | "lessonFocus"
+  | "messageShape";
 
 export type ReflectionCoachRecommendedFocus =
   | "specificity"
@@ -47,6 +56,38 @@ export type ReflectionCoachDetectedSignals = {
   hasCopiedExample: boolean;
 };
 
+export type ReflectionCoachAiSpecificity =
+  | "empty"
+  | "generic"
+  | "somewhat_specific"
+  | "specific";
+
+export type ReflectionCoachAiPersonalization =
+  | "none"
+  | "generic_example"
+  | "some_personal_detail"
+  | "clearly_personalized";
+
+export type ReflectionCoachAiMisconceptionRisk =
+  | "none"
+  | "html_css_confusion"
+  | "html_js_confusion"
+  | "css_js_confusion"
+  | "event_result_confusion"
+  | "other";
+
+export type ReflectionCoachAiCopiedExampleRisk = "none" | "possible" | "likely";
+
+export type ReflectionCoachAiAnalysis = {
+  specificity: ReflectionCoachAiSpecificity;
+  personalization: ReflectionCoachAiPersonalization;
+  misconceptionRisk: ReflectionCoachAiMisconceptionRisk;
+  misconceptionNote?: string;
+  inferredStudentUnderstanding?: string[];
+  missingConcepts?: string[];
+  copiedExampleRisk: ReflectionCoachAiCopiedExampleRisk;
+};
+
 export type ReflectionCoachEvaluationInput = {
   reflectionText: string;
   projectSlug?: string;
@@ -61,9 +102,12 @@ export type ReflectionCoachEvaluation = {
   lessonFocus: ReflectionCoachFocus;
   followUpQuestion?: string;
   positiveMessage?: string;
+  analysis?: ReflectionCoachAiAnalysis;
+  teacherInsight?: string;
 };
 
 export type ReflectionCoachApiResponse = ReflectionCoachEvaluation & {
   source: ReflectionCoachSource;
   fallbackReason?: ReflectionCoachFallbackReason;
+  fallbackDebugDetail?: ReflectionCoachFallbackDebugDetail;
 };

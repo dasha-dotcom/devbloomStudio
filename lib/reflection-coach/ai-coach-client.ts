@@ -1,17 +1,26 @@
 import type {
+  ReflectionCoachAiAnalysis,
   ReflectionCoachDetectedSignals,
   ReflectionCoachEvaluation,
+  ReflectionCoachFallbackDebugDetail,
   ReflectionCoachFallbackReason,
   ReflectionCoachFocus,
   ReflectionCoachRecommendedFocus,
   ReflectionCoachResult,
 } from "@/lib/reflection-coach/types";
+import {
+  applyDeterministicMisconceptionGuard,
+  getMisconceptionClarificationMessage,
+  getMisconceptionFollowUpQuestion,
+  hasMisconceptionClarification,
+} from "./misconception-detection";
 
 type AiReflectionCoachInput = {
   projectSlug: string;
   projectTitle: string;
   lessonTitle?: string;
   reflectionPrompt?: string;
+  reflectionPlaceholder?: string;
   lessonFocus: ReflectionCoachFocus;
   reflectionText: string;
   localEvaluation: ReflectionCoachEvaluation;
@@ -38,6 +47,7 @@ type ReflectionCoachAiResult =
   | {
       evaluation: null;
       fallbackReason: ReflectionCoachFallbackReason;
+      fallbackDebugDetail?: ReflectionCoachFallbackDebugDetail;
     };
 
 type ParsedJsonObjectResult =
@@ -58,9 +68,14 @@ type AiValidationResult =
   | {
       evaluation: null;
       fallbackReason: ReflectionCoachFallbackReason;
+      fallbackDebugDetail?: ReflectionCoachFallbackDebugDetail;
     };
 
 const MAX_COACH_TEXT_LENGTH = 180;
+const MAX_TEACHER_INSIGHT_LENGTH = 240;
+const MAX_ANALYSIS_TEXT_LENGTH = 180;
+const MAX_ANALYSIS_ARRAY_ITEMS = 4;
+const MAX_ANALYSIS_ARRAY_ITEM_LENGTH = 80;
 const MAX_REFLECTION_CHARS_FOR_AI = 1000;
 const MAX_PROVIDER_RESPONSE_CHARS = 4000;
 
@@ -116,18 +131,47 @@ const hasMatchingDetectedSignals = (
   value.hasReasonOrChoice === fallback.hasReasonOrChoice &&
   value.hasCopiedExample === fallback.hasCopiedExample;
 
-const warnStatusMismatchInDevelopment = (
-  mismatch: string,
-  details: Record<string, unknown>,
-) => {
-  if (process.env.NODE_ENV !== "production") {
-    console.warn("Reflection coach AI status mismatch:", mismatch, details);
+const getAuthoritativeMismatchDebugDetail = ({
+  detectedSignals,
+  fallbackDetectedSignals,
+  recommendedFocus,
+  fallbackRecommendedFocus,
+  lessonFocus,
+  fallbackLessonFocus,
+}: {
+  detectedSignals: ReflectionCoachDetectedSignals;
+  fallbackDetectedSignals: ReflectionCoachDetectedSignals;
+  recommendedFocus: ReflectionCoachRecommendedFocus;
+  fallbackRecommendedFocus: ReflectionCoachRecommendedFocus;
+  lessonFocus: ReflectionCoachFocus;
+  fallbackLessonFocus: ReflectionCoachFocus;
+}): ReflectionCoachFallbackDebugDetail => {
+  if (!hasMatchingDetectedSignals(detectedSignals, fallbackDetectedSignals)) {
+    return "detectedSignals";
   }
+
+  if (recommendedFocus !== fallbackRecommendedFocus) {
+    return "recommendedFocus";
+  }
+
+  if (lessonFocus !== fallbackLessonFocus) {
+    return "lessonFocus";
+  }
+
+  return "messageShape";
 };
 
-const harshLanguagePattern = /\b(incorrect|insufficient)\b/i;
+const harshLanguagePattern = /\b(incorrect|insufficient|wrong|bad|failed|failure|lazy|cheated|copied)\b/i;
 const codeLikeOutputPattern =
   /\b(paste|copy this|use this code|function|const|let|var|document\.|console\.)\b|[{}<>]/i;
+const markdownPattern =
+  /```|`[^`]+`|\*\*|__|^#{1,6}\s|\[[^\]]+\]\([^)]+\)|^\s*[-*]\s+/i;
+const jsonLikeOutputPattern = /^\s*[[{]|["'][a-z0-9_-]+["']\s*:/i;
+const stackTracePattern = /\b(stack trace|traceback|error:|at\s+\S+\s+\(.+:\d+:\d+\))\b/i;
+const hiddenReasoningPattern =
+  /\b(chain of thought|hidden reasoning|step-by-step reasoning|reasoning:|thought process|internal reasoning|my reasoning)\b/i;
+const longTechnicalExplanationPattern =
+  /\b(runtime|compiler|syntax tree|object model|execution context|call stack|serialization|deserialization|regular expression|dom api)\b/i;
 
 const rewrittenReflectionFieldNames = new Set([
   "finalReflection",
@@ -150,6 +194,137 @@ const hasRewrittenReflectionField = (value: unknown): boolean => {
   return Object.entries(value).some(
     ([key, item]) => rewrittenReflectionFieldNames.has(key) || hasRewrittenReflectionField(item),
   );
+};
+
+const isAiSpecificity = (
+  value: unknown,
+): value is ReflectionCoachAiAnalysis["specificity"] =>
+  value === "empty" ||
+  value === "generic" ||
+  value === "somewhat_specific" ||
+  value === "specific";
+
+const isAiPersonalization = (
+  value: unknown,
+): value is ReflectionCoachAiAnalysis["personalization"] =>
+  value === "none" ||
+  value === "generic_example" ||
+  value === "some_personal_detail" ||
+  value === "clearly_personalized";
+
+const isAiMisconceptionRisk = (
+  value: unknown,
+): value is ReflectionCoachAiAnalysis["misconceptionRisk"] =>
+  value === "none" ||
+  value === "html_css_confusion" ||
+  value === "html_js_confusion" ||
+  value === "css_js_confusion" ||
+  value === "event_result_confusion" ||
+  value === "other";
+
+const isAiCopiedExampleRisk = (
+  value: unknown,
+): value is ReflectionCoachAiAnalysis["copiedExampleRisk"] =>
+  value === "none" || value === "possible" || value === "likely";
+
+const hasUnsafeStructuredText = (trimmed: string, allowTechnicalTerms = true) =>
+  markdownPattern.test(trimmed) ||
+  jsonLikeOutputPattern.test(trimmed) ||
+  stackTracePattern.test(trimmed) ||
+  hiddenReasoningPattern.test(trimmed) ||
+  (!allowTechnicalTerms && longTechnicalExplanationPattern.test(trimmed));
+
+const normalizeOptionalAnalysisText = (
+  value: unknown,
+  maxLength = MAX_ANALYSIS_TEXT_LENGTH,
+): string | null | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return undefined;
+  }
+
+  if (
+    trimmed.length > maxLength ||
+    trimmed.includes("\n") ||
+    harshLanguagePattern.test(trimmed) ||
+    codeLikeOutputPattern.test(trimmed) ||
+    hasUnsafeStructuredText(trimmed)
+  ) {
+    return null;
+  }
+
+  return trimmed;
+};
+
+const normalizeOptionalAnalysisStringArray = (value: unknown): string[] | null | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!Array.isArray(value) || value.length > MAX_ANALYSIS_ARRAY_ITEMS) {
+    return null;
+  }
+
+  const normalizedItems: string[] = [];
+
+  for (const item of value) {
+    const normalizedItem = normalizeOptionalAnalysisText(item, MAX_ANALYSIS_ARRAY_ITEM_LENGTH);
+
+    if (normalizedItem === null) {
+      return null;
+    }
+
+    if (normalizedItem) {
+      normalizedItems.push(normalizedItem);
+    }
+  }
+
+  return normalizedItems;
+};
+
+const normalizeAiAnalysis = (value: unknown): ReflectionCoachAiAnalysis | null => {
+  if (
+    !isRecord(value) ||
+    !isAiSpecificity(value.specificity) ||
+    !isAiPersonalization(value.personalization) ||
+    !isAiMisconceptionRisk(value.misconceptionRisk) ||
+    !isAiCopiedExampleRisk(value.copiedExampleRisk)
+  ) {
+    return null;
+  }
+
+  const misconceptionNote = normalizeOptionalAnalysisText(value.misconceptionNote);
+  const inferredStudentUnderstanding = normalizeOptionalAnalysisStringArray(
+    value.inferredStudentUnderstanding,
+  );
+  const missingConcepts = normalizeOptionalAnalysisStringArray(value.missingConcepts);
+
+  if (
+    misconceptionNote === null ||
+    inferredStudentUnderstanding === null ||
+    missingConcepts === null
+  ) {
+    return null;
+  }
+
+  return {
+    specificity: value.specificity,
+    personalization: value.personalization,
+    misconceptionRisk: value.misconceptionRisk,
+    ...(misconceptionNote ? { misconceptionNote } : {}),
+    ...(inferredStudentUnderstanding ? { inferredStudentUnderstanding } : {}),
+    ...(missingConcepts ? { missingConcepts } : {}),
+    copiedExampleRisk: value.copiedExampleRisk,
+  };
 };
 
 const getConfiguredChatCompletionsUrl = () => {
@@ -263,6 +438,7 @@ const getMessages = ({
   projectTitle,
   lessonTitle,
   reflectionPrompt,
+  reflectionPlaceholder,
   lessonFocus,
   reflectionText,
   localEvaluation,
@@ -288,20 +464,56 @@ const getMessages = ({
         },
         recommendedFocus: "Copy exactly from authoritativeLocalEvaluation.recommendedFocus.",
         lessonFocus: "Copy exactly from authoritativeLocalEvaluation.lessonFocus.",
+        analysis: {
+          required: "Required in every response. Any response without analysis is invalid.",
+          specificity: "Required. One of: empty, generic, somewhat_specific, specific.",
+          personalization:
+            "Required. One of: none, generic_example, some_personal_detail, clearly_personalized.",
+          misconceptionRisk:
+            "Required. One of: none, html_css_confusion, html_js_confusion, css_js_confusion, event_result_confusion, other.",
+          misconceptionNote:
+            "Include only when misconceptionRisk is not none. Omit when misconceptionRisk is none.",
+          inferredStudentUnderstanding:
+            "Required array of up to 4 short phrases. Use [] when there is nothing to add.",
+          missingConcepts:
+            "Required array of up to 4 short phrases. Use [] when there is nothing to add.",
+          copiedExampleRisk: "Required. One of: none, possible, likely.",
+        },
         followUpQuestion:
           "Only if coachResult is weak or almost_there. Vary the wording, but ask only about authoritativeLocalEvaluation.followUpQuestion.",
         positiveMessage:
           "Only if coachResult is strong. Omit this field completely for weak, almost_there, and empty.",
+        teacherInsight:
+          "Optional one-sentence teacher-facing insight. Keep it concise and do not include hidden reasoning.",
       },
       rules: [
         "The authoritativeLocalEvaluation is final. Do not change coachResult, detectedSignals, recommendedFocus, or lessonFocus.",
+        "analysis is required in every response. Any response without analysis is invalid.",
+        "Always include analysis.specificity, analysis.personalization, analysis.misconceptionRisk, analysis.inferredStudentUnderstanding, analysis.missingConcepts, and analysis.copiedExampleRisk.",
+        "Use [] for analysis.inferredStudentUnderstanding and analysis.missingConcepts when there is nothing to add.",
+        "Include analysis.misconceptionNote only when analysis.misconceptionRisk is not none.",
+        "Return JSON only. Do not include markdown, code blocks, bullet lists, stack traces, or JSON inside string fields.",
+        "Do not include hidden reasoning, chain-of-thought, or step-by-step analysis.",
         "If coachResult is weak or almost_there, write exactly one short follow-up question about the same missing idea as authoritativeLocalEvaluation.followUpQuestion.",
         "If coachResult is weak or almost_there, you may mention one detail the student wrote, but do not ask about a different missing idea.",
         "If coachResult is weak or almost_there, do not include positiveMessage.",
-        "If coachResult is strong, give one short positive message and no follow-up question.",
+        "If coachResult is strong, give one short positive message and no follow-up question. If analysis finds a misconception, the positiveMessage may briefly clarify it without saying the student is wrong.",
         "If coachResult is empty, do not invent details.",
         "Never write a replacement reflection for the student.",
         "Never include code or coding instructions.",
+        "Do not say weak, copied, incorrect, insufficient, wrong, or failed in student-facing text.",
+        "Use beginner terms only unless the lesson used the term. HTML, CSS, JavaScript, class, style, button, message, page, and heading are allowed.",
+        "A misconception requires the student to attribute a concept to the wrong technology or describe an incorrect code/page relationship.",
+        "Missing specificity, missing page result, missing CSS targeting/class detail, or missing JavaScript event/action detail is not a misconception by itself. Put those in analysis.missingConcepts and the follow-up instead.",
+        "Examples that are incomplete but not misconceptions in a CSS lesson: I changed the color; I made it pink; I styled the card. Examples that are incomplete but not misconceptions in other lessons: I changed the heading; My page says cats; The message changed; When I clicked the button.",
+        "If a student says HTML changed background color, color, theme, font, size, border, spacing, layout, rounded corners, or other style words, set analysis.misconceptionRisk to html_css_confusion.",
+        "In an HTML lesson, if the student says they changed a style, color, background, theme, font, size, border, layout, rounded corners, or named color, set analysis.misconceptionRisk to html_css_confusion.",
+        "Do not use html_css_confusion when the student only says a CSS style changed in a CSS lesson, such as I changed the color, I made it pink, or I styled the card.",
+        "If an HTML lesson reflection says CSS directly changed a heading, title, paragraph, words, text, image, link, list, or other page content, set analysis.misconceptionRisk to html_css_confusion.",
+        "Use html_js_confusion only when the student explicitly says JavaScript or JS directly changed a heading, title, paragraph, words, text, image, link, list item, or page content without an action.",
+        "Do not use html_js_confusion when the student does not mention JavaScript or JS. Missing a JavaScript customization detail is not a misconception.",
+        "If a student says CSS made a button click, message change, show/hide behavior, alert, mood change, or other interaction happen, set analysis.misconceptionRisk to css_js_confusion.",
+        "If analysis.misconceptionRisk is not none, the student-facing message must gently clarify the misconception.",
         "Do not tell the student to include something that the authoritative local evaluation already says is present.",
       ],
       authoritativeLocalEvaluation: localEvaluation,
@@ -323,6 +535,7 @@ const getMessages = ({
       projectTitle,
       lessonTitle: lessonTitle ?? "",
       reflectionPrompt: reflectionPrompt ?? "",
+      reflectionPlaceholder: reflectionPlaceholder ?? "",
       projectPromptTarget: getProjectPromptTarget(projectSlug),
       lessonFocus,
       lessonFocusMeaning: {
@@ -332,6 +545,47 @@ const getMessages = ({
         general: "project change/result",
       }[lessonFocus],
       studentReflection: reflectionText.slice(0, MAX_REFLECTION_CHARS_FOR_AI),
+      requiredFinalJsonShape: {
+        coachResult: "<copy exactly from authoritativeLocalEvaluation.coachResult>",
+        detectedSignals: {
+          hasSpecificEdit:
+            "<copy exactly from authoritativeLocalEvaluation.detectedSignals.hasSpecificEdit>",
+          hasPageDetail:
+            "<copy exactly from authoritativeLocalEvaluation.detectedSignals.hasPageDetail>",
+          hasActionOrChange:
+            "<copy exactly from authoritativeLocalEvaluation.detectedSignals.hasActionOrChange>",
+          hasConceptConnection:
+            "<copy exactly from authoritativeLocalEvaluation.detectedSignals.hasConceptConnection>",
+          hasReasonOrChoice:
+            "<copy exactly from authoritativeLocalEvaluation.detectedSignals.hasReasonOrChoice>",
+          hasCopiedExample:
+            "<copy exactly from authoritativeLocalEvaluation.detectedSignals.hasCopiedExample>",
+        },
+        recommendedFocus: "<copy exactly from authoritativeLocalEvaluation.recommendedFocus>",
+        lessonFocus: "<copy exactly from authoritativeLocalEvaluation.lessonFocus>",
+        analysis: {
+          specificity: "<required: empty | generic | somewhat_specific | specific>",
+          personalization:
+            "<required: none | generic_example | some_personal_detail | clearly_personalized>",
+          misconceptionRisk:
+            "<required: none | html_css_confusion | html_js_confusion | css_js_confusion | event_result_confusion | other>",
+          misconceptionNote:
+            "<include only when misconceptionRisk is not none; otherwise omit>",
+          inferredStudentUnderstanding: [],
+          missingConcepts: [],
+          copiedExampleRisk: "<required: none | possible | likely>",
+        },
+        followUpQuestion:
+          "<only for weak or almost_there; exactly one short question; omit for strong and empty>",
+        positiveMessage:
+          "<only for strong; one short safe message; omit for weak, almost_there, and empty>",
+        teacherInsight: "<optional one short safe teacher-facing sentence>",
+      },
+      requiredFinalJsonShapeRules: [
+        "The analysis object above is required every time.",
+        "A response without analysis is invalid.",
+        "The arrays inside analysis must be present; use [] if empty.",
+      ],
     }),
   },
 ];
@@ -382,18 +636,57 @@ const getUnsafeCoachTextReason = (
     return tooLongReason;
   }
 
-  if (harshLanguagePattern.test(trimmed)) {
+  if (harshLanguagePattern.test(trimmed) || hiddenReasoningPattern.test(trimmed)) {
     return "harsh_language";
   }
 
-  if (codeLikeOutputPattern.test(trimmed)) {
+  if (
+    codeLikeOutputPattern.test(trimmed) ||
+    hasUnsafeStructuredText(trimmed, false)
+  ) {
     return "code_like_output";
   }
 
   return null;
 };
 
-const normalizeAiEvaluation = (
+const normalizeTeacherInsight = (
+  value: unknown,
+): { value?: string; fallbackReason?: ReflectionCoachFallbackReason } => {
+  if (value === undefined) {
+    return {};
+  }
+
+  if (typeof value !== "string") {
+    return { fallbackReason: "missing_required_field" };
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return {};
+  }
+
+  if (trimmed.length > MAX_TEACHER_INSIGHT_LENGTH) {
+    return { fallbackReason: "teacher_insight_too_long" };
+  }
+
+  if (trimmed.includes("\n")) {
+    return { fallbackReason: "code_like_output" };
+  }
+
+  if (harshLanguagePattern.test(trimmed) || hiddenReasoningPattern.test(trimmed)) {
+    return { fallbackReason: "harsh_language" };
+  }
+
+  if (codeLikeOutputPattern.test(trimmed) || hasUnsafeStructuredText(trimmed)) {
+    return { fallbackReason: "code_like_output" };
+  }
+
+  return { value: trimmed };
+};
+
+export const validateReflectionCoachAiEvaluation = (
   rawValue: unknown,
   fallback: ReflectionCoachEvaluation,
   reflectionText: string,
@@ -413,27 +706,27 @@ const normalizeAiEvaluation = (
   }
 
   if (!reflectionText.trim() && coachResult !== "empty") {
-    warnStatusMismatchInDevelopment("empty reflection returned non-empty result", {
-      aiCoachResult: coachResult,
-      expectedCoachResult: "empty",
-    });
-    return { evaluation: null, fallbackReason: "status_mismatch" };
+    return {
+      evaluation: null,
+      fallbackReason: "status_mismatch",
+      fallbackDebugDetail: "coachResult",
+    };
   }
 
   if (reflectionText.trim() && coachResult === "empty") {
-    warnStatusMismatchInDevelopment("non-empty reflection returned empty result", {
-      aiCoachResult: coachResult,
-      localCoachResult: fallback.coachResult,
-    });
-    return { evaluation: null, fallbackReason: "status_mismatch" };
+    return {
+      evaluation: null,
+      fallbackReason: "status_mismatch",
+      fallbackDebugDetail: "coachResult",
+    };
   }
 
   if (coachResult !== fallback.coachResult) {
-    warnStatusMismatchInDevelopment("coachResult changed", {
-      aiCoachResult: coachResult,
-      localCoachResult: fallback.coachResult,
-    });
-    return { evaluation: null, fallbackReason: "status_mismatch" };
+    return {
+      evaluation: null,
+      fallbackReason: "status_mismatch",
+      fallbackDebugDetail: "coachResult",
+    };
   }
 
   const detectedSignals = normalizeDetectedSignals(rawValue.detectedSignals);
@@ -455,15 +748,35 @@ const normalizeAiEvaluation = (
     recommendedFocus !== fallback.recommendedFocus ||
     lessonFocus !== fallback.lessonFocus
   ) {
-    warnStatusMismatchInDevelopment("authoritative fields changed", {
-      aiDetectedSignals: detectedSignals,
-      localDetectedSignals: fallback.detectedSignals,
-      aiRecommendedFocus: recommendedFocus,
-      localRecommendedFocus: fallback.recommendedFocus,
-      aiLessonFocus: lessonFocus,
-      localLessonFocus: fallback.lessonFocus,
+    const fallbackDebugDetail = getAuthoritativeMismatchDebugDetail({
+      detectedSignals,
+      fallbackDetectedSignals: fallback.detectedSignals,
+      recommendedFocus,
+      fallbackRecommendedFocus: fallback.recommendedFocus,
+      lessonFocus,
+      fallbackLessonFocus: fallback.lessonFocus,
     });
-    return { evaluation: null, fallbackReason: "status_mismatch" };
+    return { evaluation: null, fallbackReason: "status_mismatch", fallbackDebugDetail };
+  }
+
+  const analysis = normalizeAiAnalysis(rawValue.analysis);
+
+  if (!analysis) {
+    return { evaluation: null, fallbackReason: "invalid_analysis" };
+  }
+
+  const guardedAnalysis = applyDeterministicMisconceptionGuard({
+    analysis,
+    reflectionText,
+    lessonFocus: fallback.lessonFocus,
+  });
+  const didRemoveMisconceptionRisk =
+    analysis.misconceptionRisk !== "none" && guardedAnalysis.misconceptionRisk === "none";
+
+  const teacherInsight = normalizeTeacherInsight(rawValue.teacherInsight);
+
+  if (teacherInsight.fallbackReason) {
+    return { evaluation: null, fallbackReason: teacherInsight.fallbackReason };
   }
 
   const localEvaluationBase = {
@@ -471,15 +784,17 @@ const normalizeAiEvaluation = (
     detectedSignals: fallback.detectedSignals,
     recommendedFocus: fallback.recommendedFocus,
     lessonFocus: fallback.lessonFocus,
+    analysis: guardedAnalysis,
+    ...(teacherInsight.value ? { teacherInsight: teacherInsight.value } : {}),
   };
 
   if (coachResult === "empty") {
     if (rawValue.followUpQuestion !== undefined || rawValue.positiveMessage !== undefined) {
-      warnStatusMismatchInDevelopment("empty result included coach message", {
-        hasFollowUpQuestion: rawValue.followUpQuestion !== undefined,
-        hasPositiveMessage: rawValue.positiveMessage !== undefined,
-      });
-      return { evaluation: null, fallbackReason: "status_mismatch" };
+      return {
+        evaluation: null,
+        fallbackReason: "status_mismatch",
+        fallbackDebugDetail: "messageShape",
+      };
     }
 
     return {
@@ -505,10 +820,27 @@ const normalizeAiEvaluation = (
       return { evaluation: null, fallbackReason: "missing_question_mark" };
     }
 
+    const misconceptionFollowUpQuestion =
+      guardedAnalysis.misconceptionRisk !== "none"
+        ? getMisconceptionFollowUpQuestion(
+            guardedAnalysis.misconceptionRisk,
+            fallback.lessonFocus,
+          )
+        : null;
+    const safeFollowUpQuestion = didRemoveMisconceptionRisk
+      ? (fallback.followUpQuestion ?? followUpQuestion)
+      : misconceptionFollowUpQuestion &&
+          !hasMisconceptionClarification(
+            followUpQuestion,
+            guardedAnalysis.misconceptionRisk,
+          )
+        ? misconceptionFollowUpQuestion
+        : followUpQuestion;
+
     return {
       evaluation: {
         ...localEvaluationBase,
-        followUpQuestion,
+        followUpQuestion: safeFollowUpQuestion,
       },
     };
   }
@@ -520,24 +852,30 @@ const normalizeAiEvaluation = (
     return { evaluation: null, fallbackReason: unsafeReason };
   }
 
-  if (rawValue.followUpQuestion !== undefined) {
-    warnStatusMismatchInDevelopment("strong result included follow-up question", {
-      coachResult,
-      hasFollowUpQuestion: true,
-    });
-    return { evaluation: null, fallbackReason: "status_mismatch" };
-  }
-
   const positiveMessage = typeof rawPositiveMessage === "string" ? rawPositiveMessage.trim() : "";
 
   if (getQuestionMarkCount(positiveMessage) > 0) {
     return { evaluation: null, fallbackReason: "positive_message_contains_question" };
   }
 
+  const misconceptionClarificationMessage =
+    guardedAnalysis.misconceptionRisk !== "none"
+      ? getMisconceptionClarificationMessage(guardedAnalysis.misconceptionRisk)
+      : null;
+  const safePositiveMessage = didRemoveMisconceptionRisk
+    ? (fallback.positiveMessage ?? positiveMessage)
+    : misconceptionClarificationMessage &&
+        !hasMisconceptionClarification(
+          positiveMessage,
+          guardedAnalysis.misconceptionRisk,
+        )
+      ? misconceptionClarificationMessage
+      : positiveMessage;
+
   return {
     evaluation: {
       ...localEvaluationBase,
-      positiveMessage,
+      positiveMessage: safePositiveMessage,
     },
   };
 };
@@ -569,7 +907,7 @@ export async function evaluateReflectionWithAi(
         messages: getMessages(input),
         response_format: { type: "json_object" },
         temperature: 0.2,
-        max_tokens: 140,
+        max_tokens: 520,
       }),
     });
 
@@ -593,7 +931,11 @@ export async function evaluateReflectionWithAi(
       return { evaluation: null, fallbackReason: parsedContent.fallbackReason };
     }
 
-    return normalizeAiEvaluation(parsedContent.value, input.localEvaluation, input.reflectionText);
+    return validateReflectionCoachAiEvaluation(
+      parsedContent.value,
+      input.localEvaluation,
+      input.reflectionText,
+    );
   } catch (error) {
     if (process.env.NODE_ENV !== "production") {
       console.warn(
