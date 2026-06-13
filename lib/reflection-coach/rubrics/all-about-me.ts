@@ -1,5 +1,6 @@
 import {
   hasHtmlContentChangeSignal,
+  hasHtmlPersonalizedContentResultSignal,
   hasVisiblePageResultSignal,
 } from "../signal-detection";
 import type {
@@ -12,7 +13,9 @@ export const evaluateAllAboutMeReflection = ({
   normalizedValue,
 }: ReflectionCoachRubricInput): ReflectionCoachRubricEvaluation => {
   const hasHtmlChange = hasHtmlContentChangeSignal(normalizedValue);
-  const hasVisibleResult = hasVisiblePageResultSignal(normalizedValue);
+  const hasVisibleResult =
+    hasVisiblePageResultSignal(normalizedValue) ||
+    hasHtmlPersonalizedContentResultSignal(normalizedValue);
 
   if (detectedSignals.hasCopiedExample) {
     return {

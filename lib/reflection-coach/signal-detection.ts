@@ -19,6 +19,50 @@ const includesCopiedPhrase = (normalizedCopiedValue: string, phrase: string) =>
 const namedColorPattern =
   /\b(purple|green|pink|blue|red|orange|yellow|black|white|teal|turquoise|cyan|magenta|brown|gray|grey|gold|silver|neon|rainbow)\b/;
 
+const genericHtmlContentResultTokens = new Set([
+  "a",
+  "an",
+  "and",
+  "about",
+  "big",
+  "by",
+  "content",
+  "heading",
+  "headings",
+  "html",
+  "in",
+  "into",
+  "it",
+  "item",
+  "items",
+  "list",
+  "main",
+  "me",
+  "my",
+  "new",
+  "on",
+  "onto",
+  "our",
+  "page",
+  "paragraph",
+  "text",
+  "the",
+  "thing",
+  "things",
+  "title",
+  "to",
+  "topic",
+  "word",
+  "words",
+  "writing",
+  "your",
+]);
+
+const hasSpecificHtmlContentToken = (value: string) =>
+  normalizeCopiedExampleText(value)
+    .split(/\s+/)
+    .some((token) => token.length > 1 && !genericHtmlContentResultTokens.has(token));
+
 const hasSpecificResultPhrase = (normalizedCopiedValue: string) =>
   /\b(show|shows|showed|showing|say|says|said|saying|about|to)\s+(?!my topic\b|the topic\b|topic\b|thing\b|things\b|stuff\b|something\b|project\b|page\b|better\b|cool\b|good\b|nice\b)[a-z0-9]/.test(
     normalizedCopiedValue,
@@ -198,6 +242,22 @@ export const hasVisiblePageResultSignal = (normalizedValue: string) =>
     /\b(to say|to show|made my page show|made the page show|made my page about|made the page about|changed on the page|page changed to|displayed|appeared)\b/,
   );
 
+export const hasHtmlPersonalizedContentResultSignal = (normalizedValue: string) => {
+  const contentAddedToPage = normalizedValue.match(
+    /\b(add|adds|added|adding|put|puts|putting|type|typed|typing|write|writes|wrote|writing)\b\s+(.{1,80}?)\s+\b(to|on|onto|in|into)\b\s+\b(it|my page|the page|page)\b/,
+  );
+
+  if (contentAddedToPage && hasSpecificHtmlContentToken(contentAddedToPage[2])) {
+    return true;
+  }
+
+  const pageChangedByContent = normalizedValue.match(
+    /\b(my page|the page|page|it)\b.{0,60}\b(add|adds|added|adding|put|puts|putting|type|typed|typing|write|writes|wrote|writing)\b\s+(.{1,80}?)(?:[.!?]|$)/,
+  );
+
+  return Boolean(pageChangedByContent && hasSpecificHtmlContentToken(pageChangedByContent[3]));
+};
+
 export const hasCssStyleChangeSignal = (normalizedValue: string) =>
   hasPattern(
     normalizedValue,
@@ -312,6 +372,7 @@ export const getDetectedSignals = (
     hasJavaScriptPageResultSignal(normalizedValue),
   hasPageDetail:
     hasVisiblePageResultSignal(normalizedValue) ||
+    hasHtmlPersonalizedContentResultSignal(normalizedValue) ||
     hasCssVisibleDesignResultSignal(normalizedValue) ||
     hasJavaScriptPageResultSignal(normalizedValue),
   hasActionOrChange:
