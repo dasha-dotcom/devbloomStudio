@@ -47,8 +47,18 @@ registerHooks({
 const DEMO_TEACHER_EMAIL = "demo-teacher@devbloom.local";
 const DEMO_TEACHER_PASSWORD = "DevBloomDemo123!";
 const DEMO_TEACHER_DISPLAY_NAME = "Demo Teacher";
-const DEMO_CLASS_NAME = "Demo Class";
-const DEMO_CLASS_CODE = "DEMO25";
+const DEMO_CLASSES = [
+  {
+    name: "Demo Class",
+    joinCode: "DEMO25",
+    defaultVariant: "control",
+  },
+  {
+    name: "Demo AI Class",
+    joinCode: "AIDEMO",
+    defaultVariant: "ai_coach",
+  },
+];
 const DEMO_STUDENTS = [
   {
     displayName: "Ava Demo",
@@ -201,55 +211,67 @@ async function ensureDemoTeacherRecord(db, teachers, authUser) {
   return createdTeacher;
 }
 
-async function ensureDemoClass(db, classes, teacher) {
-  const classUsingDemoCode = await db.query.classes.findFirst({
-    where: eq(classes.joinCode, DEMO_CLASS_CODE),
-  });
-
-  if (classUsingDemoCode && classUsingDemoCode.teacherId !== teacher.id) {
-    throw new Error(
-      `Cannot seed demo data because join code ${DEMO_CLASS_CODE} already belongs to a different class (${classUsingDemoCode.id}). Remove or rename that class before running the demo seed.`,
-    );
-  }
-
+async function ensureDemoClasses(db, classes, teacher) {
   const teacherClasses = await db.query.classes.findMany({
     where: eq(classes.teacherId, teacher.id),
     orderBy: [asc(classes.createdAt)],
   });
+  const usedClassIds = new Set();
+  const demoClasses = [];
 
-  const reusableClass =
-    classUsingDemoCode ??
-    teacherClasses.find((teacherClass) => teacherClass.name === DEMO_CLASS_NAME) ??
-    null;
+  for (const demoClassConfig of DEMO_CLASSES) {
+    const classUsingDemoCode = await db.query.classes.findFirst({
+      where: eq(classes.joinCode, demoClassConfig.joinCode),
+    });
 
-  const canonicalClass = reusableClass
-    ? (
-        await db
-          .update(classes)
-          .set({
-            name: DEMO_CLASS_NAME,
-            joinCode: DEMO_CLASS_CODE,
-            defaultVariant: "control",
-            isArchived: false,
-          })
-          .where(eq(classes.id, reusableClass.id))
-          .returning()
-      )[0]
-    : (
-        await db
-          .insert(classes)
-          .values({
-            teacherId: teacher.id,
-            name: DEMO_CLASS_NAME,
-            joinCode: DEMO_CLASS_CODE,
-            defaultVariant: "control",
-            isArchived: false,
-          })
-          .returning()
-      )[0];
+    if (classUsingDemoCode && classUsingDemoCode.teacherId !== teacher.id) {
+      throw new Error(
+        `Cannot seed demo data because join code ${demoClassConfig.joinCode} already belongs to a different class (${classUsingDemoCode.id}). Remove or rename that class before running the demo seed.`,
+      );
+    }
+
+    const reusableClass =
+      classUsingDemoCode ??
+      teacherClasses.find(
+        (teacherClass) => teacherClass.name === demoClassConfig.name && !usedClassIds.has(teacherClass.id),
+      ) ??
+      null;
+
+    const canonicalClass = reusableClass
+      ? (
+          await db
+            .update(classes)
+            .set({
+              name: demoClassConfig.name,
+              joinCode: demoClassConfig.joinCode,
+              defaultVariant: demoClassConfig.defaultVariant,
+              isArchived: false,
+            })
+            .where(eq(classes.id, reusableClass.id))
+            .returning()
+        )[0]
+      : (
+          await db
+            .insert(classes)
+            .values({
+              teacherId: teacher.id,
+              name: demoClassConfig.name,
+              joinCode: demoClassConfig.joinCode,
+              defaultVariant: demoClassConfig.defaultVariant,
+              isArchived: false,
+            })
+            .returning()
+        )[0];
+
+    usedClassIds.add(canonicalClass.id);
+    demoClasses.push({
+      ...demoClassConfig,
+      record: canonicalClass,
+    });
+  }
 
   const extraClassIds = teacherClasses
-    .filter((teacherClass) => teacherClass.id !== canonicalClass.id)
+    .filter((teacherClass) => !usedClassIds.has(teacherClass.id))
     .map((teacherClass) => teacherClass.id);
 
   if (extraClassIds.length > 0) {
@@ -258,7 +280,7 @@ async function ensureDemoClass(db, classes, teacher) {
       .where(and(eq(classes.teacherId, teacher.id), inArray(classes.id, extraClassIds)));
   }
 
-  return canonicalClass;
+  return demoClasses;
 }
 
 async function ensureDemoStudents(db, studentProfiles, classId, hashStudentPin, verifyStudentPin) {
@@ -365,6 +387,7 @@ async function ensureDemoAttempts(
   db,
   projectAttempts,
   classId,
+  variant,
   studentsByName,
   projects,
   buildFreshStudentProjectAttempt,
@@ -416,7 +439,7 @@ async function ensureDemoAttempts(
         eq(projectAttempts.studentProfileId, student.id),
         eq(projectAttempts.projectSlug, config.project.slug),
         eq(projectAttempts.contentVersion, config.project.contentVersion),
-        eq(projectAttempts.variant, config.variant ?? "control"),
+        eq(projectAttempts.variant, variant),
       ),
     });
 
@@ -425,7 +448,7 @@ async function ensureDemoAttempts(
       buildFreshStudentProjectAttempt,
       config.project,
       attemptId,
-      config,
+      { ...config, variant },
     );
     const recordValues = buildProjectAttemptRecordValues({
       attempt,
@@ -487,24 +510,29 @@ async function main() {
   try {
     const authUser = await ensureDemoAuthUser(supabaseAdmin);
     const teacher = await ensureDemoTeacherRecord(db, schema.teachers, authUser);
-    const demoClass = await ensureDemoClass(db, schema.classes, teacher);
-    const studentsByName = await ensureDemoStudents(
-      db,
-      schema.studentProfiles,
-      demoClass.id,
-      hashStudentPin,
-      verifyStudentPin,
-    );
+    const demoClasses = await ensureDemoClasses(db, schema.classes, teacher);
+    const projects = getAllProjects();
 
-    await ensureDemoAttempts(
-      db,
-      schema.projectAttempts,
-      demoClass.id,
-      studentsByName,
-      getAllProjects(),
-      buildFreshStudentProjectAttempt,
-      buildProjectAttemptRecordValues,
-    );
+    for (const demoClass of demoClasses) {
+      const studentsByName = await ensureDemoStudents(
+        db,
+        schema.studentProfiles,
+        demoClass.record.id,
+        hashStudentPin,
+        verifyStudentPin,
+      );
+
+      await ensureDemoAttempts(
+        db,
+        schema.projectAttempts,
+        demoClass.record.id,
+        demoClass.defaultVariant,
+        studentsByName,
+        projects,
+        buildFreshStudentProjectAttempt,
+        buildProjectAttemptRecordValues,
+      );
+    }
 
     console.log("Demo seed complete.");
     console.log("");
@@ -512,8 +540,14 @@ async function main() {
     console.log(`  Email: ${DEMO_TEACHER_EMAIL}`);
     console.log(`  Password: ${DEMO_TEACHER_PASSWORD}`);
     console.log("");
-    console.log("Student demo:");
-    console.log(`  Class code: ${DEMO_CLASS_CODE}`);
+    console.log("Student demos:");
+
+    for (const demoClass of demoClasses) {
+      console.log(`  ${demoClass.name} (${demoClass.defaultVariant}): ${demoClass.joinCode}`);
+    }
+
+    console.log("");
+    console.log("Student PINs:");
 
     for (const student of DEMO_STUDENTS) {
       console.log(`  ${student.displayName}: ${student.pin}`);

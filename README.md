@@ -19,7 +19,7 @@ Teacher demo:
 
 Student demo:
 
-- Class code: `DEMO25`
+- Class code: `DEMO25` for regular class or `AIDEMO` for the class with the Sprout Reflection Coach
 - Student: `Ava Demo`
 - PIN: `123456`
 
@@ -121,6 +121,8 @@ Run the demo seed after configuring your database and Supabase env vars:
 ```bash
 npm run seed:demo
 ```
+
+The seed creates one control class with code `DEMO25` and one Sprout Reflection Coach class with code `AIDEMO`.
 
 ## Useful scripts
 
