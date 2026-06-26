@@ -13,7 +13,7 @@ export function HeroPreview() {
         <div className="preview-pane-grid">
           <div className="mini-editor">
             <div className="mini-editor-header">
-              <span>all-about-me.html</span>
+              <span>something-you-like.html</span>
               <span>Guided step: Add your title</span>
             </div>
             <div className="code-lines">
@@ -60,7 +60,7 @@ export function HeroPreview() {
               <span>Theme: Ocean</span>
             </div>
             <div className="mini-site-body">
-              <span className="mini-badge">All About Me</span>
+              <span className="mini-badge">Something You Like</span>
               <h3>Hi, I&apos;m Maya!</h3>
               <p>I love sketching, soccer, and building mini websites.</p>
               <ul>

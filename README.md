@@ -53,10 +53,13 @@ The app currently includes:
 
 ## Current lesson projects
 
-- `all-about-me`: beginner HTML lesson for building a page about something you like
+- `all-about-me`: beginner HTML lesson displayed in the UI as "Make a Page About Something You Like"
 - `vibe-page`: CSS styling lesson focused on color, layout, and mood
 - `mood-switch`: JavaScript interaction lesson built around a click-driven mood toggle
 - `build-your-own-mini-site`: mixed HTML/CSS/JavaScript builder lesson with guided starter choices
+
+Note: `all-about-me` is the original internal slug for the "Make a Page About Something You Like" project.
+The slug is kept for saved student attempts and existing links.
 
 ## Tech stack
 
