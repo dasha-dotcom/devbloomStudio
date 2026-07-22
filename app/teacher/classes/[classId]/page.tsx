@@ -103,7 +103,7 @@ export default async function TeacherClassDetailPage({ params }: TeacherClassDet
           </div>
         </div>
 
-        <CreateStudentForm classId={teacherClass.id} />
+        <CreateStudentForm classId={teacherClass.id} classCode={teacherClass.joinCode} />
       </div>
     </section>
   );
