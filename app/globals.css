@@ -61,6 +61,28 @@ select {
   padding: 24px 0 72px;
 }
 
+.site-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 48px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.tin-credit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tin-mark {
+  width: 0.75em;
+  height: 0.75em;
+  background: #66dc9d;
+}
+
 .topbar {
   display: flex;
   justify-content: space-between;
@@ -325,7 +347,7 @@ select {
   color: #f5c2e7;
 }
 
-.code-line span {
+.code-line > span {
   color: rgba(255, 255, 255, 0.3);
 }
 
@@ -357,9 +379,10 @@ select {
   font-weight: 700;
 }
 
-.mini-site h3 {
+.mini-site-title {
   margin: 16px 0 12px;
   font-size: 2rem;
+  font-weight: 700;
 }
 
 .mini-site p,
