@@ -1,4 +1,5 @@
 import { LivePreview } from "@/components/lesson/live-preview";
+import { TeacherReviewFeedbackPrompt } from "@/components/teacher/teacher-review-feedback-prompt";
 import type { ReflectionCoachCheck } from "@/lib/persistence/project-attempt-types";
 import { getProjectBySlug } from "@/lib/projects";
 import { normalizeProjectAttempt } from "@/lib/persistence/project-attempt-sanitizer";
@@ -6,7 +7,6 @@ import { deriveReflectionCoachTeacherInsight } from "@/lib/reflection-coach/teac
 import { deriveTeacherAttemptSummary, type TeacherAttemptStepSummary } from "@/lib/teacher/derive-attempt-summary";
 import { getLessonVariantDisplay } from "@/lib/teacher/lesson-variant-display";
 import { requireTeacherProjectAttempt } from "@/lib/teacher/require-teacher-project-attempt";
-import { TEACHER_REVIEW_FEEDBACK_HREF } from "@/lib/teacher/review-feedback";
 
 type TeacherAttemptDetailPageProps = {
   params: Promise<{
@@ -119,24 +119,6 @@ const getSproutCheckSourceLabel = (source: ReflectionCoachCheck["source"]) => {
 
   return null;
 };
-
-const TeacherReviewFeedbackPrompt = () => (
-  <aside className="teacher-review-feedback" aria-labelledby="teacher-review-feedback-title">
-    <div>
-      <span className="teacher-review-feedback-kicker">Help improve teacher review</span>
-      <h2 id="teacher-review-feedback-title">How did this review work for you?</h2>
-      <p>
-        Share what helped, what felt confusing, and what you would need to use DevBloom again.
-      </p>
-      <p className="teacher-review-feedback-privacy">
-        Please don&apos;t include student names or student work.
-      </p>
-    </div>
-    <a className="teacher-review-feedback-link" href={TEACHER_REVIEW_FEEDBACK_HREF}>
-      Email teacher feedback
-    </a>
-  </aside>
-);
 
 export default async function TeacherAttemptDetailPage({ params }: TeacherAttemptDetailPageProps) {
   const { classId, studentId, attemptId } = await params;
