@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AppShell } from "@/components/app-shell";
+import { AnalyticsEvent } from "@/components/analytics-event";
 import { signInTeacher } from "@/app/auth/actions";
 
 type SignInPageProps = {
@@ -15,6 +16,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
 
   return (
     <AppShell>
+      {success ? <AnalyticsEvent event="teacher_signup_completed" /> : null}
       <section className="section">
         <div className="section-head">
           <div>

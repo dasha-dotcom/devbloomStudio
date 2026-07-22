@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as
 import Link from "next/link";
 
 import { AppShell, type AppShellNavMode } from "@/components/app-shell";
+import { captureAnalyticsEvent } from "@/lib/analytics";
 import { CheckpointPanel } from "@/components/lesson/checkpoint-panel";
 import { CodeEditor, type CodeEditorHandle } from "@/components/lesson/code-editor";
 import { ErrorHelper } from "@/components/lesson/error-helper";
@@ -148,6 +149,13 @@ export function LessonPageShell({
     () => getStarterCode(project, step, builderSelections),
     [builderSelections, project, step],
   );
+
+  useEffect(() => {
+    captureAnalyticsEvent("lesson_started", {
+      project_slug: project.slug,
+      lesson_variant: variant,
+    });
+  }, [project.slug, variant]);
   const editorTabs = step.editorTabs ?? [
     {
       id: "default",
@@ -703,6 +711,11 @@ export function LessonPageShell({
       });
 
       setIsComplete(true);
+      captureAnalyticsEvent("lesson_completed", {
+        project_slug: project.slug,
+        lesson_variant: variant,
+        total_steps: project.steps.length,
+      });
       persistImmediately(completedAttempt);
       return;
     }
@@ -715,6 +728,13 @@ export function LessonPageShell({
     };
     const nextActiveEditorTabId = nextStep.defaultEditorTabId ?? nextStep.editorTabs?.[0]?.id ?? "default";
 
+    captureAnalyticsEvent("lesson_step_completed", {
+      project_slug: project.slug,
+      lesson_variant: variant,
+      step_id: step.id,
+      step_number: currentStep + 1,
+      total_steps: project.steps.length,
+    });
     setActiveEditorError(null);
     setStepStartCodeByStep(nextStepStartCodeByStep);
     setActiveEditorTabId(nextActiveEditorTabId);
