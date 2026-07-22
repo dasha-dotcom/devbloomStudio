@@ -65,10 +65,38 @@ select {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px 14px;
   margin-top: 48px;
   color: var(--muted);
   font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.site-footer-links {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.site-footer-link {
+  border-radius: 6px;
+  text-decoration: underline;
+  text-decoration-color: rgba(101, 93, 132, 0.42);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.site-footer-link:hover {
+  color: var(--text);
+  text-decoration-color: currentColor;
+}
+
+.site-footer-link:focus-visible {
+  outline: 3px solid rgba(29, 22, 55, 0.72);
+  outline-offset: 3px;
 }
 
 .tin-credit {
