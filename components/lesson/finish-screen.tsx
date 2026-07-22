@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { DeveloperProgressRing } from "@/components/lesson/developer-progress-ring";
+import { FinishedProjectShare } from "@/components/lesson/finished-project-share";
 import type { FinishScreenContent } from "@/lib/projects";
 
 type FinishScreenProps = {
@@ -9,6 +10,8 @@ type FinishScreenProps = {
   onStartOver: () => void;
   onSaveAndExit?: () => Promise<void> | void;
   content: FinishScreenContent;
+  projectSlug: string;
+  projectTitle: string;
   progressPercent: number;
   notebookEntry?: string;
   notebookPrompt?: string;
@@ -24,6 +27,8 @@ export function FinishScreen({
   onStartOver,
   onSaveAndExit,
   content,
+  projectSlug,
+  projectTitle,
   progressPercent,
   notebookEntry,
   notebookPrompt,
@@ -80,6 +85,7 @@ export function FinishScreen({
             title="Final project preview"
           />
         </div>
+        <FinishedProjectShare projectSlug={projectSlug} projectTitle={projectTitle} />
         <div className="hero-actions">
           {showSaveAndExit ? (
             <button
@@ -101,7 +107,7 @@ export function FinishScreen({
                     : "Save and exit"}
             </button>
           ) : null}
-          <button type="button" className="button" onClick={onContinueEditing}>
+          <button type="button" className="button-ghost" onClick={onContinueEditing}>
             Continue editing
           </button>
           <button type="button" className="button-ghost" onClick={onStartOver}>
