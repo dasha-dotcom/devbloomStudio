@@ -3,12 +3,63 @@ import { AppShell } from "@/components/app-shell";
 import { HeroPreview } from "@/components/hero-preview";
 import { getAllProjects, getProjectHref } from "@/lib/projects";
 
+const faqItems = [
+  {
+    question: "How do I set up a class?",
+    answer:
+      "Create a teacher account, add a class and its student roster, then share the class code and each student's six-digit PIN. Students can open the class join page and continue to their assigned projects.",
+  },
+  {
+    question: "Do students need their own email accounts?",
+    answer:
+      "No. Classroom students enter a teacher-created class code, choose their name from the roster, and sign in with a six-digit PIN. Public lessons can be opened without any student account.",
+  },
+  {
+    question: "How do student access and privacy work?",
+    answer:
+      "Public lesson progress stays in the current browser. Classroom attempts and reflections are saved with the student's class profile so their teacher can review progress; students use a class code and private PIN instead of an email login.",
+  },
+  {
+    question: "What coding skills do the lessons cover?",
+    answer:
+      "The current projects introduce HTML, CSS, and JavaScript through guided website builds. Students edit real code, watch the page change, answer checkpoints, and explain their choices in short reflections.",
+  },
+  {
+    question: "What can teachers see?",
+    answer:
+      "Teachers can open class rosters, review saved project attempts and reflections, and see where each student is in a lesson. Student project previews are read-only in the teacher view.",
+  },
+  {
+    question: "What is free to try?",
+    answer:
+      "All four current guided projects can be opened from the public project library. No account or credit card is required to try those public lessons.",
+  },
+] as const;
+
 export default function LandingPage() {
   const projects = getAllProjects();
   const defaultProject = projects[0];
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqItems.map(({ question, answer }) => ({
+      "@type": "Question",
+      name: question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: answer,
+      },
+    })),
+  };
 
   return (
     <AppShell>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqSchema).replace(/</g, "\\u003c"),
+        }}
+      />
       <section className="hero">
         <div>
           <span className="eyebrow">
@@ -208,6 +259,33 @@ export default function LandingPage() {
               <li>No credit card required</li>
             </ul>
           </div>
+        </div>
+      </section>
+
+      <section className="section faq-section" aria-labelledby="faq-title">
+        <div className="faq-intro">
+          <span className="eyebrow">For families and classrooms</span>
+          <h2 id="faq-title" className="section-title">
+            Questions before you start?
+          </h2>
+          <p>
+            The practical details parents and teachers usually want before a
+            student opens a project.
+          </p>
+        </div>
+
+        <div className="faq-list">
+          {faqItems.map(({ question, answer }, index) => (
+            <article className="faq-item" key={question}>
+              <span className="faq-number" aria-hidden>
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <div>
+                <h3>{question}</h3>
+                <p>{answer}</p>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
     </AppShell>
