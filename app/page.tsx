@@ -22,10 +22,13 @@ export default function LandingPage() {
             explain what their code did.
           </p>
           <div className="hero-actions">
-            <Link href={getProjectHref(defaultProject.slug)} className="button">
+            <Link
+              href={getProjectHref(defaultProject.slug)}
+              className="button primary-cta"
+            >
               Try a lesson
             </Link>
-            <Link href="/teacher" className="button-ghost">
+            <Link href="/teacher" className="text-link">
               See teacher tools
             </Link>
           </div>
@@ -189,8 +192,11 @@ export default function LandingPage() {
               Open a guided coding project and start building in your browser.
               No account or credit card is required for the public lessons.
             </p>
-            <Link href={getProjectHref(defaultProject.slug)} className="button">
-              Try the first lesson
+            <Link
+              href={getProjectHref(defaultProject.slug)}
+              className="button primary-cta"
+            >
+              Try a lesson
             </Link>
           </div>
           <div className="access-summary" aria-label="Free lesson access details">
