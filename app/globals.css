@@ -61,6 +61,28 @@ select {
   padding: 24px 0 72px;
 }
 
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 48px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.tin-credit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tin-mark {
+  width: 0.75em;
+  height: 0.75em;
+  background: #66dc9d;
+}
+
 .topbar {
   display: flex;
   justify-content: space-between;
@@ -1253,6 +1275,75 @@ select {
 .teacher-reflection-insight strong {
   display: block;
   font-size: 0.88rem;
+}
+
+.teacher-review-feedback {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 24px;
+  padding: 20px 24px;
+  border: 1px solid rgba(77, 125, 96, 0.2);
+  border-radius: 24px;
+  background: rgba(115, 216, 175, 0.1);
+}
+
+.teacher-review-feedback h2 {
+  margin: 4px 0 6px;
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+.teacher-review-feedback p {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.teacher-review-feedback-kicker {
+  color: #4d7d60;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.teacher-review-feedback .teacher-review-feedback-privacy {
+  margin-top: 8px;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.teacher-review-feedback-link {
+  display: inline-flex;
+  min-height: 44px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border: 1px solid rgba(77, 125, 96, 0.28);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.66);
+  color: #315c43;
+  font-weight: 800;
+  transition:
+    transform 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.teacher-review-feedback-link:hover {
+  transform: translateY(-1px);
+  border-color: rgba(77, 125, 96, 0.5);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.teacher-review-feedback-link:focus-visible {
+  outline: 3px solid rgba(49, 92, 67, 0.56);
+  outline-offset: 3px;
 }
 
 .checklist-item.done .check-bubble,
@@ -2874,5 +2965,15 @@ select {
   .improved-bubble {
     margin-left: 0;
     margin-right: 0;
+  }
+
+  .teacher-review-feedback {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 18px;
+  }
+
+  .teacher-review-feedback-link {
+    width: fit-content;
   }
 }
