@@ -4,7 +4,8 @@ import { HeroPreview } from "@/components/hero-preview";
 import { getAllProjects, getProjectHref } from "@/lib/projects";
 
 export default function LandingPage() {
-  const defaultProject = getAllProjects()[0];
+  const projects = getAllProjects();
+  const defaultProject = projects[0];
 
   return (
     <AppShell>
@@ -177,23 +178,29 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="section">
-        <div className="final-cta glass-card">
-          <div>
-            <span className="eyebrow">Start building</span>
-            <h2 className="section-title">Ready to build something real?</h2>
+      <section className="section" aria-labelledby="lesson-access-title">
+        <div className="access-panel">
+          <div className="access-copy">
+            <span className="eyebrow">Lesson access</span>
+            <h2 id="lesson-access-title" className="section-title">
+              {projects.length} projects. Free to try today.
+            </h2>
             <p>
-              Start with one beginner-friendly project and see how code changes
-              the page.
+              Open a guided coding project and start building in your browser.
+              No account or credit card is required for the public lessons.
             </p>
+            <Link href={getProjectHref(defaultProject.slug)} className="button">
+              Try the first lesson
+            </Link>
           </div>
-          <div className="hero-actions final-cta-actions">
-            <Link href="/projects" className="button">
-              Choose a project
-            </Link>
-            <Link href="/teacher" className="button-ghost">
-              Open teacher dashboard
-            </Link>
+          <div className="access-summary" aria-label="Free lesson access details">
+            <span className="access-label">Current lesson access</span>
+            <strong className="access-price">Free</strong>
+            <ul>
+              <li>{projects.length} guided coding projects</li>
+              <li>No student account required</li>
+              <li>No credit card required</li>
+            </ul>
           </div>
         </div>
       </section>

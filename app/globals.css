@@ -61,6 +61,28 @@ select {
   padding: 24px 0 72px;
 }
 
+.site-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 48px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.tin-credit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tin-mark {
+  width: 0.75em;
+  height: 0.75em;
+  background: #66dc9d;
+}
+
 .topbar {
   display: flex;
   justify-content: space-between;
@@ -548,28 +570,93 @@ select {
   border-color: rgba(115, 216, 175, 0.34);
 }
 
-.final-cta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
+.access-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr);
+  gap: 20px;
   padding: 28px;
-  background:
-    linear-gradient(135deg, rgba(255, 211, 90, 0.22), rgba(104, 200, 255, 0.18)),
-    var(--surface);
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: #21183d;
+  box-shadow: 0 24px 64px rgba(35, 24, 70, 0.2);
 }
 
-.final-cta p {
-  max-width: 580px;
-  margin: 12px 0 0;
-  color: var(--muted);
+.access-copy {
+  align-self: center;
+  padding: 12px 10px;
+}
+
+.access-copy .eyebrow {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #fff3e5;
+}
+
+.access-copy .section-title {
+  max-width: 650px;
+  margin-top: 18px;
+  color: white;
+}
+
+.access-copy p {
+  max-width: 620px;
+  margin: 14px 0 0;
+  color: #d8d1ea;
   font-size: 1.04rem;
   line-height: 1.7;
 }
 
-.final-cta-actions {
-  margin-top: 0;
-  justify-content: flex-end;
+.access-copy .button {
+  margin-top: 24px;
+}
+
+.access-summary {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 300px;
+  padding: 28px;
+  border-radius: 26px;
+  background: #fff6e8;
+  color: var(--text);
+}
+
+.access-label {
+  color: #6b5570;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.access-price {
+  margin: 4px 0 14px;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(3.2rem, 6vw, 5rem);
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.access-summary ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 16px 0 0;
+  border-top: 1px solid rgba(33, 25, 61, 0.12);
+  list-style: none;
+}
+
+.access-summary li {
+  display: flex;
+  gap: 10px;
+  color: #544a6c;
+  line-height: 1.45;
+}
+
+.access-summary li::before {
+  content: "\2713";
+  color: #267155;
+  font-weight: 900;
 }
 
 .page-hero {
@@ -2776,6 +2863,7 @@ select {
   .lesson-workspace,
   .project-grid,
   .reflection-card,
+  .access-panel,
   .teacher-grid,
   .steps-grid,
   .preview-pane-grid {
@@ -2858,15 +2946,22 @@ select {
   }
 
   .lesson-footer,
-  .final-cta,
   .section-head,
   .student-session-panel {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .final-cta-actions {
-    justify-content: flex-start;
+  .access-panel {
+    padding: 20px;
+  }
+
+  .access-summary {
+    min-height: auto;
+  }
+
+  .site-footer {
+    flex-wrap: wrap;
   }
 
   .student-bubble,
