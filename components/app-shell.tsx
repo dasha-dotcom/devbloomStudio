@@ -75,10 +75,21 @@ export function AppShell({ children, navMode = "public" }: AppShellProps) {
         {children}
         <footer className="site-footer">
           <span>DevBloom Studio</span>
-          <a href="https://tin.computer" className="tin-credit">
-            <span className="tin-mark" aria-hidden />
-            Growth by Tin
-          </a>
+          <span className="site-footer-links">
+            <a
+              href="mailto:devbloom-studio@mail.tin.computer"
+              className="site-footer-link"
+            >
+              devbloom-studio@mail.tin.computer
+            </a>
+            <a
+              href="https://tin.computer"
+              className="site-footer-link tin-credit"
+            >
+              <span className="tin-mark" aria-hidden />
+              Growth by Tin
+            </a>
+          </span>
         </footer>
       </div>
     </div>
