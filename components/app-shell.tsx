@@ -28,8 +28,6 @@ const getNavConfig = (navMode: AppShellNavMode) => {
       return {
         secondaryHref: "/projects",
         secondaryLabel: "Projects",
-        tertiaryHref: "/join",
-        tertiaryLabel: "Join Class",
         primaryHref: "/teacher",
         primaryLabel: "Teacher Dashboard",
       };
@@ -54,6 +52,11 @@ export function AppShell({ children, navMode = "public" }: AppShellProps) {
             {navMode === "public" ? (
               <Link href={nav.secondaryHref} className="nav-link">
                 {nav.secondaryLabel}
+              </Link>
+            ) : null}
+            {navMode === "public" ? (
+              <Link href="/teachers" className="nav-link">
+                For Teachers
               </Link>
             ) : null}
             {navMode === "public" ? (
