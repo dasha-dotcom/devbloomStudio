@@ -3,9 +3,13 @@ import type { LessonProjectConfig } from "@/lib/projects";
 
 type StudentProjectLaunchCardProps = {
   project: LessonProjectConfig;
+  isRecommended?: boolean;
 };
 
-export function StudentProjectLaunchCard({ project }: StudentProjectLaunchCardProps) {
+export function StudentProjectLaunchCard({
+  project,
+  isRecommended = false,
+}: StudentProjectLaunchCardProps) {
   const launchAttemptForProject = launchStudentProjectAttempt.bind(null, project.slug);
 
   return (
@@ -17,6 +21,7 @@ export function StudentProjectLaunchCard({ project }: StudentProjectLaunchCardPr
       </div>
 
       <div className="pill-row">
+        {isRecommended ? <span className="pill project-card-recommendation">Start here</span> : null}
         <span className="pill">{project.projectCard.level}</span>
         <span className="pill">{project.projectCard.time}</span>
       </div>

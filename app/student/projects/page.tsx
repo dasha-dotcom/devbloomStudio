@@ -4,9 +4,14 @@ import { StudentProjectLaunchCard } from "@/components/student/student-project-l
 import { getAllProjects } from "@/lib/projects";
 import { requireStudentSession } from "@/lib/student/require-student-session";
 
+const recommendedProjectSlug = "all-about-me";
+
 export default async function StudentProjectsPage() {
   const session = await requireStudentSession();
-  const projects = getAllProjects();
+  const projects = [...getAllProjects()].sort(
+    (left, right) =>
+      Number(right.slug === recommendedProjectSlug) - Number(left.slug === recommendedProjectSlug),
+  );
 
   return (
     <AppShell navMode="student">
@@ -23,7 +28,8 @@ export default async function StudentProjectsPage() {
           <div>
             <strong>Your class session</strong>
             <p className="muted teacher-panel-copy">
-              Choose any project to start building. Your project attempt will resume here the next time you return.
+              Start with the recommended 20-25 minute lesson, or choose any project. Your work will
+              resume here the next time you return.
             </p>
           </div>
 
@@ -37,7 +43,11 @@ export default async function StudentProjectsPage() {
         <section className="section" style={{ paddingTop: 28 }}>
           <div className="project-grid">
             {projects.map((project) => (
-              <StudentProjectLaunchCard key={project.slug} project={project} />
+              <StudentProjectLaunchCard
+                key={project.slug}
+                project={project}
+                isRecommended={project.slug === recommendedProjectSlug}
+              />
             ))}
           </div>
         </section>

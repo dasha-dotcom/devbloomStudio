@@ -619,6 +619,11 @@ select {
   font-weight: 700;
 }
 
+.project-card-recommendation {
+  background: rgba(155, 229, 192, 0.36);
+  color: #275f4b;
+}
+
 .project-art {
   min-height: 180px;
   border-radius: 24px;
