@@ -69,6 +69,28 @@ select {
   padding: 18px 0 10px;
 }
 
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 40px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.tin-credit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tin-credit svg {
+  width: 0.78em;
+  height: 0.78em;
+  flex: 0 0 auto;
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
@@ -2646,6 +2668,141 @@ select {
   border: none;
 }
 
+.finish-share-card {
+  display: grid;
+  gap: 22px;
+  margin-top: 28px;
+  padding: 24px;
+  border: 1px solid rgba(104, 200, 255, 0.28);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(115, 216, 175, 0.22), transparent 38%),
+    rgba(246, 251, 255, 0.9);
+}
+
+.finish-share-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.finish-share-heading h2 {
+  margin: 6px 0 8px;
+  font-size: clamp(1.55rem, 3vw, 2rem);
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.finish-share-heading p {
+  max-width: 62ch;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.finish-share-kicker {
+  color: #356b82;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.finish-share-lock {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(115, 216, 175, 0.2);
+  color: #215944;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.finish-share-primary {
+  justify-self: start;
+  min-height: 44px;
+}
+
+.finish-share-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+.finish-share-consent,
+.finish-share-invitation {
+  display: grid;
+  gap: 14px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(33, 25, 61, 0.1);
+}
+
+.finish-share-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 60ch;
+  line-height: 1.55;
+  cursor: pointer;
+}
+
+.finish-share-checkbox input {
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--coral);
+}
+
+.finish-share-boundary {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.finish-share-boundary p,
+.finish-share-status {
+  margin: 0;
+}
+
+.finish-share-message-label {
+  font-weight: 800;
+}
+
+.finish-share-message {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid rgba(33, 25, 61, 0.16);
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: white;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.finish-share-message:focus-visible,
+.finish-share-primary:focus-visible,
+.finish-share-checkbox input:focus-visible {
+  outline: 3px solid rgba(104, 200, 255, 0.55);
+  outline-offset: 3px;
+}
+
+.finish-share-status {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.finish-share-status-copied {
+  color: #236f52;
+}
+
+.finish-share-status-error {
+  color: #9b4d42;
+}
+
 .editor-tab-row {
   display: flex;
   flex-wrap: wrap;
@@ -2814,6 +2971,18 @@ select {
 }
 
 @media (max-width: 720px) {
+  .finish-share-heading {
+    display: grid;
+  }
+
+  .finish-share-lock {
+    justify-self: start;
+  }
+
+  .finish-share-card {
+    padding: 20px;
+  }
+
   .finish-process-card {
     justify-content: center;
     text-align: center;

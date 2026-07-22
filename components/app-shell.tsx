@@ -67,6 +67,16 @@ export function AppShell({ children, navMode = "public" }: AppShellProps) {
           </nav>
         </header>
         {children}
+        <footer className="site-footer">
+          <span>DevBloom Studio</span>
+          <span aria-hidden>·</span>
+          <a href="https://tin.computer" className="tin-credit">
+            <svg aria-hidden viewBox="0 0 32 32" focusable="false">
+              <rect width="32" height="32" fill="#66DC9D" />
+            </svg>
+            Growth by Tin
+          </a>
+        </footer>
       </div>
     </div>
   );

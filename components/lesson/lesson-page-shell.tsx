@@ -48,6 +48,7 @@ import {
   evaluateReflectionForCoach,
   getReflectionCoachLessonFocus,
 } from "@/lib/reflection-coach/evaluate-reflection";
+import { isFinishedProjectInvitation } from "@/lib/sharing/finished-project-invitation";
 
 const DEFAULT_EDITOR_WIDTH = 64;
 const MIN_PANE_WIDTH = 320;
@@ -151,9 +152,14 @@ export function LessonPageShell({
   );
 
   useEffect(() => {
+    const invitationSource = isFinishedProjectInvitation(window.location.search)
+      ? "finished_project"
+      : undefined;
+
     captureAnalyticsEvent("lesson_started", {
       project_slug: project.slug,
       lesson_variant: variant,
+      ...(invitationSource ? { invitation_source: invitationSource } : {}),
     });
   }, [project.slug, variant]);
   const editorTabs = step.editorTabs ?? [
@@ -1200,6 +1206,8 @@ export function LessonPageShell({
           onStartOver={restart}
           onSaveAndExit={saveAndExit}
           content={project.finish}
+          projectSlug={project.slug}
+          projectTitle={project.projectCard.title}
           progressPercent={progressSummary.progressPercent}
           notebookEntry={notebookReflection?.entry}
           notebookPrompt={notebookReflection?.prompt}
