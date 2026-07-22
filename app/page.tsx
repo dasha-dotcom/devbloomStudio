@@ -8,6 +8,7 @@ export default function LandingPage() {
 
   return (
     <AppShell>
+      <main>
       <section className="hero">
         <div>
           <span className="eyebrow">
@@ -197,6 +198,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      </main>
     </AppShell>
   );
 }

@@ -61,7 +61,7 @@ export function HeroPreview() {
             </div>
             <div className="mini-site-body">
               <span className="mini-badge">Something You Like</span>
-              <h3>Hi, I&apos;m Maya!</h3>
+              <p className="mini-site-title">Hi, I&apos;m Maya!</p>
               <p>I love sketching, soccer, and building mini websites.</p>
               <ul>
                 <li>Bubble tea</li>
