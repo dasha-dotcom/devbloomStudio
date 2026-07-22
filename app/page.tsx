@@ -79,7 +79,7 @@ export default function LandingPage() {
             >
               Try a lesson
             </Link>
-            <Link href="/teacher" className="text-link">
+            <Link href="/teachers" className="text-link">
               See teacher tools
             </Link>
           </div>
