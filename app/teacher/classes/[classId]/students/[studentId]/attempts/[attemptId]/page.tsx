@@ -1,4 +1,5 @@
 import { LivePreview } from "@/components/lesson/live-preview";
+import { TeacherReviewFeedbackPrompt } from "@/components/teacher/teacher-review-feedback-prompt";
 import type { ReflectionCoachCheck } from "@/lib/persistence/project-attempt-types";
 import { getProjectBySlug } from "@/lib/projects";
 import { normalizeProjectAttempt } from "@/lib/persistence/project-attempt-sanitizer";
@@ -146,6 +147,7 @@ export default async function TeacherAttemptDetailPage({ params }: TeacherAttemp
             Reflection mode: <strong>{variantDisplay.attemptLabel}</strong>
           </p>
         </div>
+        <TeacherReviewFeedbackPrompt />
       </section>
     );
   }
@@ -449,6 +451,8 @@ export default async function TeacherAttemptDetailPage({ params }: TeacherAttemp
           )}
         </div>
       ) : null}
+
+      <TeacherReviewFeedbackPrompt />
     </section>
   );
 }
