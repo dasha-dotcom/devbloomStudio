@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { ProjectCard } from "@/components/project-card";
 import { getAllProjectCards } from "@/lib/projects";
@@ -21,6 +22,22 @@ export default function ProjectsPage() {
           {projectCards.map((project) => (
             <ProjectCard key={project.title} project={project} />
           ))}
+        </div>
+      </section>
+
+      <section className="section" style={{ paddingTop: 16 }}>
+        <div className="final-cta glass-card">
+          <div>
+            <span className="eyebrow">Choosing what comes next</span>
+            <h2 className="section-title">Moving on from Scratch?</h2>
+            <p>
+              Compare seven coding websites by what your child wants to build
+              next, from deeper blocks to real HTML, CSS, and JavaScript.
+            </p>
+          </div>
+          <Link href="/websites-like-scratch" className="button-ghost">
+            Compare Scratch alternatives
+          </Link>
         </div>
       </section>
     </AppShell>

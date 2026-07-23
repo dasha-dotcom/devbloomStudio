@@ -61,6 +61,28 @@ select {
   padding: 24px 0 72px;
 }
 
+.site-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 48px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.tin-credit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tin-mark {
+  width: 0.75em;
+  height: 0.75em;
+  background: #66dc9d;
+}
+
 .topbar {
   display: flex;
   justify-content: space-between;
